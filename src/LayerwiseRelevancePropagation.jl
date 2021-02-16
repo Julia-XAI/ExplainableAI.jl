@@ -1,5 +1,10 @@
 module LayerwiseRelevancePropagation
 
-# Write your package code here.
+using Flux
+using Statistics: std
 
-end
+include("rules.jl")
+
+export LRP
+
+end # module
