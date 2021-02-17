@@ -4,7 +4,7 @@ General LRP rule implemented according to "Layer-Wise Relevance Propagation: An 
 
 Default kwargs correspond to the basic LRP-0 rule.
 """
-function _LRP(
+function LRP_generic(
     layer::Dense,
     a::AbstractVector, # activations (forward)
     R::AbstractVector; # relevance scores (backward)
@@ -21,12 +21,13 @@ function _LRP(
     return R_prev = a .* (transpose(ρW) * s) # backward pass
 end
 
-function _LRP(
+"""
+function LRP_generic(
     layer::Union{Conv,MeanPool,MaxPool},
     a::AbstractVector, # activations (forward)
     R::AbstractVector; # relevance scores (backward)
     ρ::Function=identity,
-    add_ϵ::Function=., # also sometimes called incr
+    add_ϵ::Function=identity, # also sometimes called incr
 )::AbstractVector
     ρW, ρb = ρ.(Flux.params(layer))
 
@@ -41,22 +42,22 @@ end
 """
 LRP-0 rule. Commonly used on upper layers.
 """
-LRP_0(l, a, R) = _LRP(l, a, R)
+LRP_0(l, a, R) = LRP_generic(l, a, R)
 
 """
 LRP-``ϵ`` rule. Commonly used on middle layers.
 """
 function LRP_ϵ(l, a, R; ϵ=0.25)
     _add_ϵ(z) = (1 + ϵ * std(z)) * z
-    return _LRP(l, a, R; add_ϵ=_add_ϵ)
+    return LRP_generic(l, a, R; add_ϵ=_add_ϵ)
 end
 
 """
 LRP-``γ`` rule. Commonly used on lower layers.
 """
 function LRP_γ(l, a, R; γ=0.1)
-    ρᵧ(w) = w + γ * relu(w)
-    return _LRP(l, a, R; ρ=ρᵧ)
+    _ρ(w) = w + γ * relu(w)
+    return LRP_generic(l, a, R; ρ=_ρ)
 end
 
 """
