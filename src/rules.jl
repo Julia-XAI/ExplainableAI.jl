@@ -49,6 +49,22 @@ function LRP_generic(
 end
 
 """
+Generic LRP rule for batch norm layers.
+Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.3.2):
+
+> Batch Normalization Layers are commonly used to facilitate training and improve prediction accuracy. At test time, they simply consist of a centering and rescaling operation. These layers can therefore be absorbed by the adjacent linear layer without changing the function. This allows to recover the canonical neural network structure needed for applying LRP.
+"""
+function LRP_generic(
+    layer::BatchNorm,
+    a::AbstractVector, # activations (forward)
+    R::AbstractVector; # relevance scores (backward)
+    ρ::Function=identity,
+    add_ϵ::Function=identity, # also sometimes called incr
+)::AbstractVector
+    return R_prev = R
+end
+
+"""
 LRP-0 rule. Commonly used on upper layers.
 """
 LRP_0(l, a, R) = LRP_generic(l, a, R)
