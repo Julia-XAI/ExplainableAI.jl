@@ -1,6 +1,7 @@
 
 """
-General LRP rule implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2)
+Generic LRP rule for dense layers.
+Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2).
 
 Default kwargs correspond to the basic LRP-0 rule.
 """
@@ -21,6 +22,14 @@ function LRP_generic(
     return R_prev = a .* (transpose(ρW) * s) # backward pass
 end
 
+"""
+Generic LRP rule for convolutional and sum-pooling layers.
+Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2).
+According to (10.3.2), this can also be applied to max-pooling layers:
+
+>
+
+Default kwargs correspond to the basic LRP-0 rule.
 """
 function LRP_generic(
     layer::Union{Conv,MeanPool,MaxPool},
