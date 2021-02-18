@@ -46,3 +46,23 @@ function annotate_chain(
 
     return annotations = ntuple(annotate_layer, Val(n_layers))
 end
+"""
+Annotate layers in the chain by mapping them to one of the following symbols:
+
+  - `:FirstPixels`
+  - `:FirstReals`
+  - `:Lower`
+  - `:Middle`
+  - `:Upper`
+  - `:Top`
+  - `:TopSoftmax`
+
+If no positional arguments are supplied, a 45/35/20%-split heuristic is applied.
+"""
+function annotate_chain(chain::Chain; kwargs...)
+    n_layers = length(chain)
+    middle_start = floor(Int, 0.45 * n_layers)
+    upper_start = floor(Int, 0.8 * n_layers)
+
+    return annotate_chain(chain, middle_start, upper_start; kwargs...)
+end
