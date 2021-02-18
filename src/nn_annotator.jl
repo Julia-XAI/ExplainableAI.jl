@@ -1,42 +1,39 @@
 """
 Annotate layers in the chain by mapping them to one of the following symbols:
-* `:FirstPixels`
-* `:FirstReals`
-* `:Lower`
-* `:Middle`
-* `:Upper`
-* `:Top`
-* `:TopSoftmax`
+
+  - `:FirstPixels`
+  - `:FirstReals`
+  - `:Lower`
+  - `:Middle`
+  - `:Upper`
+  - `:Top`
+  - `:TopSoftmax`
 """
 function annotate_chain(
-    chain::Chain,
-    middle_start::Integer,
-    upper_start::Integer;
-    input_type::String="pixels"
+    chain::Chain, middle_start::Integer, upper_start::Integer; input_type::String="pixels"
 )
     n_layers = length(chain)
 
     function annotate_layer(i)::Symbol
-        # Input layer
-        if i == 1
+        if i == 1 # Input layer
             if input_type == "pixels"
                 return :FirstPixels
             elseif input_type == "reals"
                 return :FirstReals
             else
-                throw(ArgumentError("""Unknown input type "$(input_type)". Expected "pixels" or "reals"."""))
+                throw(
+                    ArgumentError(
+                        """Unknown input type "$(input_type)". Expected "pixels" or "reals".""",
+                    ),
+                )
             end
-        # Lower layers
-        elseif i < middle_start
+        elseif i < middle_start # Lower layers
             return :Lower
-        # Middle layers
-        elseif i < upper_start
+        elseif i < upper_start # Middle layers
             return :Middle
-        # Upper layers
-        elseif i < n_layers
+        elseif i < n_layers # Upper layers
             return :Upper
-        # Output layer
-        elseif i == n_layers
+        elseif i == n_layers # Output layer
             if chain[n_layers] == softmax
                 return :TopSoftmax
             else

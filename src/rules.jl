@@ -27,8 +27,6 @@ Generic LRP rule for convolutional and sum-pooling layers.
 Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2).
 According to (10.3.2), this can also be applied to max-pooling layers:
 
->
-
 Default kwargs correspond to the basic LRP-0 rule.
 """
 function LRP_generic(

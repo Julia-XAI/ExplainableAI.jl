@@ -7,6 +7,7 @@ Match rules based on position in the `Flux.Chain` according to
 > **Lower layers** are similar to middle layers, however, LRP-γ is more suitable here, as this rule tends to spread relevance uniformly to the whole feature rather than capturing the contribution of every individual pixel. This makes the explanation more understandable for a human.
 
 And in (10.3.2) on Handling Special Layers:
+
 > **Input Layers** are different from intermediate layers as they do not receive ReLU activations as input but pixels or real values [...]. In this chapter, we made use of the zB-rule, which is suitable for pixels.
 """
 LRP(l::CommonLayer, a, R, ::Val(:Upper)) = LRP_0(l, a, R)
