@@ -1,118 +1,111 @@
+struct AbstractReverseRule end
 
 """
-Generic LRP rule for dense layers.
-Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2).
+Common layer types LRP rules work on.
+"""
+CommonLayer = Union{Dense,Conv,MaxPool}
+
+"""
+Constructs generic LRP rules, implemented according to [1], chapter (10.2.2).
+
+Arguments:
+- `layer`: A Flux layer.
+- `rulename`: The name of the rule used for printing the LRPChain summary
+- `ρ`: Function that modifies weights and biases as proposed in [1].
+- `add_ϵ`: Function that increments zₖ on the forward pass for stability [1].
 
 Default kwargs correspond to the basic LRP-0 rule.
+
+References:
+[1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 """
-function LRP_generic(
-    layer::Dense,
-    a::AbstractVector, # activations (forward)
-    R::AbstractVector; # relevance scores (backward)
-    ρ::Function=identity,
-    add_ϵ::Function=identity, # also sometimes called incr
-)::AbstractVector
-    ρW, ρb = ρ.(Flux.params(layer))
+struct LRPRule{L,PW,PB} <: AbstractReverseRule
+    layer::L # Flux layer
+    ρW::PW # weights after applying modifier ρ
+    ρb::PB # biases after applying modifier ρ
+    add_ϵ::Function # increments zₖ on forward pass
+    rulename::String
 
-    # forward pass
-    z = ρW * a + ρb
-    s = R ./ (add_ϵ(z) .+ 1e-9)
-
-    # println.(size.([ρW, ρb, a, R, z, s, ρW'ᵀ * s]))
-    return R_prev = a .* (transpose(ρW) * s) # backward pass
+    function LRPRule(layer, rulename; ρ=identity, add_ϵ=identity)
+        ρW, ρb = ρ.(Flux.params(layer))
+        return new{typeof(layer),typeof(ρW),typeof(ρb)}(layer, ρW, ρb, add_ϵ, rulename)
+    end
 end
 
-"""
-Generic LRP rule for convolutional and sum-pooling layers.
-Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.2.2).
-According to (10.3.2), this can also be applied to max-pooling layers:
-
-Default kwargs correspond to the basic LRP-0 rule.
-"""
-function LRP_generic(
-    layer::Union{Conv,MeanPool,MaxPool},
-    a::AbstractVector, # activations (forward)
-    R::AbstractVector; # relevance scores (backward)
-    ρ::Function=identity,
-    add_ϵ::Function=identity, # also sometimes called incr
-)::AbstractVector
-    ρW, ρb = ρ.(Flux.params(layer))
-
+function (r::LRPRule{L})(
+    aₖ::AbstractArray, # activations (forward)
+    Rₖ₊₁::AbstractArray, # relevance scores (backward)
+)::AbstractArray where {L<:CommonLayer}
     # forward pass
-    z = ρW * a + ρb
-    s = R ./ (add_ϵ(z) .+ 1e-9)
+    z = r.ρW * aₖ + r.ρb
+    s = Rₖ₊₁ ./ (r.add_ϵ(z) .+ 1e-9)
 
     # println.(size.([ρW, ρb, a, R, z, s, ρW'ᵀ * s]))
-    return R_prev = a .* (transpose(ρW) * s) # backward pass
-end
-
-"""
-Generic LRP rule for batch norm layers.
-Implemented according to "Layer-Wise Relevance Propagation: An Overview" chapter (10.3.2):
-
-> Batch Normalization Layers are commonly used to facilitate training and improve prediction accuracy. At test time, they simply consist of a centering and rescaling operation. These layers can therefore be absorbed by the adjacent linear layer without changing the function. This allows to recover the canonical neural network structure needed for applying LRP.
-"""
-function LRP_generic(
-    layer::BatchNorm,
-    a::AbstractVector, # activations (forward)
-    R::AbstractVector; # relevance scores (backward)
-    ρ::Function=identity,
-    add_ϵ::Function=identity, # also sometimes called incr
-)::AbstractVector
-    return R_prev = R
+    Rₖ = aₖ .* (transpose(r.ρW) * s) # backward pass
+    return Rₖ
 end
 
 """
 LRP-0 rule. Commonly used on upper layers.
 """
-LRP_0(l, a, R) = LRP_generic(l, a, R)
+LRP_0(l) = LRPRule(l, "LRP-0")
 
 """
 LRP-``ϵ`` rule. Commonly used on middle layers.
+
+Arguments:
+- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
 """
-function LRP_ϵ(l, a, R; ϵ=0.25)
+function LRP_ϵ(l; ϵ=1f-6)
     _add_ϵ(z) = (1 + ϵ * std(z)) * z
-    return LRP_generic(l, a, R; add_ϵ=_add_ϵ)
+    return LRPRule(l, "LRP-ϵ, ϵ=$(ϵ)"; add_ϵ=_add_ϵ)
 end
 
 """
 LRP-``γ`` rule. Commonly used on lower layers.
+
+Arguments:
+- `γ`: Optional multiplier for added positive weights.
 """
-function LRP_γ(l, a, R; γ=0.1)
+function LRP_γ(l; γ=0.25)
     _ρ(w) = w + γ * relu(w)
-    return LRP_generic(l, a, R; ρ=_ρ)
+    return LRPRule(l, "LRP-γ, γ=$(γ)"; ρ=_ρ)
 end
 
 """
 Implements the ``z^{\\mathcal{B}}``-rule.
 Commonly used on the first layer for pixel input.
 """
-function LRP_zB(
-    layer::Dense,
-    a::AbstractVector, # activations (forward)
-    R::AbstractVector; # relevance scores (backward)
-    ρ::Function=identity,
-    l::Real=-1.0, # lower bound of pixel values
-    h::Real=1.0,  # upper bound of pixel values
-)::AbstractVector
-    W, b = Flux.params(layer)
-    W⁻, W⁺ = minmax.(0, W)
+struct LRPZBoxRule{L,W,B} <: AbstractReverseRule
+    layer::L # Flux layer
+    W::W # weights
+    W⁻::W
+    W⁺::W
+    b::B # biases
+    rulename::String
 
-    h = fill(1.0, size(a))
-    l = -h
+    function LRPZBoxRule(layer; ρ=identity)
+        rulename = "LRP-zᴮ"
 
-    # forward pass
-    z = W * a - W⁺ * l - W⁻ * h .+ 1e-9 # denominator of LRP rules
-    s = R ./ z
+        W, b = ρ.(Flux.params(layer))
+        W⁻ = min.(0, W)
+        W⁺ = max.(0, W)
 
-    return R_prev =
-        a .* (transpose(W) * s) - l .* (transpose(W⁺) * s) - h .* (transpose(W⁻) * s) # backward pass
+        return new{typeof(layer),typeof(W),typeof(b)}(layer, W, W⁻, W⁺, b, rulename)
+    end
 end
 
-"""
-Implements the ``z^{\\mathcal{B}}``-rule.
-Commonly used on the first layer for input in ``\\mathbb{R}^d``.
-"""
-# function LRP_zB(l::Dense, a, R; γ=0.1)
-#     return # TODO
-# end
+function (r::LRPZBoxRule{L})(
+    aₖ::AbstractArray, Rₖ₊₁::AbstractArray
+)::AbstractArray where {L<:CommonLayer}
+    l, h = extrema(aₖ)
+
+    # forward pass
+    z = r.W * aₖ - r.W⁺ * l - r.W⁻ * h .+ 1e-9 # denominator of LRP rules
+    s = Rₖ₊₁ ./ z
+
+    # backward pass
+    Rₖ =
+        aₖ .* (transpose(r.W) * s) - l .* (transpose(r.W⁺) * s) - h .* (transpose(r.W⁻) * s)
+    return Rₖ
+end
