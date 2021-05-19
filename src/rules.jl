@@ -1,4 +1,4 @@
-struct AbstractReverseRule end
+abstract type AbstractReverseRule end
 
 """
 Common layer types LRP rules work on.
@@ -32,16 +32,22 @@ struct LRPRule{L,PW,PB} <: AbstractReverseRule
     end
 end
 
-function (r::LRPRule{L})(
+function (r::LRPRule{L,PW,PB})(
     aₖ::AbstractArray, # activations (forward)
     Rₖ₊₁::AbstractArray, # relevance scores (backward)
-)::AbstractArray where {L<:CommonLayer}
+)::AbstractArray where {L<:CommonLayer, PW, PB}
     # forward pass
-    z = r.ρW * aₖ + r.ρb
-    s = Rₖ₊₁ ./ (r.add_ϵ(z) .+ 1e-9)
 
-    # println.(size.([ρW, ρb, a, R, z, s, ρW'ᵀ * s]))
-    Rₖ = aₖ .* (transpose(r.ρW) * s) # backward pass
+    function fwpass(a)
+        z = r.add_ϵ(r.ρW * a + r.ρb)
+        s = Rₖ₊₁ ./ (z .+ 1e-9)
+        return z ⋅ s
+    end
+
+    c = gradient(fwpass, aₖ)
+    println(c)
+
+    Rₖ = aₖ .* c # backward pass
     return Rₖ
 end
 
@@ -95,17 +101,26 @@ struct LRPZBoxRule{L,W,B} <: AbstractReverseRule
     end
 end
 
-function (r::LRPZBoxRule{L})(
+function (r::LRPZBoxRule{L,W,B})(
     aₖ::AbstractArray, Rₖ₊₁::AbstractArray
-)::AbstractArray where {L<:CommonLayer}
+)::AbstractArray where {L<:CommonLayer, W, B}
     l, h = extrema(aₖ)
 
-    # forward pass
-    z = r.W * aₖ - r.W⁺ * l - r.W⁻ * h .+ 1e-9 # denominator of LRP rules
-    s = Rₖ₊₁ ./ z
+    function fwpass(a)
+        z = r.W * a - r.W⁺ * l - r.W⁻
+        s = Rₖ₊₁ ./ (z .+ 1e-9)
+        return z ⋅ s
+    end
+
+    dfw = gradient(fwpass, a)
+
+    c = dfw(aₖ)
+    cₗ= dfw(l)
+    cₕ= dfw(h)
+
+    println(c, cₗ, cₕ)
 
     # backward pass
-    Rₖ =
-        aₖ .* (transpose(r.W) * s) - l .* (transpose(r.W⁺) * s) - h .* (transpose(r.W⁻) * s)
+    Rₖ = aₖ .* c + l .* cₗ + h .* cₕ
     return Rₖ
 end
