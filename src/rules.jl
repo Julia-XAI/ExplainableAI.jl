@@ -6,7 +6,7 @@ Common layer types LRP rules work on.
 CommonLayer = Union{Dense,Conv,MaxPool}
 
 """
-Constructs generic LRP rules, implemented according to [1], chapter (10.2.2).
+Constructs generic LRP rules, implemented according to [1, 2].
 
 Arguments:
 - `layer`: A Flux layer.
@@ -18,109 +18,147 @@ Default kwargs correspond to the basic LRP-0 rule.
 
 References:
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+[2] W. Samek et al., Explaining Deep Neural Networks and Beyond:
+    A Review of Methods and Applications
 """
-struct LRPRule{L,PW,PB} <: AbstractReverseRule
+struct LRPRule{T,L,W,B} <: AbstractReverseRule
     layer::L # Flux layer
-    ρW::PW # weights after applying modifier ρ
-    ρb::PB # biases after applying modifier ρ
+    ρW::W # weights after applying modifier ρ
+    b::B # biases after applying modifier ρ
     add_ϵ::Function # increments zₖ on forward pass
     rulename::String
 
-    function LRPRule(layer, rulename; ρ=identity, add_ϵ=identity)
-        ρW, ρb = ρ.(Flux.params(layer))
-        return new{typeof(layer),typeof(ρW),typeof(ρb)}(layer, ρW, ρb, add_ϵ, rulename)
+    function LRPRule(layer, rulename; ρ=identity, add_ϵ=identity, T=Float32)
+        ρW = T.(ρ(layer.weight))
+
+        if typeof(layer.bias) <: Flux.Zeros
+            b = zeros(T, size(ρW, 1))
+        else
+            b = T.(layer.bias)
+        end
+        return new{T, typeof(layer),typeof(ρW),typeof(b)}(layer, ρW, b, add_ϵ, rulename)
     end
 end
 
-function (r::LRPRule{L,PW,PB})(
-    aₖ::AbstractArray, # activations (forward)
-    Rₖ₊₁::AbstractArray, # relevance scores (backward)
-)::AbstractArray where {L<:CommonLayer, PW, PB}
-    # forward pass
-
+function (r::LRPRule{T,L,W,B})(
+    aₖ::AbstractArray{T}, # activations (forward)
+    Rₖ₊₁::AbstractArray{T}, # relevance scores (backward)
+)::AbstractArray{T} where {T,L<:CommonLayer,W,B}
+    # Forward pass
     function fwpass(a)
-        z = r.add_ϵ(r.ρW * a + r.ρb)
+        z = r.add_ϵ(r.ρW * a + r.b)
         s = Rₖ₊₁ ./ (z .+ 1e-9)
         return z ⋅ s
     end
+    c = gradient(fwpass, aₖ)[1]
 
-    c = gradient(fwpass, aₖ)
-    println(c)
-
-    Rₖ = aₖ .* c # backward pass
+    # Backward pass
+    Rₖ = aₖ .* c
     return Rₖ
 end
 
 """
-LRP-0 rule. Commonly used on upper layers.
+Constructor for LRP-0 rule. Commonly used on upper layers.
 """
-LRP_0(l) = LRPRule(l, "LRP-0")
+LRP_0(l; kwargs...) = LRPRule(l, "LRP-0"; kwargs...)
 
 """
-LRP-``ϵ`` rule. Commonly used on middle layers.
+Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
 
 Arguments:
 - `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
 """
-function LRP_ϵ(l; ϵ=1f-6)
+function LRP_ϵ(l; ϵ=1f-6, kwargs...)
     _add_ϵ(z) = (1 + ϵ * std(z)) * z
-    return LRPRule(l, "LRP-ϵ, ϵ=$(ϵ)"; add_ϵ=_add_ϵ)
+    return LRPRule(l, "LRP-ϵ, ϵ=$(ϵ)"; add_ϵ=_add_ϵ, kwargs...)
 end
 
 """
-LRP-``γ`` rule. Commonly used on lower layers.
+Constructor for LRP-``γ`` rule. Commonly used on lower layers.
 
 Arguments:
-- `γ`: Optional multiplier for added positive weights.
+- `γ`: Optional multiplier for added positive weights, defaults to 0.25.
 """
-function LRP_γ(l; γ=0.25)
-    _ρ(w) = w + γ * relu(w)
-    return LRPRule(l, "LRP-γ, γ=$(γ)"; ρ=_ρ)
+function LRP_γ(l; γ=0.25, kwargs...)
+    _ρ(w) = w + γ * relu.(w)
+    return LRPRule(l, "LRP-γ, γ=$(γ)"; ρ=_ρ, kwargs...)
 end
 
 """
-Implements the ``z^{\\mathcal{B}}``-rule.
-Commonly used on the first layer for pixel input.
+Implements generic ``z^{\\mathcal{B}}``-rule., implemented according to [1, 2].
+
+Arguments:
+- `layer`: A Flux layer.
+- `rulename`: The name of the rule used for printing the LRPChain summary
+- `ρ`: Function that modifies weights and biases as proposed in [1].
+
+Default kwargs correspond to the basic LRP-0 rule.
+
+References:
+[1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+[2] W. Samek et al., Explaining Deep Neural Networks and Beyond:
+    A Review of Methods and Applications
 """
-struct LRPZBoxRule{L,W,B} <: AbstractReverseRule
+struct LRPZBoxRule{T,L,W,B} <: AbstractReverseRule
     layer::L # Flux layer
     W::W # weights
     W⁻::W
     W⁺::W
     b::B # biases
+    b⁻::B
+    b⁺::B
     rulename::String
 
-    function LRPZBoxRule(layer; ρ=identity)
-        rulename = "LRP-zᴮ"
-
-        W, b = ρ.(Flux.params(layer))
+    function LRPZBoxRule(layer, rulename; ρ=identity, T=Float32)
+        W = T.(ρ(layer.weight))
         W⁻ = min.(0, W)
         W⁺ = max.(0, W)
 
-        return new{typeof(layer),typeof(W),typeof(b)}(layer, W, W⁻, W⁺, b, rulename)
+        if typeof(layer.bias) <: Flux.Zeros
+            b = zeros(T, size(ρW, 1))
+        else
+            b = T.(layer.bias)
+        end
+        b⁻ = min.(0, b)
+        b⁺ = max.(0, b)
+
+        return new{T, typeof(layer),typeof(W),typeof(b)}(layer, W, W⁻, W⁺, b, b⁻, b⁺, rulename)
     end
 end
 
-function (r::LRPZBoxRule{L,W,B})(
-    aₖ::AbstractArray, Rₖ₊₁::AbstractArray
-)::AbstractArray where {L<:CommonLayer, W, B}
-    l, h = extrema(aₖ)
+function (r::LRPZBoxRule{T,L,W,B})(
+    aₖ::AbstractArray{T}, Rₖ₊₁::AbstractArray{T}
+)::AbstractArray{T} where {T,L<:CommonLayer,W,B}
+    onemat = ones(T, size(aₖ))
+    l = onemat * minimum(aₖ)
+    h = onemat * maximum(aₖ)
 
+    # Forward pass
     function fwpass(a)
-        z = r.W * a - r.W⁺ * l - r.W⁻
+        f = r.W * a + r.b
+        f⁺ = r.W⁺ * l + r.b⁺
+        f⁻ = r.W⁻ * l + r.b⁻
+
+        z = f - f⁺ - f⁻
         s = Rₖ₊₁ ./ (z .+ 1e-9)
         return z ⋅ s
     end
 
-    dfw = gradient(fwpass, a)
+    dfw(a) = gradient(fwpass, a)[1]
 
     c = dfw(aₖ)
-    cₗ= dfw(l)
-    cₕ= dfw(h)
+    cₗ = dfw(l)
+    cₕ = dfw(h)
 
     println(c, cₗ, cₕ)
 
-    # backward pass
+    # Backward pass
     Rₖ = aₖ .* c + l .* cₗ + h .* cₕ
     return Rₖ
 end
+
+"""
+Constructor for LRP-`z^{\\mathcal{B}}``-rule.
+Commonly used on the first layer for pixel input.
+"""
+LRP_zᴮ(l; kwargs...) = LRPZBoxRule(l, "LRP-zᴮ"; kwargs...)
