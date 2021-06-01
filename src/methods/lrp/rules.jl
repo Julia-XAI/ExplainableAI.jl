@@ -41,9 +41,9 @@ struct LRPRule{T,L,W,B} <: AbstractReverseRule
 end
 
 function (r::LRPRule{T,L,W,B})(
-    aₖ::AbstractArray{T}, # activations (forward)
-    Rₖ₊₁::AbstractArray{T}, # relevance scores (backward)
-)::AbstractArray{T} where {T,L<:CommonLayer,W,B}
+    aₖ::AbstractArray, # activations (forward)
+    Rₖ₊₁::AbstractArray, # relevance scores (backward)
+) where {T,L<:CommonLayer,W,B}
     # Forward pass
     function fwpass(a)
         z = r.add_ϵ(r.ρW * a + r.b)
@@ -127,8 +127,8 @@ struct LRPZBoxRule{T,L,W,B} <: AbstractReverseRule
 end
 
 function (r::LRPZBoxRule{T,L,W,B})(
-    aₖ::AbstractArray{T}, Rₖ₊₁::AbstractArray{T}
-)::AbstractArray{T} where {T,L<:CommonLayer,W,B}
+    aₖ::AbstractArray, Rₖ₊₁::AbstractArray
+) where {T,L<:CommonLayer,W,B}
     onemat = ones(T, size(aₖ))
     l = onemat * minimum(aₖ)
     h = onemat * maximum(aₖ)
