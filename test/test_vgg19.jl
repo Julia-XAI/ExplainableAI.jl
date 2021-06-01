@@ -1,10 +1,10 @@
-using ImageMagick # jpg I/O
+using ExplainabilityMethods
 using Flux
 using Metalhead
-# Load useful things from Metalhead.utils
 using Metalhead: classify, forward, labels, load_img
+
+using ImageMagick # jpg I/O
 using PrettyTables
-using LayerwiseRelevancePropagation
 
 vgg = VGG19()
 

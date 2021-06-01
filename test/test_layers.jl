@@ -1,4 +1,4 @@
-using LayerwiseRelevancePropagation
+using ExplainabilityMethods
 using Flux
 using LinearAlgebra
 using ReferenceTests

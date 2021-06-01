@@ -1,4 +1,4 @@
-name = "LayerwiseRelevancePropagation"
+name = "ExplainabilityMethods"
 uuid = "cd722a4f-8d55-446b-8550-a4aabc9151ab"
 authors = ["Adrian Hill"]
 version = "0.1.0"

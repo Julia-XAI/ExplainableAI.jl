@@ -1,7 +1,7 @@
-using LayerwiseRelevancePropagation
+using ExplainabilityMethods
 using Test
 
-@testset "LayerwiseRelevancePropagation.jl" begin
+@testset "ExplainabilityMethods.jl" begin
     @testset "Reference layers" begin
         include("test_layers.jl")
     end
