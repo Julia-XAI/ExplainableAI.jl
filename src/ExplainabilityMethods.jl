@@ -10,8 +10,10 @@ include("methods/lrp/rules.jl")
 
 export explain, classify_and_explain
 
-# rules
+# analyzers
 export Gradient
+
+# rules
 export LRP_0, LRP_γ, LRP_ϵ, LRP_zᴮ
 
 end # module
