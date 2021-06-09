@@ -22,5 +22,8 @@ labels = Metalhead.labels(vgg)
 # ## Run analyzers
 analyzer = Gradient(chain)
 class, expl = classify_and_explain(imgp, labels, analyzer)
-println(class)
-imshow(Gray.(expl))
+imshow(heatmap(expl))
+
+analyzer = InputTimesGradient(chain)
+class, expl = classify_and_explain(imgp, labels, analyzer)
+imshow(heatmap(expl))

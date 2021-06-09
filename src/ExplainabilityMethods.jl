@@ -15,7 +15,7 @@ include("utils.jl")
 export explain, classify_and_explain
 
 # analyzers
-export Gradient
+export Gradient, InputTimesGradient
 
 # rules
 export LRP_0, LRP_γ, LRP_ϵ, LRP_zᴮ

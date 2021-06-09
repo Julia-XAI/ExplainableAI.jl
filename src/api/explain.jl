@@ -4,10 +4,14 @@ abstract type AbstractXAIMethod end
 Return raw classifier output and explanation.
 """
 function output_and_explain(
-    input::AbstractArray{<:Real}, analyzer::AbstractXAIMethod, class::Integer, args...; kwargs...
+    input::AbstractArray{<:Real},
+    analyzer::AbstractXAIMethod,
+    neuron_selection::Integer,
+    args...;
+    kwargs...,
 )
     output = analyzer.model(input)
-    expl = analyzer(input, output, class, args...; kwargs...)
+    expl = analyzer(input, output, neuron_selection, args...; kwargs...)
     return output, expl
 end
 
@@ -18,7 +22,8 @@ function output_and_explain(
     input::AbstractArray{<:Real}, analyzer::AbstractXAIMethod, args...; kwargs...
 )
     output = analyzer.model(input)
-    expl = analyzer(input, output, argmax(output), args...; kwargs...)
+    neuron_selection = argmax(output)
+    expl = analyzer(input, output, neuron_selection, args...; kwargs...)
     return output, expl
 end
 
