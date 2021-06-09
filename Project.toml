@@ -4,14 +4,15 @@ authors = ["Adrian Hill"]
 version = "0.1.0"
 
 [deps]
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-TerminalExtensions = "d3a6a179-465e-5219-bd3e-0137f7fd17c7"
 
 [compat]
 Flux = "0.12"
 Metalhead = "0.5"
+PrettyTables = "1.0"
 julia = "1.6"

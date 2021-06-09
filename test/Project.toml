@@ -1,8 +1,9 @@
 [deps]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
+ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
-PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
