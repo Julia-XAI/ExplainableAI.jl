@@ -1,23 +1,14 @@
-using Base: Symbol
 """
 Visualize explanation.
 """
-function heatmap(exp::AbstractArray, cs::ColorScheme=:bwr)
-    expl = drop_singleton_dims(expl)
+function heatmap(expl::AbstractArray; cs::ColorScheme=ColorSchemes.bwr, kwargs...)
+    expl = reduce_color_channels(drop_singleton_dims(expl), kwargs...)
     expl .= absnormalize(expl)
-    img = image_from_array(expl)
+    return get(cs, expl)
 end
 
 function drop_singleton_dims(A::AbstractArray)
     return dropdims(A; dims=tuple(findall(size(A) .== 1)...))
-end
-
-"""
-Normalize all values in array between 0 and 1.
-"""
-function normalize(A::AbstractArray)
-    min, max = extrema(A)
-    return (A .- min) / (max - min)
 end
 
 """
@@ -29,35 +20,31 @@ function absnormalize(A::AbstractArray)
 end
 
 """
+Normalize all values in array between 0 and 1.
+"""
+function normalize(A::AbstractArray)
+    min, max = extrema(A)
+    return (A .- min) / (max - min)
+end
+
+"""
 Helper function around colorview that abstracts channel permutations.
 """
-function image_from_array(
-    ::Type{C}, expl::AbstractArray{T,3}; flipimg=false
-) where {C<:Colorant,T<:Number}
-    color_dims = findall(size(expl) .== length(C))
+function reduce_color_channels(
+    expl::AbstractArray{<:Number,3}; nchannels::Integer=3, reducer::String="absmax"
+)
+    color_dims = findall(size(expl) .== nchannels)
     if length(color_dims) != 1
         throw(ArgumentError("Several dimensions of length $(length(C)) found."))
     end
     color_dim = first(color_dims)
 
-    # leftover dims assumed to be in order HW, can be flipped
-    hw_dims = deleteat!([1, 2, 3], color_dim)
-    flipimg && (reverse!(hw_dims))
-    return colorview(C, permutedims(expl, tuple(color_dim, hw_dims...)))
-end
-function image_from_array(expl::AbstractArray{<:Number,3}; kwargs...)
-    return image_from_array(RGB{N0f8}, expl; kwargs...)
-end
-
-function image_from_array(
-    ::Type{C}, expl::AbstractArray{T,2}; flipimg=false
-) where {C<:Colorant,T<:Number}
-    if flipimg
-        return colorview(C, permutedims(expl, (2, 1)))
+    if reducer == "absmax"
+        return maximum(abs, expl; dims=color_dim)
+    elseif reducer == "sum"
+        return sum(expl; dims=color_dim)
     else
-        return colorview(C, expl)
+        throw(ArgumentError("Only reducers \"absmax\" and \"sum\" are currently implemented."))
     end
 end
-function image_from_array(expl::AbstractArray{<:Number,2}; kwargs...)
-    return image_from_array(Gray{N0f8}, expl; kwargs...)
-end
+reduce_color_channels(expl::AbstractArray{<:Number,2}; kwargs...) = expl
