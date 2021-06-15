@@ -20,10 +20,14 @@ labels = Metalhead.labels(vgg)
 # model_summary(chain)
 
 # ## Run analyzers
-analyzer = Gradient(chain)
-class, expl = classify_and_explain(imgp, labels, analyzer)
+analyzer1 = Gradient(chain)
+class, expl = classify_and_explain(imgp, labels, analyzer1)
 imshow(heatmap(expl))
 
-analyzer = InputTimesGradient(chain)
-class, expl = classify_and_explain(imgp, labels, analyzer)
+analyzer2 = InputTimesGradient(chain)
+class, expl = classify_and_explain(imgp, labels, analyzer2)
 imshow(heatmap(expl))
+
+# ## Compare analyzers
+fig = compare(imgp, labels, [analyzer1, analyzer2])
+save("test/testgrid.png", fig)

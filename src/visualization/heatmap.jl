@@ -44,7 +44,9 @@ function reduce_color_channels(
     elseif reducer == "sum"
         return sum(expl; dims=color_dim)
     else
-        throw(ArgumentError("Only reducers \"absmax\" and \"sum\" are currently implemented."))
+        throw(
+            ArgumentError("Only reducers \"absmax\" and \"sum\" are currently implemented.")
+        )
     end
 end
 reduce_color_channels(expl::AbstractArray{<:Number,2}; kwargs...) = expl
