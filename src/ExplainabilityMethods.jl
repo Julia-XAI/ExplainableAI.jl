@@ -9,11 +9,11 @@ using CairoMakie
 using ImageCore
 using Base.Iterators
 
-include("api/explain.jl")
+include("api.jl")
 include("neuron_selection.jl")
 include("gradient.jl")
-include("lrp.jl")
 include("lrp_rules.jl")
+include("lrp.jl")
 include("visualization/heatmap.jl")
 include("visualization/compare.jl")
 include("utils.jl")
@@ -21,11 +21,12 @@ include("utils.jl")
 export explain, classify_and_explain
 
 # analyzers
+export AbstractXAIMethod
 export Gradient, InputTimesGradient
 export LRP, LRPZero, LRPEpsilon, LRPGamma
 
-# rules
-export LRPLayer
+# LRP rules
+export AbstractLRPRule, LRPRuleset
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 
 # heatmapping
