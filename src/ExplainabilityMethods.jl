@@ -2,11 +2,12 @@ module ExplainabilityMethods
 
 using LinearAlgebra
 using Flux
-using Statistics: std
+using Zygote
 using PrettyTables: pretty_table
 using ColorSchemes
 using CairoMakie
 using ImageCore
+using Base.Iterators
 
 include("api/explain.jl")
 include("methods/gradient.jl")
@@ -22,6 +23,7 @@ export Gradient, InputTimesGradient
 
 # rules
 export LRP_0, LRP_γ, LRP_ϵ, LRP_zᴮ
+export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 
 # heatmapping
 export heatmap, compare
