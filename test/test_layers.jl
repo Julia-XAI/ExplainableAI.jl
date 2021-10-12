@@ -4,7 +4,7 @@ using LinearAlgebra
 using ReferenceTests
 using Random
 
-# Fixed "random" numbers
+# Fixed pseudo-random numbers
 T = Float64
 pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 
@@ -14,7 +14,7 @@ outs = 10 # output dimension
 
 rules = [ZeroRule(), EpsilonRule(), GammaRule(), ZBoxRule()]
 layers = Dict(
-    "Dense_relu" => Dense(ins, outs, relu; init=nonrandn),
+    "Dense_relu" => Dense(ins, outs, relu; init=pseudorandn),
     "Dense_identity" => Dense(Matrix(I, outs, ins), false, identity),
 )
 

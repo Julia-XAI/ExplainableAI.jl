@@ -17,20 +17,20 @@
 #     A Review of Methods and Applications
 
 abstract type AbstractLRPRule end
-
+const LRPRuleset = AbstractVector{<:AbstractLRPRule}
 """
     modify_params!(w, rule)
 
 Function that modifies weights and biases before applying relevance propagation.
 """
-modify_params(p, ::AbstractLRPRule) = p
+modify_params(::AbstractLRPRule, p) = p
 
 """
     modify_denominator!(d, rule)
 
 Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
-modify_denominator(d, ::AbstractLRPRule) = stabilize_denom(d; eps=1f-9)
+modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1f-9)
 
 """
     ZeroRule()
@@ -51,7 +51,7 @@ struct GammaRule{T} <: AbstractLRPRule
     γ::T
     GammaRule(; γ=0.25) = new{Float32}(γ)
 end
-modify_params(p, r::GammaRule) = p + r.γ * relu.(p)
+modify_params(r::GammaRule, p) = p + r.γ * relu.(p)
 
 """
     EpsilonRule(; ε=1f-6)
@@ -65,7 +65,7 @@ struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
     EpsilonRule(; ε=1f-6) = new{Float32}(ε)
 end
-modify_denominator(d, r::EpsilonRule) = stabilize_denom(d; eps=1f-6)
+modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=1f-6)
 
 
 LinearLayer = Union{Dense,Conv,MaxPool}
@@ -77,12 +77,12 @@ function (rule::AbstractLRPRule)(
 ) where {L<:LinearLayer}
     # Forward pass
     W, b = get_weights(layer)
-    ρW = modify_params(W, rule)
-    ρb = modify_params(b, rule)
+    ρW = modify_params(rule, W)
+    ρb = modify_params(rule, b)
 
     function fwpass(a)
         z = ρW * a + ρb
-        s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(z, rule))
+        s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
         return z ⋅ s
     end
     c = gradient(fwpass, aₖ)[1]

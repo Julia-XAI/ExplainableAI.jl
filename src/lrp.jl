@@ -1,53 +1,38 @@
 """
-    LRPLayer(layer, rule)
-
-Struct assigning a LRP-rule to a Flux layer.
-"""
-struct LRPLayer{L, R} where {R<:AbstractLRPRule}
-    layer::L
-    rule::R
-end
-# Calls to LRPLayer with one argument are assumed to be calls to the layers:
-(l::LRPLayer)(x) = l.layer(x)
-
-# Calls to LRPLayer with two arguments are assumed to be applications of the LRP-rule:
-(l::LRPLayer)(aₖ, Rₖ₊₁) = l.rule(l.layer, aₖ, Rₖ₊₁)
-
-
-"""
     LRP(c::Chain, r::AbstractLRPRule)
     LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
     LRP(layers::AbstractVector{LRPLayer})
 
 Analyzer that applies LRP.
 """
-struct LRP{T<:AbstractVector{LRPLayer}}  <: AbstractXAIMethod
-    layers::T
+struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
+    model::C
+    rules::R
 
-    # Construct LRP analyzer that uses a single rule
-    function LRP(c::Chain, r::AbstractLRPRule)
-        ls = [LRPLayer(l, r) for l in c.layers]
-        return new{typeof(ls)}(ls)
-    end
     # Construct LRP analyzer by manually assigning a rule to each layer
-    function LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
-        if length(c.layers) != length(rs)
+    function LRP(model::Chain, rules::LRPRuleset)
+        if length(model.layers) != length(rules)
             throw(DimensionError("Length of rules doesn't match length of Flux chain."))
         end
-        ls = [LRPLayer(l, r) for (l, r) in zip(c.layers, rs)]
-        return new{typeof(ls)}(ls)
+        return new{typeof(model),typeof(rules)}(model, rules)
+    end
+    # Construct LRP analyzer by assigning a single rule to all layers
+    function LRP(model::Chain, r::AbstractLRPRule)
+        rules = repeat([r], length(model.layers))
+        return new{typeof(model),typeof(rules)}(model, rules)
     end
 end
 # Additional constructors for convenience:
-LRPZero(c::Chain) = LRP(c, ZeroRule())
-LRPEpsilon(c::Chain) = LRP(c, EpsilonRule())
-LRPGamma(c::Chain) = LRP(c, GammaRule())
+LRPZero(model::Chain) = LRP(model, ZeroRule())
+LRPEpsilon(model::Chain) = LRP(model, EpsilonRule())
+LRPGamma(model::Chain) = LRP(model, GammaRule())
 
 # The call to the LRP analyzer.
-function (analyzer::LRP)(input, ns::AbstractNeuronSelector, ::Val(:LayerwiseRelevances))
-    acts = [input,]
+function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances=false)
+    layers = analyzer.model.layers
+    acts = [input]
     # Forward pass through layers, keeping track of activations
-    for l in analyzer.layers
+    for l in layers
         append!(acts, l(acts[end]))
     end
     rels = acts # allocate arrays
@@ -58,13 +43,13 @@ function (analyzer::LRP)(input, ns::AbstractNeuronSelector, ::Val(:LayerwiseRele
     rels[end][output_neuron] .= acts[end][output_neuron]
 
     # Backward pass through layers, applying LRP rules
-    for (i, l) in Iterators.reverse(enumerate(analyzer.layers))
-        rels[i] .= l(acts[i], rels[i+1]) # Rₖ = rule(layer, aₖ, Rₖ₊₁)
+    for (i, rule) in Iterators.reverse(enumerate(analyzer.rules))
+        rels[i] .= rule(layers[i], acts[i], rels[i + 1]) # Rₖ = rule(layer, aₖ, Rₖ₊₁)
     end
-    return acts, rels
-end
 
-function (analyzer::LRP)(input, ns::AbstractNeuronSelector)
-    acts, rels = analyzer(input, _output, neuron_selection, :LayerwiseRelevances)
-    return acts[end], rels[1] # corresponds to output, expl
+    if layerwise_relevances
+        return acts, rels
+    else
+        return acts[end], rels[1] # corresponds to output, expl
+    end
 end
