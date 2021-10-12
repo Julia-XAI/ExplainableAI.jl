@@ -10,8 +10,10 @@ using ImageCore
 using Base.Iterators
 
 include("api/explain.jl")
-include("methods/gradient.jl")
-include("methods/lrp/rules.jl")
+include("neuron_selection.jl")
+include("gradient.jl")
+include("lrp.jl")
+include("lrp_rules.jl")
 include("visualization/heatmap.jl")
 include("visualization/compare.jl")
 include("utils.jl")
