@@ -22,9 +22,10 @@ export explain, classify_and_explain
 
 # analyzers
 export Gradient, InputTimesGradient
+export LRP, LRPZero, LRPEpsilon, LRPGamma
 
 # rules
-export LRP_0, LRP_γ, LRP_ϵ, LRP_zᴮ
+export LRPLayer
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 
 # heatmapping
