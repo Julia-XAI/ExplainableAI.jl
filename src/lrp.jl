@@ -1,3 +1,5 @@
+const LRPRuleset = AbstractVector{<:AbstractLRPRule}
+
 """
     LRP(c::Chain, r::AbstractLRPRule)
     LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
@@ -12,6 +14,7 @@ struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
     # Construct LRP analyzer by manually assigning a rule to each layer
     function LRP(model::Chain, rules::LRPRuleset)
         check_ouput_softmax(model)
+        model = flatten_chain(model)
         if length(model.layers) != length(rules)
             throw(DimensionError("Length of rules doesn't match length of Flux chain."))
         end
@@ -20,6 +23,7 @@ struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
     # Construct LRP analyzer by assigning a single rule to all layers
     function LRP(model::Chain, r::AbstractLRPRule)
         check_ouput_softmax(model)
+        model = flatten_chain(model)
         rules = repeat([r], length(model.layers))
         return new{typeof(model),typeof(rules)}(model, rules)
     end
@@ -32,17 +36,20 @@ LRPGamma(model::Chain) = LRP(model, GammaRule())
 # The call to the LRP analyzer.
 function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances=false)
     layers = analyzer.model.layers
-    acts = [input]
+    acts = Vector{Any}([input])
     # Forward pass through layers, keeping track of activations
-    for l in layers
-        append!(acts, l(acts[end]))
+    for layer in layers
+        append!(acts, [layer(acts[end])])
     end
-    rels = acts # allocate arrays
+    rels = copy(acts) # allocate arrays
 
     # Mask output neuron
-    output_neuron = ns(activations[end])
-    rels[end] .*= 0
-    rels[end][output_neuron] .= acts[end][output_neuron]
+    output_neuron = ns(acts[end])
+
+    println(size(rels[end]))
+    println(output_neuron)
+    rels[end] *= 0
+    rels[end][output_neuron] = acts[end][output_neuron]
 
     # Backward pass through layers, applying LRP rules
     for (i, rule) in Iterators.reverse(enumerate(analyzer.rules))
