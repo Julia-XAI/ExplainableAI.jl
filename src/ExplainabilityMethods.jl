@@ -10,13 +10,14 @@ using ImageCore
 using Base.Iterators
 
 include("api.jl")
+include("flux_utils.jl")
+include("utils.jl")
 include("neuron_selection.jl")
 include("gradient.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("visualization/heatmap.jl")
 include("visualization/compare.jl")
-include("utils.jl")
 
 export explain, classify_and_explain
 
@@ -34,5 +35,6 @@ export heatmap, compare
 
 # utils
 export model_summary
+export strip_softmax
 
 end # module
