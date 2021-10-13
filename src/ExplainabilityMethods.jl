@@ -3,13 +3,12 @@ module ExplainabilityMethods
 using LinearAlgebra
 using Flux
 using Zygote
-using PrettyTables: pretty_table
 using ColorSchemes
 using CairoMakie
 using ImageCore
 using Base.Iterators
 
-include("api.jl")
+include("analyze_api.jl")
 include("flux_utils.jl")
 include("utils.jl")
 include("neuron_selection.jl")
@@ -19,7 +18,7 @@ include("lrp.jl")
 include("visualization/heatmap.jl")
 include("visualization/compare.jl")
 
-export explain, classify_and_explain
+export analyze
 
 # analyzers
 export AbstractXAIMethod

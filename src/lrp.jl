@@ -11,6 +11,7 @@ struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
 
     # Construct LRP analyzer by manually assigning a rule to each layer
     function LRP(model::Chain, rules::LRPRuleset)
+        check_ouput_softmax(model)
         if length(model.layers) != length(rules)
             throw(DimensionError("Length of rules doesn't match length of Flux chain."))
         end
@@ -18,6 +19,7 @@ struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
     end
     # Construct LRP analyzer by assigning a single rule to all layers
     function LRP(model::Chain, r::AbstractLRPRule)
+        check_ouput_softmax(model)
         rules = repeat([r], length(model.layers))
         return new{typeof(model),typeof(rules)}(model, rules)
     end
@@ -48,8 +50,8 @@ function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances
     end
 
     if layerwise_relevances
-        return acts, rels
-    else
-        return acts[end], rels[1] # corresponds to output, expl
+        return rels, acts
     end
+
+    return rels[1], acts[end] # expl, output
 end
