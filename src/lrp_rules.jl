@@ -1,4 +1,3 @@
-
 # Generic implementation of LRP according to [1, 2].
 # LRP-rules are implemented as structs of type `AbstractLRPRule`.
 # Through the magic of multiple dispatch, rule modifications such as LRP-γ and -ϵ
@@ -17,20 +16,47 @@
 #     A Review of Methods and Applications
 
 abstract type AbstractLRPRule end
-const LRPRuleset = AbstractVector{<:AbstractLRPRule}
+LinearLayer = Union{Dense,Conv,MaxPool}
+
+# This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
+# It can be extended for new rules via `modify_params` and `modify_denominator`.
+function (rule::AbstractLRPRule)(
+    layer::L, aₖ::AbstractArray, Rₖ₊₁::AbstractArray
+) where {L<:LinearLayer}
+    # Forward pass
+    W, b = get_weights(layer)
+    ρW = modify_params(rule, W)
+    ρb = modify_params(rule, b)
+
+    function fwpass(a)
+        z = ρW * a + ρb
+        s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
+        return z ⋅ s
+    end
+    c = gradient(fwpass, aₖ)[1]
+
+    # Backward pass
+    Rₖ = aₖ .* c
+    return Rₖ
+end
+
+# Special cases are dispatched on layer type:
+(rule::AbstractLRPRule)(::Dropout, aₖ, Rₖ₊₁) = Rₖ₊₁
+(rule::AbstractLRPRule)(::typeof(Flux.flatten), aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+
 """
     modify_params!(w, rule)
 
 Function that modifies weights and biases before applying relevance propagation.
 """
-modify_params(::AbstractLRPRule, p) = p
+modify_params(::AbstractLRPRule, p) = p # general fallback
 
 """
     modify_denominator!(d, rule)
 
 Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
-modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1f-9)
+modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1f-9) # general fallback
 
 """
     ZeroRule()
@@ -66,31 +92,6 @@ struct EpsilonRule{T} <: AbstractLRPRule
     EpsilonRule(; ε=1f-6) = new{Float32}(ε)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=1f-6)
-
-
-LinearLayer = Union{Dense,Conv,MaxPool}
-
-# This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
-# It can be extended for new rules via `modify_params` and `modify_denominator`.
-function (rule::AbstractLRPRule)(
-    layer::L, aₖ::AbstractArray, Rₖ₊₁::AbstractArray
-) where {L<:LinearLayer}
-    # Forward pass
-    W, b = get_weights(layer)
-    ρW = modify_params(rule, W)
-    ρb = modify_params(rule, b)
-
-    function fwpass(a)
-        z = ρW * a + ρb
-        s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
-        return z ⋅ s
-    end
-    c = gradient(fwpass, aₖ)[1]
-
-    # Backward pass
-    Rₖ = aₖ .* c
-    return Rₖ
-end
 
 """
     ZBoxRule()
