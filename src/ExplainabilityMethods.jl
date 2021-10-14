@@ -9,7 +9,7 @@ using ImageCore
 using Base.Iterators
 
 include("analyze_api.jl")
-include("flux_utils.jl")
+include("flux.jl")
 include("utils.jl")
 include("neuron_selection.jl")
 include("gradient.jl")

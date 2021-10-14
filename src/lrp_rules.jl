@@ -16,26 +16,18 @@
 #     A Review of Methods and Applications
 
 abstract type AbstractLRPRule end
-LinearLayer = Union{Dense,Conv,MaxPool}
 
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
-# It can be extended for new rules via `modify_params` and `modify_denominator`.
-function (rule::AbstractLRPRule)(
-    layer::L, aₖ::AbstractArray, Rₖ₊₁::AbstractArray
-) where {L<:LinearLayer}
-    # Forward pass
-    W, b = get_weights(layer)
-    ρW = modify_params(rule, W)
-    ρb = modify_params(rule, b)
-
+# It can be extended for new rules via `modify_denominator` and `modify_layer`,
+# which in turn uses `modify_params`.
+function (rule::AbstractLRPRule)(layer::Union{Dense,Conv,MaxPool,MeanPool}, aₖ, Rₖ₊₁)
+    layerᵨ = modify_layer(rule, layer)
     function fwpass(a)
-        z = ρW * a + ρb
+        z = layerᵨ(a)
         s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
         return z ⋅ s
     end
     c = gradient(fwpass, aₖ)[1]
-
-    # Backward pass
     Rₖ = aₖ .* c
     return Rₖ
 end
@@ -45,11 +37,23 @@ end
 (rule::AbstractLRPRule)(::typeof(Flux.flatten), aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
 """
-    modify_params!(w, rule)
+    modify_params!(rule, W, b)
 
 Function that modifies weights and biases before applying relevance propagation.
 """
-modify_params(::AbstractLRPRule, p) = p # general fallback
+modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
+
+"""
+    modify_layer(rule, layer)
+
+Applies `modify_params` to layer if it has parameters
+"""
+modify_layer(::AbstractLRPRule, l) = l # skip layers without params
+function modify_layer(rule::AbstractLRPRule, l::Union{Dense, Chain})
+    W, b = get_weights(l)
+    ρW, ρb = modify_params(rule, W, b)
+    return set_weights(l, ρW, ρb)
+end
 
 """
     modify_denominator!(d, rule)
@@ -77,7 +81,7 @@ struct GammaRule{T} <: AbstractLRPRule
     γ::T
     GammaRule(; γ=0.25) = new{Float32}(γ)
 end
-modify_params(r::GammaRule, p) = p + r.γ * relu.(p)
+modify_params(r::GammaRule, W, b) = (W + r.γ * relu.(W), b)
 
 """
     EpsilonRule(; ε=1f-6)
@@ -102,14 +106,8 @@ Commonly used on the first layer for pixel input.
 struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-function (::ZBoxRule)(
-    layer::L, aₖ::AbstractArray, Rₖ₊₁::AbstractArray
-) where {L<:LinearLayer}
-    W, b = get_weights(layer)
-    W⁻ = min.(0, W)
-    W⁺ = max.(0, W)
-    b⁻ = min.(0, b)
-    b⁺ = max.(0, b)
+function (rule::ZBoxRule)(layer::L, aₖ, Rₖ₊₁) where {L<:Dense}
+    layer, layer⁺, layer⁻ = modify_layer(rule, layer)
 
     onemat = ones(eltype(aₖ), size(aₖ))
     l = onemat * minimum(aₖ)
@@ -117,9 +115,9 @@ function (::ZBoxRule)(
 
     # Forward pass
     function fwpass(a, l, h)
-        f = W * a + b
-        f⁺ = W⁺ * l + b⁺
-        f⁻ = W⁻ * h + b⁻
+        f = layer(a)
+        f⁺ = layer⁺(l)
+        f⁻ = layer⁻(h)
 
         z = f - f⁺ - f⁻
         s = Zygote.dropgrad(Rₖ₊₁ ./ stabilize_denom(z; eps=1e-9))
@@ -130,4 +128,16 @@ function (::ZBoxRule)(
     # Backward pass
     Rₖ = aₖ .* c + l .* cₗ + h .* cₕ
     return Rₖ
+end
+
+function modify_layer(::ZBoxRule, l::Union{Dense, Chain})
+    W, b = get_weights(l)
+    W⁻ = min.(0, W)
+    W⁺ = max.(0, W)
+    b⁻ = min.(0, b)
+    b⁺ = max.(0, b)
+
+    l⁺ = set_weights(l, W⁺, b⁺)
+    l⁻ = set_weights(l, W⁻, b⁻)
+    return l, l⁺, l⁻
 end

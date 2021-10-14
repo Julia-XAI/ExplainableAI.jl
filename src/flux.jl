@@ -52,3 +52,11 @@ function get_weights(layer)
     end
     return W, b
 end
+
+"""
+    set_weights(layer, W, b)
+
+Duplicate layer using weights W, b.
+"""
+set_weights(l::Conv, W, b) = Conv(l.σ, W, b, l.stride, l.pad, l.dilation, l.groups)
+set_weights(l::Dense, W, b) = Dense(W, b, l.σ)

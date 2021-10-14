@@ -1,5 +1,3 @@
-const LRPRuleset = AbstractVector{<:AbstractLRPRule}
-
 """
     LRP(c::Chain, r::AbstractLRPRule)
     LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
@@ -7,25 +5,25 @@ const LRPRuleset = AbstractVector{<:AbstractLRPRule}
 
 Analyzer that applies LRP.
 """
-struct LRP{C<:Chain,R<:LRPRuleset} <: AbstractXAIMethod
-    model::C
+struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
+    model::Chain
     rules::R
 
     # Construct LRP analyzer by manually assigning a rule to each layer
-    function LRP(model::Chain, rules::LRPRuleset)
+    function LRP(model::Chain, rules::AbstractVector{<:AbstractLRPRule})
         check_ouput_softmax(model)
         model = flatten_chain(model)
         if length(model.layers) != length(rules)
-            throw(DimensionError("Length of rules doesn't match length of Flux chain."))
+            throw(ArgumentError("Length of rules doesn't match length of Flux chain."))
         end
-        return new{typeof(model),typeof(rules)}(model, rules)
+        return new{typeof(rules)}(model, rules)
     end
     # Construct LRP analyzer by assigning a single rule to all layers
     function LRP(model::Chain, r::AbstractLRPRule)
         check_ouput_softmax(model)
         model = flatten_chain(model)
         rules = repeat([r], length(model.layers))
-        return new{typeof(model),typeof(rules)}(model, rules)
+        return new{typeof(rules)}(model, rules)
     end
 end
 # Additional constructors for convenience:
@@ -41,13 +39,10 @@ function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances
     for layer in layers
         append!(acts, [layer(acts[end])])
     end
-    rels = copy(acts) # allocate arrays
+    rels = deepcopy(acts) # allocate arrays
 
     # Mask output neuron
     output_neuron = ns(acts[end])
-
-    println(size(rels[end]))
-    println(output_neuron)
     rels[end] *= 0
     rels[end][output_neuron] = acts[end][output_neuron]
 
