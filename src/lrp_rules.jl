@@ -37,23 +37,23 @@ end
 (rule::AbstractLRPRule)(::typeof(Flux.flatten), aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
 """
-    modify_params!(rule, W, b)
-
-Function that modifies weights and biases before applying relevance propagation.
-"""
-modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
-
-"""
     modify_layer(rule, layer)
 
 Applies `modify_params` to layer if it has parameters
 """
 modify_layer(::AbstractLRPRule, l) = l # skip layers without params
-function modify_layer(rule::AbstractLRPRule, l::Union{Dense, Chain})
+function modify_layer(rule::AbstractLRPRule, l::Union{Dense,Conv})
     W, b = get_weights(l)
     ρW, ρb = modify_params(rule, W, b)
     return set_weights(l, ρW, ρb)
 end
+
+"""
+    modify_params!(rule, W, b)
+
+Function that modifies weights and biases before applying relevance propagation.
+"""
+modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
 
 """
     modify_denominator!(d, rule)
@@ -81,10 +81,14 @@ struct GammaRule{T} <: AbstractLRPRule
     γ::T
     GammaRule(; γ=0.25) = new{Float32}(γ)
 end
-modify_params(r::GammaRule, W, b) = (W + r.γ * relu.(W), b)
+function modify_params(r::GammaRule, W, b)
+    ρW = W + r.γ * relu.(W)
+    ρb = b + r.γ * relu.(b)
+    return ρW, ρb
+end
 
 """
-    EpsilonRule(; ε=1f-6)
+    EpsilonRule(; ϵ=1f-6)
 
 Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
 
@@ -93,9 +97,9 @@ Arguments:
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(; ε=1f-6) = new{Float32}(ε)
+    EpsilonRule(; ϵ=1f-6) = new{Float32}(ϵ)
 end
-modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=1f-6)
+modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=r.ϵ)
 
 """
     ZBoxRule()
@@ -106,7 +110,7 @@ Commonly used on the first layer for pixel input.
 struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-function (rule::ZBoxRule)(layer::L, aₖ, Rₖ₊₁) where {L<:Dense}
+function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
     layer, layer⁺, layer⁻ = modify_layer(rule, layer)
 
     onemat = ones(eltype(aₖ), size(aₖ))
@@ -130,7 +134,7 @@ function (rule::ZBoxRule)(layer::L, aₖ, Rₖ₊₁) where {L<:Dense}
     return Rₖ
 end
 
-function modify_layer(::ZBoxRule, l::Union{Dense, Chain})
+function modify_layer(::ZBoxRule, l::Union{Dense,Conv})
     W, b = get_weights(l)
     W⁻ = min.(0, W)
     W⁺ = max.(0, W)

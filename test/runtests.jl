@@ -5,8 +5,8 @@ using Test
     @testset "Utilities" begin
         include("test_utils.jl")
     end
-    @testset "Reference layers" begin
-        include("test_layers.jl")
+    @testset "LRP rules" begin
+        include("test_rules.jl")
     end
     @testset "Heatmaps" begin
         include("test_heatmaps.jl")

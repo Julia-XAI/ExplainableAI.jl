@@ -18,14 +18,30 @@ include("heatmap.jl")
 
 export analyze
 
-# analyzers
+# Analyzers
 export AbstractXAIMethod
 export Gradient, InputTimesGradient
 export LRP, LRPZero, LRPEpsilon, LRPGamma
 
+const ANALYZERS = Dict(
+    "Gradient" => Gradient,
+    "InputTimesGradient" => InputTimesGradient,
+    "LRP" => LRP,
+    "LRPZero" => LRPZero,
+    "LRPEpsilon" => LRPEpsilon,
+    "LRPGamma" => LRPGamma,
+)
+
 # LRP rules
-export AbstractLRPRule, LRPRuleset
+export AbstractLRPRule
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
+
+const RULES = Dict(
+  "ZeroRule" => ZeroRule,
+  "EpsilonRule" => EpsilonRule,
+  "GammaRule" => GammaRule,
+  "ZBoxRule" => ZBoxRule,
+)
 
 # heatmapping
 export heatmap
