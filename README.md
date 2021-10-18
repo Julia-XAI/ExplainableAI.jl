@@ -34,15 +34,15 @@ heatmap(expl)
 ```
 
 Currently, the following analyzers are implemented:
-* `LRP`
-  * `LRPZero`
-  * `LRPEpsilon`
-  * `LRPGamma`
-* `Gradient`
-* `InputTimesGradient`
 
-
-Custom composites of LRP rules can also be created.
+```
+├── Gradient
+├── InputTimesGradient
+└── LRP
+    ├── LRPZero
+    ├── LRPEpsilon
+    └── LRPGamma
+```
 
 One of the design goals of ExplainabilityMethods.jl is extensibility.
-`ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` are already implemented and can easily be extended by custom rules.
+Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` can be composed and are easily extended by custom rules.
