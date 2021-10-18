@@ -1,11 +1,11 @@
-# ExplainabilityMethods.jl
+![ExplainabilityMethods.jl](https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/banner.svg)
+___
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://adrhill.github.io/ExplainabilityMethods.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://adrhill.github.io/ExplainabilityMethods.jl/dev)
-[![Build Status](https://github.com/adrhill/ExplainabilityMethods.jl/workflows/CI/badge.svg)](https://github.com/adrhill/ExplainabilityMethods.jl/actions)
-[![Coverage](https://codecov.io/gh/adrhill/ExplainabilityMethods.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/adrhill/ExplainabilityMethods.jl)
+| **Documentation**                                                     | **Build Status**                                      |
+|:--------------------------------------------------------------------- |:----------------------------------------------------- |
+| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] |
 
-Explainable AI (XAI) in Julia using Flux.
+Explainable AI in Julia using Flux.
 
 ## Installation 
 To install this package and its dependencies, open the Julia REPL and run 
@@ -13,7 +13,7 @@ To install this package and its dependencies, open the Julia REPL and run
 julia> ]add https://github.com/adrhill/ExplainabilityMethods.jl
 ```
 
-⚠️ This package is in early development, so expect frequent breaking changes ⚠️
+⚠️ This package is in early development, so expect frequent breaking changes. ⚠️
 
 ## Example
 ```julia
@@ -21,7 +21,7 @@ using Flux
 using Metalhead
 using ExplainabilityMethods
 
-# Load VGG model
+# Load model
 vgg = VGG19()
 model = strip_softmax(vgg.layers)
 
@@ -46,3 +46,16 @@ Currently, the following analyzers are implemented:
 
 One of the design goals of ExplainabilityMethods.jl is extensibility.
 Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` can be composed and are easily extended by custom rules.
+
+
+[docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stab-url]: https://adrhill.github.io/ExplainabilityMethods.jl/stable
+
+[docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
+[docs-dev-url]: https://adrhill.github.io/ExplainabilityMethods.jl/dev
+
+[ci-img]: https://github.com/adrhill/ExplainabilityMethods.jl/workflows/CI/badge.svg
+[ci-url]: https://github.com/adrhill/ExplainabilityMethods.jl/actions
+
+[codecov-img]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl
