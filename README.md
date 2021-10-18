@@ -1,4 +1,4 @@
-![ExplainabilityMethods.jl](https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/banner.svg)
+![ExplainabilityMethods.jl][banner-img]
 ___
 
 | **Documentation**                                                     | **Build Status**                                      |
@@ -47,6 +47,7 @@ Currently, the following analyzers are implemented:
 One of the design goals of ExplainabilityMethods.jl is extensibility.
 Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` can be composed and are easily extended by custom rules.
 
+[banner-img]: https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/banner.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://adrhill.github.io/ExplainabilityMethods.jl/stable
