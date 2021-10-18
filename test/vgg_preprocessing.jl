@@ -1,4 +1,5 @@
 # Code taken from Metalhead 0.5.3's utils.jl
+using Images
 
 # Resize an image such that its smallest dimension is the given length
 function resize_smallest_dimension(im, len)

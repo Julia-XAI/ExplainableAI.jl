@@ -37,16 +37,16 @@ export AbstractLRPRule
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 
 const RULES = Dict(
-  "ZeroRule" => ZeroRule,
-  "EpsilonRule" => EpsilonRule,
-  "GammaRule" => GammaRule,
-  "ZBoxRule" => ZBoxRule,
+    "ZeroRule" => ZeroRule,
+    "EpsilonRule" => EpsilonRule,
+    "GammaRule" => GammaRule,
+    "ZBoxRule" => ZBoxRule,
 )
 
 # heatmapping
 export heatmap
 
 # utils
-export strip_softmax
+export strip_softmax, flatten_chain
 
 end # module
