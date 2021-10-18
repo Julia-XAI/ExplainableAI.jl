@@ -4,7 +4,6 @@ using LinearAlgebra
 using Flux
 using Zygote
 using ColorSchemes
-using CairoMakie
 using ImageCore
 using Base.Iterators
 
@@ -15,8 +14,7 @@ include("neuron_selection.jl")
 include("gradient.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
-include("visualization/heatmap.jl")
-include("visualization/compare.jl")
+include("heatmap.jl")
 
 export analyze
 
@@ -30,10 +28,9 @@ export AbstractLRPRule, LRPRuleset
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 
 # heatmapping
-export heatmap, compare
+export heatmap
 
 # utils
-export model_summary
 export strip_softmax
 
 end # module
