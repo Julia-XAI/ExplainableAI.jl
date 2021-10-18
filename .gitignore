@@ -1,4 +1,19 @@
+# Julia
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+Manifest.toml
+
+# Generated files
 /docs/build/
+
+# Playground
+/_research
+
+# macOS
+.DS_Store
+
+# VSCode
+/.vscode
+
+

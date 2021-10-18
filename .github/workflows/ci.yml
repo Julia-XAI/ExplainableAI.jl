@@ -57,8 +57,8 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
-            using LayerwiseRelevancePropagation
-            doctest(LayerwiseRelevancePropagation)'
+            using ExplainabilityMethods
+            doctest(ExplainabilityMethods)'
       - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

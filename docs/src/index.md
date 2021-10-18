@@ -1,12 +1,12 @@
 ```@meta
-CurrentModule = LayerwiseRelevancePropagation
+CurrentModule = ExplainabilityMethods
 ```
 
-# LayerwiseRelevancePropagation
+# ExplainabilityMethods
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [LayerwiseRelevancePropagation]
+Modules = [ExplainabilityMethods]
 ```
