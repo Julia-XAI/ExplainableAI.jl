@@ -20,13 +20,10 @@ Zygote = "0.6"
 julia = "1.6"
 
 [extras]
-ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
-Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
 
 [targets]
-test = ["ImageMagick", "Images", "Metalhead", "Random", "ReferenceTests", "Test", "TestImages"]
+test = ["Metalhead", "Random", "ReferenceTests", "Test"]
