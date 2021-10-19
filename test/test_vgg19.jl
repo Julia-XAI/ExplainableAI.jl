@@ -34,6 +34,6 @@ for (name, method) in analyzers
 
         @test size(expl) == size(img)
         @test_reference "references/vgg19/$(name).jld2" Dict("expl" => expl) by =
-            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.2)
+            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.4)
     end
 end
