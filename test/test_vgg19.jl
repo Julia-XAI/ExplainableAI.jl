@@ -22,6 +22,13 @@ function LRPCustom(model::Chain)
 end
 analyzers["LRPCustom"] = LRPCustom
 
+function approxref(ref::String, act::String)
+    # Parse reference string into array and compare
+    ref = eval(Meta.parse(ref))
+    act = eval(Meta.parse(act))
+    return isapprox(ref, act; rtol=0.03)
+end
+
 for (name, method) in analyzers
     @testset "$name" begin
         if name == "LRP"
@@ -31,6 +38,9 @@ for (name, method) in analyzers
         end
         expl, _ = analyze(img, analyzer)
 
-        @test_reference "references/vgg19/$(name).txt" expl
+        @test size(expl) == size(img)
+        # Testing sum to keep reference file size lower, otherwise parser fails.
+        # TODO: find a way test full (224,224,3,1) array
+        @test_reference "references/vgg19/$(name).txt" sum(expl; dims=(2,3)) by = approxref
     end
 end
