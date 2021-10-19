@@ -21,13 +21,6 @@ layers = Dict(
 # Define Dense test input
 aₖ = pseudorandn(ins)
 
-function approxref(ref::String, act::String)
-    # Parse reference string into array and compare
-    ref = eval(Meta.parse(ref))
-    act = eval(Meta.parse(act))
-    return isapprox(ref, act; rtol=0.01)
-end
-
 for (rulename, ruletype) in RULES
     rule = ruletype()
     @testset "Rule $rulename" begin
@@ -47,8 +40,9 @@ for (rulename, ruletype) in RULES
                     @test all(Rₖ[outs:end] .< 1e-8)
                 end
 
-                @test_reference "references/rules/$(rulename)_$(layername).txt" Rₖ by =
-                    approxref
+                @test_reference "references/rules/$(rulename)_$(layername).jld2" Dict(
+                    "R" => Rₖ
+                ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
             end
         end
     end
