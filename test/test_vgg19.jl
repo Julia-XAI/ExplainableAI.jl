@@ -1,23 +1,18 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: ANALYZERS
 using Flux
-using Metalhead
+using JLD2
 
-using Images
-using ImageMagick
-using TestImages
 using Random
-Random.seed!(222)
+pseudorand(T, dims...) = rand(MersenneTwister(123), T, dims...)
+img = pseudorand(Float32, (224, 224, 3, 1))
 
-include("./vgg_preprocessing.jl")
-
-# Load test image and use preprocess it
-img = testimage("monarch_color")
-imgp = preprocess(img)
-
-# Load VGG model
-vgg = VGG19()
-model = flatten_chain(strip_softmax(vgg.layers))
+# Load VGG model:
+# We run the reference test on the randomly intialized weights
+# so we don't have to download ~550 MB on every CI run.
+include("./vgg19.jl")
+vgg19 = VGG19(; pretrain=false)
+model = flatten_chain(strip_softmax(vgg19.layers))
 
 # Run analyzers
 analyzers = ANALYZERS
@@ -27,16 +22,16 @@ end
 analyzers["LRPCustom"] = LRPCustom
 
 for (name, method) in analyzers
-    if name == "LRP"
-        analyzer = method(model, ZeroRule())
-    else
-        analyzer = method(model)
-    end
-    expl, _ = analyze(imgp, analyzer)
+    @testset "$name" begin
+        if name == "LRP"
+            analyzer = method(model, ZeroRule())
+        else
+            analyzer = method(model)
+        end
+        expl, _ = analyze(img, analyzer)
 
-    # Since Zygote gradients are not deterministic and ReferenceTests is best suited for images,
-    # we compare if the heatmaps are approximately the same:
-    h = heatmap(expl)
-    @test_reference "references/vgg19/$(name).png" h by =
-        (ref, x) -> isapprox(ref, x; atol=0.05)
+        @test size(expl) == size(img)
+        @test_reference "references/vgg19/$(name).jld2" Dict("expl" => expl) by =
+            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+    end
 end
