@@ -11,9 +11,10 @@ jobs:
       matrix:
         version:
           - '1'
-          - 'nightly'
+          - '1.7'
         os:
           - ubuntu-latest
+          - macOS-latest
         arch:
           - x64
     steps:
