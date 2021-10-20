@@ -16,16 +16,14 @@ ColorSchemes = "3"
 Flux = "0.12"
 ImageCore = "0.8, 0.9"
 JLD2 = "0.4"
-Metalhead = "0.6"
 Zygote = "0.6"
 julia = "1.6"
 
 [extras]
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JLD2", "Metalhead", "Random", "ReferenceTests", "Test"]
+test = ["JLD2", "Random", "ReferenceTests", "Test"]

@@ -1,20 +1,18 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: ANALYZERS
 using Flux
-using Metalhead
 using JLD2
 
 using Random
-Random.seed!(222)
-pseudorand(dims...) = randn(MersenneTwister(123), Float32, dims...)
-
-img = pseudorand(224, 224, 3, 1)
+pseudorand(T, dims...) = rand(MersenneTwister(123), T, dims...)
+img = pseudorand(Float32, (224, 224, 3, 1))
 
 # Load VGG model:
 # We run the reference test on the randomly intialized weights
 # so we don't have to download ~550 MB on every CI run.
-vgg = VGG19(; pretrain=false)
-model = flatten_chain(strip_softmax(vgg.layers))
+include("./vgg19.jl")
+vgg19 = VGG19(; pretrain=false)
+model = flatten_chain(strip_softmax(vgg19.layers))
 
 # Run analyzers
 analyzers = ANALYZERS
