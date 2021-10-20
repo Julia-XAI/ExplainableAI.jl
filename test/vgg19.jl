@@ -3,7 +3,7 @@
 # due to need to fix initializer RNG across Julia versions.
 using Flux: @functor, outputsize
 using Random
-fixedinit(dims...) = randn(MersenneTwister(123), Float32, dims...)
+fixedinit(dims...) = Flux.glorot_uniform(MersenneTwister(123), dims...)
 
 """
     vgg_block(ifilters, ofilters, depth, batchnorm)
