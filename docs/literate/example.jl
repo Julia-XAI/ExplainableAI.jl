@@ -31,15 +31,15 @@ img = preprocess(img_raw); # array of size (224, 224, 3, 1)
 
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
-# and call [`analyze`](@ref) to get an explaination `expl`:
+# and call [`analyze`](@ref) to get an explanation `expl`:
 analyzer = LRPZero(model)
 expl, out = analyze(img, analyzer);
 
-# Finally, we can visualize the explaination through heatmapping:
+# Finally, we can visualize the explanation through heatmapping:
 heatmap(expl)
 
 #md # !!! tip "Neuron selection"
-#md #     To get an explaination with respect to a specific output neuron (e.g. class 42) call
+#md #     To get an explanation with respect to a specific output neuron (e.g. class 42) call
 #md #     ```julia
 #md #     expl, out = analyze(img, analyzer, 42)
 #md #     ```
