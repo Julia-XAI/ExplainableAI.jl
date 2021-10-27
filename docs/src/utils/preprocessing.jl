@@ -1,3 +1,4 @@
+# Image preprocessing for ImageNet models.
 # Code taken from Metalhead 0.5.3's utils.jl
 using Images
 

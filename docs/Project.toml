@@ -1,3 +1,9 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExplainabilityMethods = "cd722a4f-8d55-446b-8550-a4aabc9151ab"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
+TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"

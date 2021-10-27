@@ -5,7 +5,7 @@ ___
 |:--------------------------------------------------------------------- |:----------------------------------------------------- |
 | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] |
 
-Explainable AI in Julia using Flux.
+Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
 
 ## Installation 
 To install this package and its dependencies, open the Julia REPL and run 
@@ -13,7 +13,7 @@ To install this package and its dependencies, open the Julia REPL and run
 julia> ]add https://github.com/adrhill/ExplainabilityMethods.jl
 ```
 
-⚠️ This package is in early development, so expect frequent breaking changes. ⚠️
+This package is in early development. Expect [breaking changes on minor version updates](https://semver.org/#spec-item-4) until version `1.0.0`.
 
 ## Example
 ```julia

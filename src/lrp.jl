@@ -3,7 +3,11 @@
     LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
     LRP(layers::AbstractVector{LRPLayer})
 
-Analyzer that applies LRP.
+Analyze model by applying Layer-Wise Relevance Propagation.
+
+# References
+[1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+[2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 """
 struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     model::Chain

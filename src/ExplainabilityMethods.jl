@@ -35,6 +35,7 @@ const ANALYZERS = Dict(
 # LRP rules
 export AbstractLRPRule
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
+export modify_layer, modify_params, modify_denominator
 
 const RULES = Dict(
     "ZeroRule" => ZeroRule,
