@@ -14,9 +14,6 @@ for example in readdir(EXAMPLE_DIR)
     Literate.script(EXAMPLE, OUT_DIR) # .jl script
 end
 
-DocMeta.setdocmeta!(
-    ExplainabilityMethods, :DocTestSetup, :(using ExplainabilityMethods); recursive=true
-)
 makedocs(;
     modules=[ExplainabilityMethods],
     authors="Adrian Hill",

@@ -2,7 +2,7 @@
 # ## Preparing the model
 # ExplainabilityMethods.jl can be used on any classifier.
 # In this tutorial we will be using a pretrained VGG-19 model from
-# [Metalhead.jl](https://github.com/FluxML/Metalhead.jl)
+# [Metalhead.jl](https://github.com/FluxML/Metalhead.jl).
 using ExplainabilityMethods
 using Flux
 using Metalhead
@@ -11,7 +11,7 @@ using Metalhead: weights
 vgg = VGG19()
 Flux.loadparams!(vgg, Metalhead.weights("vgg19"))
 
-#md # !!! note "Pretrained weights"
+#md # !!! warning "Pretrained weights"
 #md #     This doc page was generated using Metalhead `v0.6.0`.
 #md #     At the time you read this, Metalhead might already have implemented weight loading
 #md #     via `VGG19(; pretrain=true)`, in which case `loadparams!` is not necessary.
@@ -27,24 +27,23 @@ img_raw = testimage("chelsea")
 
 # which we preprocess for VGG-19
 include("../utils/preprocessing.jl")
-img = preprocess(img_raw)
-size(img)
+img = preprocess(img_raw); # array of size (224, 224, 3, 1)
 
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
-# and call `analyze` to get an explaination `expl`:
+# and call [`analyze`](@ref) to get an explaination `expl`:
 analyzer = LRPZero(model)
 expl, out = analyze(img, analyzer);
 
-#md # !!! note "Neuron selection"
+# Finally, we can visualize the explaination through heatmapping:
+heatmap(expl)
+
+#md # !!! tip "Neuron selection"
 #md #     To get an explaination with respect to a specific output neuron (e.g. class 42) call
 #md #     ```julia
 #md #     expl, out = analyze(img, analyzer, 42)
 #md #     ```
 #
-# Finally, we can visualize the explaination through heatmapping:
-heatmap(expl)
-
 # Currently, the following analyzers are implemented:
 #
 # ```
@@ -56,21 +55,23 @@ heatmap(expl)
 #     └── LRPGamma
 # ```
 
-# ## Custom rules composites
+# ## Custom composites
 # If our model is a "flat" chain of Flux layers, we can assign LRP rules
 # to each layer individually. For this purpose,
-# ExplainabilityMethods exports the method `flatten_chain`:
+# ExplainabilityMethods exports the method [`flatten_chain`](@ref):
 model = flatten_chain(model)
 
-#md # !!! note "Flattening models"
+#md # !!! warning "Flattening models"
 #md #     Not all models can be flattened, e.g. those using
 #md #     `Parallel` and `SkipConnection` layers.
 #
 # Now we set a rule for each layer
 rules = [
-    ZBoxRule(), repeat([GammaRule()], 15)..., repeat([ZeroRule()], length(model) - 16)...
+    ZBoxRule(),
+    repeat([GammaRule()], 15)...,
+    repeat([ZeroRule()], length(model) - 16)...
 ]
-# to define a custom LRP analyzer:
+# and define a custom LRP analyzer:
 analyzer = LRP(model, rules)
 expl, out = analyze(img, analyzer)
 heatmap(expl)
@@ -80,9 +81,9 @@ heatmap(expl)
 # The rule has to be of type `AbstractLRPRule`.
 struct MyCustomLRPRule <: AbstractLRPRule end
 
-# It is then possible to dispatch on the utility functions `modify_layer`, `modify_params`
-# and `modify_denominator` with our rule type `MyCustomLRPRule`
-# to define custom rules without writing boilerplate code.
+# It is then possible to dispatch on the utility functions [`modify_layer`](@ref),
+# [`modify_params`](@ref) and [`modify_denominator`](@ref) with our rule type
+# `MyCustomLRPRule` to define custom rules without writing boilerplate code.
 function modify_params(::MyCustomLRPRule, W, b)
     ρW = W + 0.1 * relu.(W)
     return ρW, b
@@ -93,6 +94,6 @@ analyzer = LRP(model, MyCustomLRPRule())
 expl, out = analyze(img, analyzer)
 heatmap(expl)
 
-#md # !!! note "PRs welcome"
+#md # !!! tip "Pull requests welcome"
 #md #     If you implement a rule that's not included in ExplainabilityMethods, please make a PR to
 #md #     [`src/lrp_rules.jl`](https://github.com/adrhill/ExplainabilityMethods.jl/blob/master/src/lrp_rules.jl)!

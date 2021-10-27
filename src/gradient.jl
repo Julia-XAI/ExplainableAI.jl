@@ -1,5 +1,5 @@
 """
-    InputTimesGradient(model)
+    Gradient(model)
 
 Analyze model by calculating the gradient of a neuron activation with respect to the input.
 """
