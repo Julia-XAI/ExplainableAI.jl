@@ -13,8 +13,6 @@ To install this package and its dependencies, open the Julia REPL and run
 julia> ]add https://github.com/adrhill/ExplainabilityMethods.jl
 ```
 
-This package is in early development. Expect [breaking changes on minor version updates](https://semver.org/#spec-item-4) until version `1.0.0`.
-
 ## Example
 Let's use LRP to explain why an image of a cat gets classified as a cat:
 ```julia
