@@ -99,6 +99,7 @@ layers = Dict(
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
     "flatten" => flatten,
     "Dropout" => Dropout(0.2),
+    "AlphaDropout" => AlphaDropout(0.2),
 )
 @testset "Other Layers" begin
     for (rulename, ruletype) in RULES
