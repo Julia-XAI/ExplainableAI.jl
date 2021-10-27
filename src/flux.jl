@@ -1,3 +1,12 @@
+## Group layers by type:
+const ConvLayers = Union{Conv,DepthwiseConv,ConvTranspose,CrossCor}
+const DropoutLayers = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
+const ReshapingLayers = Union{typeof(Flux.flatten)}
+# Pooling layers
+const MaxPoolLayers = Union{MaxPool,AdaptiveMaxPool,GlobalMaxPool}
+const MeanPoolLayers = Union{MeanPool,AdaptiveMeanPool,GlobalMeanPool}
+const PoolingLayers = Union{MaxPoolLayers,MeanPoolLayers}
+
 _flatten_chain(x) = x
 _flatten_chain(c::Chain) = [c.layers...]
 """

@@ -22,7 +22,8 @@ end
 analyzers["LRPCustom"] = LRPCustom
 
 for (name, method) in analyzers
-    @testset "$name" begin
+    @time @testset "$name" begin
+        print("Timing $name on VGG19...")
         if name == "LRP"
             analyzer = method(model, ZeroRule())
         else

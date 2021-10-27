@@ -20,7 +20,7 @@ abstract type AbstractLRPRule end
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
 # It can be extended for new rules via `modify_denominator` and `modify_layer`,
 # which in turn uses `modify_params`.
-function (rule::AbstractLRPRule)(layer::Union{Dense,Conv,MaxPool,MeanPool}, aₖ, Rₖ₊₁)
+function (rule::AbstractLRPRule)(layer::Union{Dense,ConvLayers,PoolingLayers}, aₖ, Rₖ₊₁)
     layerᵨ = modify_layer(rule, layer)
     function fwpass(a)
         z = layerᵨ(a)
@@ -33,8 +33,8 @@ function (rule::AbstractLRPRule)(layer::Union{Dense,Conv,MaxPool,MeanPool}, aₖ
 end
 
 # Special cases are dispatched on layer type:
-(rule::AbstractLRPRule)(::Dropout, aₖ, Rₖ₊₁) = Rₖ₊₁
-(rule::AbstractLRPRule)(::typeof(Flux.flatten), aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+(rule::AbstractLRPRule)(::DropoutLayers, aₖ, Rₖ₊₁) = Rₖ₊₁
+(rule::AbstractLRPRule)(::ReshapingLayers, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
 """
     modify_layer(rule, layer)
