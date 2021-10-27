@@ -14,8 +14,7 @@ using TestImages
 img_raw = testimage("chelsea")
 
 include("../utils/preprocessing.jl")
-img = preprocess(img_raw)
-size(img)
+img = preprocess(img_raw); # array of size (224, 224, 3, 1)
 
 analyzer = LRPZero(model)
 expl, out = analyze(img, analyzer);
@@ -25,7 +24,9 @@ heatmap(expl)
 model = flatten_chain(model)
 
 rules = [
-    ZBoxRule(), repeat([GammaRule()], 15)..., repeat([ZeroRule()], length(model) - 16)...
+    ZBoxRule(),
+    repeat([GammaRule()], 15)...,
+    repeat([ZeroRule()], length(model) - 16)...
 ]
 
 analyzer = LRP(model, rules)
