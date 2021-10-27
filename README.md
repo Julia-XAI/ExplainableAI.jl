@@ -16,10 +16,11 @@ julia> ]add https://github.com/adrhill/ExplainabilityMethods.jl
 This package is in early development. Expect [breaking changes on minor version updates](https://semver.org/#spec-item-4) until version `1.0.0`.
 
 ## Example
+Let's use LRP to explain why an image of a cat gets classified as a cat:
 ```julia
+using ExplainabilityMethods
 using Flux
 using Metalhead
-using ExplainabilityMethods
 
 # Load model
 vgg = VGG19()
@@ -27,12 +28,15 @@ model = strip_softmax(vgg.layers)
 
 # Run XAI method
 analyzer = LRPEpsilon(model)
-expl, out = analyze(img, analyzer) 
+expl, out = analyze(img, analyzer)
 
 # Show heatmap
 heatmap(expl)
 ```
+![][heatmap]
 
+
+## Methods
 Currently, the following analyzers are implemented:
 
 ```
@@ -45,9 +49,10 @@ Currently, the following analyzers are implemented:
 ```
 
 One of the design goals of ExplainabilityMethods.jl is extensibility.
-Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` can be composed and are easily extended by custom rules.
+Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
 
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/banner.png
+[heatmap]: https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/heatmap.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://adrhill.github.io/ExplainabilityMethods.jl/stable
@@ -60,3 +65,6 @@ Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` 
 
 [codecov-img]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl
+
+[docs-composites]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-composites
+[docs-custom-rules]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-rules
