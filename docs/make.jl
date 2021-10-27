@@ -29,7 +29,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Getting started" => "generated/simple_example.md",
+        "Getting started" => "generated/example.md",
         "API Reference" => "api.md",
     ],
 )
