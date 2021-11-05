@@ -7,6 +7,10 @@ Manifest.toml
 # Generated files
 /docs/build/
 
+# Benchmarking
+/.benchmarkci
+/benchmark/*.json
+
 # Playground
 /_research
 
