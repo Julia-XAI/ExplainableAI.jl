@@ -3,8 +3,8 @@
 
 Replace zero terms of a matrix `d` with `eps`.
 """
-function stabilize_denom(d; eps=1f-9)
-    return d + eps * (d .≈ 0)
+function stabilize_denom(d; eps=1.0f-9)
+    return d + ((d .≈ 0) + sign.(d)) * eps
 end
 
 """
@@ -13,7 +13,7 @@ end
 Elementwise division of two matrices avoiding zero terms
 in the denominator by replacing them with `eps`.
 """
-function safedivide(a, b; eps=1f-9)
+function safedivide(a, b; eps=1.0f-9)
     return a ./ stabilize_denom(b; eps=eps)
 end
 

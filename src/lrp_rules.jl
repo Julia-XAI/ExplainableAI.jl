@@ -60,7 +60,7 @@ modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
 
 Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
-modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1f-9) # general fallback
+modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # general fallback
 
 """
     ZeroRule()
@@ -97,7 +97,7 @@ Arguments:
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(; ϵ=1f-6) = new{Float32}(ϵ)
+    EpsilonRule(; ϵ=1.0f-6) = new{Float32}(ϵ)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=r.ϵ)
 

@@ -2,8 +2,8 @@ using ExplainabilityMethods
 using Test
 
 @testset "ExplainabilityMethods.jl" begin
-    @testset "Flux utilities" begin
-        include("test_flux_utils.jl")
+    @testset "Utilities" begin
+        include("test_utils.jl")
     end
     @testset "Neuron selection" begin
         include("test_neuron_selection.jl")
