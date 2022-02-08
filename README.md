@@ -13,6 +13,8 @@ To install this package and its dependencies, open the Julia REPL and run
 julia> ]add ExplainabilityMethods
 ```
 
+⚠️ This package is still in early development, expect breaking changes. ⚠️
+
 ## Example
 Let's use LRP to explain why an image of a cat gets classified as a cat:
 ```julia
