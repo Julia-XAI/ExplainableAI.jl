@@ -5,6 +5,34 @@ using LinearAlgebra
 using ReferenceTests
 using Random
 
+## Hand-written tests
+@testset "ZeroRule analytic" begin
+    rule = ZeroRule()
+
+    ## Simple dense layer
+    Rₖ₊₁ = [1/3, 2/3]
+    aₖ = [1.0, 2.0]
+    W = [3.0 4.0; 5.0 6.0]
+    b = [7.0, 8.0]
+    Rₖ = [17/90, 316/675] # expected output
+
+    layer = Dense(W, b, relu)
+    @test rule(layer, aₖ, Rₖ₊₁) ≈ Rₖ
+
+    ## Pooling layer
+    Rₖ₊₁ = Float32.([1 2; 3 4]//30)
+    aₖ = Float32.([1 2 3; 10 5 6; 7 8 9])
+    Rₖ = Float32.([0 0 0; 4 0 2; 0 0 4]//30) # expected output
+
+    # Repeat in color channel dim and add batch dim
+    Rₖ₊₁ = reshape(repeat(Rₖ₊₁, 1, 3), 2, 2, 3, 1)
+    aₖ = reshape(repeat(aₖ,1, 3), 3, 3, 3, 1)
+    Rₖ = reshape(repeat(Rₖ,1, 3), 3, 3, 3, 1)
+
+    layer = MaxPool((2,2), stride=(1,1))
+    @test rule(layer, aₖ, Rₖ₊₁) ≈ Rₖ
+end
+
 # Fixed pseudo-random numbers
 T = Float32
 pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
