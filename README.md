@@ -51,6 +51,9 @@ Currently, the following analyzers are implemented:
 One of the design goals of ExplainabilityMethods.jl is extensibility.
 Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
 
+## Acknowledgements
+> Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
+
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/banner.png
 [heatmap]: https://raw.githubusercontent.com/adrhill/ExplainabilityMethods.jl/gh-pages/assets/heatmap.png
 
