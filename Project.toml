@@ -1,7 +1,7 @@
 name = "ExplainabilityMethods"
 uuid = "cd722a4f-8d55-446b-8550-a4aabc9151ab"
 authors = ["Adrian Hill"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
