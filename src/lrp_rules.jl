@@ -104,7 +104,7 @@ modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=r.ϵ)
 """
     ZBoxRule()
 
-Constructor for LRP-`z^{\\mathcal{B}}``-rule.
+Constructor for LRP-``z^{\\mathcal{B}}``-rule.
 Commonly used on the first layer for pixel input.
 """
 struct ZBoxRule <: AbstractLRPRule end
