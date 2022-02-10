@@ -1,9 +1,9 @@
 ![ExplainabilityMethods.jl][banner-img]
 ___
 
-| **Documentation**                                                     | **Build Status**                                      |
-|:--------------------------------------------------------------------- |:----------------------------------------------------- |
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] |
+| **Documentation**                                                     | **Build Status**                                      | **DOI**                    |
+|:--------------------------------------------------------------------- |:----------------------------------------------------- |:-------------------------- |
+| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![DOI](doi-img)](doi-url) |
 
 Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
 
@@ -71,3 +71,6 @@ Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` 
 
 [docs-composites]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-composites
 [docs-custom-rules]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-rules
+
+[doi-img]: https://zenodo.org/badge/337430397.svg
+[doi-url]: https://zenodo.org/badge/latestdoi/337430397
