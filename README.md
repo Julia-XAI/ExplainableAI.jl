@@ -1,9 +1,9 @@
 ![ExplainabilityMethods.jl][banner-img]
 ___
 
-| **Documentation**                                                     | **Build Status**                                      | **DOI**                    |
-|:--------------------------------------------------------------------- |:----------------------------------------------------- |:-------------------------- |
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![DOI](doi-img)](doi-url) |
+| **Documentation**                                                     | **Build Status**                                      | **DOI**                 |
+|:--------------------------------------------------------------------- |:----------------------------------------------------- |:----------------------- |
+| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![][doi-img]][doi-url] |
 
 Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
 
