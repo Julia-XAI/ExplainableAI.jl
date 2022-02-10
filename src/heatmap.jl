@@ -28,7 +28,7 @@ function (::MaxAbsNormalizer)(img::SingleChannelImage)
 end
 
 struct RangeNormalizer <: AbstractActivationNormalizer end
-function normalize(img::SingleChannelImage)
+function (::RangeNormalizer)(img::SingleChannelImage)
     min, max = extrema(img)
     return (img .- min) / (max - min)
 end

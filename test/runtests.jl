@@ -8,11 +8,11 @@ using Test
     @testset "Neuron selection" begin
         include("test_neuron_selection.jl")
     end
-    @testset "LRP rules" begin
-        include("test_rules.jl")
-    end
     @testset "Heatmaps" begin
         include("test_heatmaps.jl")
+    end
+    @testset "LRP rules" begin
+        include("test_rules.jl")
     end
     @testset "VGG-19" begin
         include("test_vgg19.jl")
