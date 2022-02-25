@@ -124,7 +124,7 @@ function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
         f⁻ = layer⁻(h)
 
         z = f - f⁺ - f⁻
-        s = Zygote.dropgrad(Rₖ₊₁ ./ stabilize_denom(z; eps=1e-9))
+        s = Zygote.dropgrad(safedivide(Rₖ₊₁, z; eps=1e-9))
         return z ⋅ s
     end
     c, cₗ, cₕ = gradient(fwpass, aₖ, l, h) # w.r.t. three inputs

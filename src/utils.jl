@@ -10,12 +10,10 @@ end
 """
     safedivide(a, b; eps = 1f-6)
 
-Elementwise division of two matrices avoiding zero terms
-in the denominator by replacing them with `eps`.
+Elementwise division of two matrices avoiding near zero terms
+in the denominator by replacing them with `± eps`.
 """
-function safedivide(a, b; eps=1.0f-9)
-    return a ./ stabilize_denom(b; eps=eps)
-end
+safedivide(a, b; eps=1.0f-9) = a ./ stabilize_denom(b; eps=eps)
 
 """
     drop_singleton_dims(a)
