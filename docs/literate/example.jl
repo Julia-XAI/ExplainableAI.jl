@@ -17,23 +17,31 @@ Flux.loadparams!(vgg, Metalhead.weights("vgg19"))
 #md #     via `VGG19(; pretrain=true)`, in which case `loadparams!` is not necessary.
 
 # In case they exist, we need to strip softmax activations from the output before analyzing:
-model = strip_softmax(vgg.layers)
+model = strip_softmax(vgg.layers);
 
 # We also need to load an image
 using Images
 using TestImages
 
-img_raw = testimage("chelsea")
+img = testimage("chelsea")
 
-# which we preprocess for VGG-19
-include("../utils/preprocessing.jl")
-img = preprocess(img_raw); # array of size (224, 224, 3, 1)
+# which we can preprocess for VGG-19 using [DataAugmentation.jl](https://github.com/lorenzoh/DataAugmentation.jl):
+using DataAugmentation
+
+## Coefficients taken from PyTorch's ImageNet normalization code
+μ = [0.485, 0.456, 0.406]
+σ = [0.229, 0.224, 0.225]
+transform = CenterResizeCrop((224, 224)) |> ImageToTensor() |> Normalize(μ, σ)
+
+item = Image(img)
+input = apply(transform, item) |> itemdata
+input = permutedims(input, (2,1,3))[:,:,:,:] * 255; # flip X/Y axes, add batch dim. and rescale
 
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
 # and call [`analyze`](@ref) to get an explanation `expl`:
 analyzer = LRPZero(model)
-expl, out = analyze(img, analyzer);
+expl, out = analyze(input, analyzer);
 
 # Finally, we can visualize the explanation through heatmapping:
 heatmap(expl)
@@ -73,7 +81,7 @@ rules = [
 ]
 # and define a custom LRP analyzer:
 analyzer = LRP(model, rules)
-expl, out = analyze(img, analyzer)
+expl, out = analyze(input, analyzer)
 heatmap(expl)
 
 # ## Custom rules
@@ -91,7 +99,7 @@ end
 
 # We can directly use this rule to make an analyzer!
 analyzer = LRP(model, MyCustomLRPRule())
-expl, out = analyze(img, analyzer)
+expl, out = analyze(input, analyzer)
 heatmap(expl)
 
 #md # !!! tip "Pull requests welcome"
