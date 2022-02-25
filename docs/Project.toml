@@ -1,4 +1,5 @@
 [deps]
+DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExplainabilityMethods = "cd722a4f-8d55-446b-8550-a4aabc9151ab"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
