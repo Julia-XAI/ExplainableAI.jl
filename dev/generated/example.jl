@@ -6,18 +6,26 @@ using Metalhead: weights
 vgg = VGG19()
 Flux.loadparams!(vgg, Metalhead.weights("vgg19"))
 
-model = strip_softmax(vgg.layers)
+model = strip_softmax(vgg.layers);
 
 using Images
 using TestImages
 
-img_raw = testimage("chelsea")
+img = testimage("chelsea")
 
-include("../utils/preprocessing.jl")
-img = preprocess(img_raw); # array of size (224, 224, 3, 1)
+using DataAugmentation
+
+# Coefficients taken from PyTorch's ImageNet normalization code
+μ = [0.485, 0.456, 0.406]
+σ = [0.229, 0.224, 0.225]
+transform = CenterResizeCrop((224, 224)) |> ImageToTensor() |> Normalize(μ, σ)
+
+item = Image(img)
+input = apply(transform, item) |> itemdata
+input = permutedims(input, (2,1,3))[:,:,:,:] * 255; # flip X/Y axes, add batch dim. and rescale
 
 analyzer = LRPZero(model)
-expl, out = analyze(img, analyzer);
+expl, out = analyze(input, analyzer);
 
 heatmap(expl)
 
@@ -30,7 +38,7 @@ rules = [
 ]
 
 analyzer = LRP(model, rules)
-expl, out = analyze(img, analyzer)
+expl, out = analyze(input, analyzer)
 heatmap(expl)
 
 struct MyCustomLRPRule <: AbstractLRPRule end
@@ -41,7 +49,7 @@ function modify_params(::MyCustomLRPRule, W, b)
 end
 
 analyzer = LRP(model, MyCustomLRPRule())
-expl, out = analyze(img, analyzer)
+expl, out = analyze(input, analyzer)
 heatmap(expl)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
