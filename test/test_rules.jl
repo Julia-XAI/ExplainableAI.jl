@@ -1,20 +1,27 @@
 using ExplainabilityMethods
-using ExplainabilityMethods: RULES, modify_params
+using ExplainabilityMethods: modify_params
 using Flux
 using LinearAlgebra
 using ReferenceTests
 using Random
+
+const RULES = Dict(
+    "ZeroRule" => ZeroRule,
+    "EpsilonRule" => EpsilonRule,
+    "GammaRule" => GammaRule,
+    "ZBoxRule" => ZBoxRule,
+)
 
 ## Hand-written tests
 @testset "ZeroRule analytic" begin
     rule = ZeroRule()
 
     ## Simple dense layer
-    Rₖ₊₁ = [1/3, 2/3]
+    Rₖ₊₁ = [1 / 3, 2 / 3]
     aₖ = [1.0, 2.0]
     W = [3.0 4.0; 5.0 6.0]
     b = [7.0, 8.0]
-    Rₖ = [17/90, 316/675] # expected output
+    Rₖ = [17 / 90, 316 / 675] # expected output
 
     layer = Dense(W, b, relu)
     @test rule(layer, aₖ, Rₖ₊₁) ≈ Rₖ
@@ -26,10 +33,10 @@ using Random
 
     # Repeat in color channel dim and add batch dim
     Rₖ₊₁ = reshape(repeat(Rₖ₊₁, 1, 3), 2, 2, 3, 1)
-    aₖ = reshape(repeat(aₖ,1, 3), 3, 3, 3, 1)
-    Rₖ = reshape(repeat(Rₖ,1, 3), 3, 3, 3, 1)
+    aₖ = reshape(repeat(aₖ, 1, 3), 3, 3, 3, 1)
+    Rₖ = reshape(repeat(Rₖ, 1, 3), 3, 3, 3, 1)
 
-    layer = MaxPool((2,2), stride=(1,1))
+    layer = MaxPool((2, 2); stride=(1, 1))
     @test rule(layer, aₖ, Rₖ₊₁) ≈ Rₖ
 end
 
