@@ -6,6 +6,13 @@ const ReshapingLayer = Union{typeof(Flux.flatten)}
 const MaxPoolLayer = Union{MaxPool,AdaptiveMaxPool,GlobalMaxPool}
 const MeanPoolLayer = Union{MeanPool,AdaptiveMeanPool,GlobalMeanPool}
 const PoolingLayer = Union{MaxPoolLayer,MeanPoolLayer}
+# Activation functions that are similar to ReLU
+const ReluLikeActivation = Union{
+    typeof(relu),typeof(gelu),typeof(swish),typeof(softplus),typeof(mish)
+}
+# Layers & activation functions supported by LRP
+const LRPSupportedLayer = Union{Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer}
+const LRPSupportedActivation = Union{typeof(identity),ReluLikeActivation}
 
 _flatten_chain(x) = x
 _flatten_chain(c::Chain) = [c.layers...]
@@ -25,6 +32,7 @@ end
 is_softmax(layer) = layer isa Union{typeof(softmax),typeof(softmax!)}
 has_output_softmax(x) = is_softmax(x)
 has_output_softmax(model::Chain) = has_output_softmax(model[end])
+
 """
     check_ouput_softmax(model)
 
