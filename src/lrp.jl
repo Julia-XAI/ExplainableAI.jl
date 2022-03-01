@@ -1,7 +1,6 @@
 """
     LRP(c::Chain, r::AbstractLRPRule)
     LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
-    LRP(layers::AbstractVector{LRPLayer})
 
 Analyze model by applying Layer-Wise Relevance Propagation.
 
