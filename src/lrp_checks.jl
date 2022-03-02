@@ -66,7 +66,8 @@ function check_model(c::Chain; verbose=true)
                 ## Using custom layers
                 If you implemented custom layers, register them via
                 ```julia
-                LRP_CONFIG.supports_layer(::MyLayer) = true
+                LRP_CONFIG.supports_layer(::MyLayer) = true               # for structs
+                LRP_CONFIG.supports_activation(::typeof(mylayer)) = true  # for functions
                 ```
                 The default fallback for this layer will use Automatic Differentiation according to "Layer-Wise Relevance Propagation: An Overview".
                 You can also define a fully LRP-custom rule for your layer by using the interface
