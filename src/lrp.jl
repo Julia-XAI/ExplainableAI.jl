@@ -15,7 +15,7 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     # Construct LRP analyzer by manually assigning a rule to each layer
     function LRP(model::Chain, rules::AbstractVector{<:AbstractLRPRule})
         check_ouput_softmax(model)
-        model = flatten_chain(model)
+        model = flatten_model(model)
         if length(model.layers) != length(rules)
             throw(ArgumentError("Length of rules doesn't match length of Flux chain."))
         end
@@ -24,7 +24,7 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     # Construct LRP analyzer by assigning a single rule to all layers
     function LRP(model::Chain, r::AbstractLRPRule)
         check_ouput_softmax(model)
-        model = flatten_chain(model)
+        model = flatten_model(model)
         rules = repeat([r], length(model.layers))
         return new{typeof(rules)}(model, rules)
     end

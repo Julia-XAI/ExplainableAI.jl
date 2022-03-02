@@ -19,7 +19,7 @@ img = pseudorand(Float32, input_size)
 # so we don't have to download ~550 MB on every CI run.
 include("./vgg19.jl")
 vgg19 = VGG19(; pretrain=false)
-model = flatten_chain(strip_softmax(vgg19.layers))
+model = flatten_model(strip_softmax(vgg19.layers))
 
 function LRPCustom(model::Chain)
     return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])

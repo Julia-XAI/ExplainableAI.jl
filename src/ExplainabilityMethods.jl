@@ -38,6 +38,6 @@ export check_model
 export heatmap
 
 # utils
-export strip_softmax, flatten_chain
+export strip_softmax, flatten_model, flatten_chain
 
 end # module

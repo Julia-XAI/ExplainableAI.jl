@@ -66,8 +66,8 @@ heatmap(expl)
 # ## Custom composites
 # If our model is a "flat" chain of Flux layers, we can assign LRP rules
 # to each layer individually. For this purpose,
-# ExplainabilityMethods exports the method [`flatten_chain`](@ref):
-model = flatten_chain(model)
+# ExplainabilityMethods exports the method [`flatten_model`](@ref):
+model = flatten_model(model)
 
 #md # !!! warning "Flattening models"
 #md #     Not all models can be flattened, e.g. those using

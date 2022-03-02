@@ -14,20 +14,21 @@ const ReluLikeActivation = Union{
 const LRPSupportedLayer = Union{Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer}
 const LRPSupportedActivation = Union{typeof(identity),ReluLikeActivation}
 
-_flatten_chain(x) = x
-_flatten_chain(c::Chain) = [c.layers...]
+_flatten_model(x) = x
+_flatten_model(c::Chain) = [c.layers...]
 """
-    flatten_chain(c)
+    flatten_model(c)
 
 Flatten a Flux chain containing Flux chains.
 """
-function flatten_chain(chain::Chain)
+function flatten_model(chain::Chain)
     if any(isa.(chain.layers, Chain))
-        flatchain = Chain(vcat(_flatten_chain.(chain.layers)...)...)
-        return flatten_chain(flatchain)
+        flatchain = Chain(vcat(_flatten_model.(chain.layers)...)...)
+        return flatten_model(flatchain)
     end
     return chain
 end
+@deprecate flatten_chain(c) flatten_model(c)
 
 is_softmax(layer) = layer isa Union{typeof(softmax),typeof(softmax!)}
 has_output_softmax(x) = is_softmax(x)
@@ -54,7 +55,7 @@ Remove softmax activation on model output if it exists.
 """
 function strip_softmax(model::Chain)
     if has_output_softmax(model)
-        model = flatten_chain(model)
+        model = flatten_model(model)
         return Chain(model.layers[1:(end - 1)]...)
     end
     return model

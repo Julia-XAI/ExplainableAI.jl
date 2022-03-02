@@ -33,7 +33,7 @@ modify_denominator
 # Utilities
 ```@docs
 strip_softmax
-flatten_chain
+flatten_model
 ```
 
 # Index
