@@ -25,8 +25,6 @@ function LRPCustom(model::Chain)
     return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
 end
 
-println("Running tests on VGG16...")
-
 function test_vgg16(name, method)
     @time @testset "$name" begin
         print("Timing $name...\t")
