@@ -6,6 +6,8 @@ using Zygote
 using ColorSchemes
 using ImageCore
 using Base.Iterators
+
+using Markdown
 using PrettyTables
 
 include("analyze_api.jl")

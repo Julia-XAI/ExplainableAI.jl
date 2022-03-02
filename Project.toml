@@ -8,6 +8,7 @@ ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
@@ -16,15 +17,18 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ColorSchemes = "3"
 Flux = "0.12"
 ImageCore = "0.8, 0.9"
+PrettyTables = "1"
 JLD2 = "0.4"
 Zygote = "0.6"
 julia = "1.6"
+Suppressor = "0.2"
 
 [extras]
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JLD2", "Random", "ReferenceTests", "Test"]
+test = ["JLD2", "Random", "ReferenceTests", "Suppressor", "Test"]
