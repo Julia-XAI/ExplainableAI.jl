@@ -54,7 +54,6 @@ function check_model(c::Chain; verbose=true)
         c, layer_names, layer_checks, activation_names, activation_checks
     )
     if !passed_layer_checks
-        @warn "Unknown layers found in model"
         verbose && display(
             Markdown.parse(
                 """# Layers failed model check
@@ -83,9 +82,9 @@ function check_model(c::Chain; verbose=true)
                 """,
             ),
         )
+        throw(ArgumentError("Unknown layers found in model"))
     end
     if !passed_activation_checks
-        @warn "Unknown or unsupported activation functions found in model"
         verbose && display(
             Markdown.parse(
                 """ # Activations failed model check
@@ -106,6 +105,7 @@ function check_model(c::Chain; verbose=true)
                 """,
             ),
         )
+        throw(ArgumentError("Unknown or unsupported activation functions found in model"))
     end
     return false
 end
