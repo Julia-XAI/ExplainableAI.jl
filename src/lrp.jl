@@ -13,26 +13,34 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     rules::R
 
     # Construct LRP analyzer by manually assigning a rule to each layer
-    function LRP(model::Chain, rules::AbstractVector{<:AbstractLRPRule})
-        check_ouput_softmax(model)
+    function LRP(
+        model::Chain,
+        rules::AbstractVector{<:AbstractLRPRule};
+        skip_checks=false,
+        verbose=true,
+    )
         model = flatten_model(model)
+        if !skip_checks
+            check_ouput_softmax(model)
+            check_model(model; verbose=verbose)
+        end
         if length(model.layers) != length(rules)
             throw(ArgumentError("Length of rules doesn't match length of Flux chain."))
         end
         return new{typeof(rules)}(model, rules)
     end
     # Construct LRP analyzer by assigning a single rule to all layers
-    function LRP(model::Chain, r::AbstractLRPRule)
-        check_ouput_softmax(model)
-        model = flatten_model(model)
-        rules = repeat([r], length(model.layers))
-        return new{typeof(rules)}(model, rules)
-    end
 end
+
 # Additional constructors for convenience:
-LRPZero(model::Chain) = LRP(model, ZeroRule())
-LRPEpsilon(model::Chain) = LRP(model, EpsilonRule())
-LRPGamma(model::Chain) = LRP(model, GammaRule())
+function LRP(model::Chain, r::AbstractLRPRule; kwargs...)
+    model = flatten_model(model)
+    rules = repeat([r], length(model.layers))
+    return LRP(model, rules; kwargs...)
+end
+LRPZero(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
+LRPEpsilon(model::Chain; kwargs...) = LRP(model, EpsilonRule(); kwargs...)
+LRPGamma(model::Chain; kwargs...) = LRP(model, GammaRule(); kwargs...)
 
 # The call to the LRP analyzer.
 function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances=false)
