@@ -10,7 +10,8 @@ To extend LRP to your own layers, define:
 LRP_CONFIG.supports_layer(::MyLayer) = true
 ```
 """
-supports_layer(l) = (l isa LRPSupportedLayer)
+supports_layer(l) = false
+supports_layer(::LRPSupportedLayer) = true
 """
     supports_activation(σ)
 
@@ -20,7 +21,8 @@ To extend LRP to your own activation functions, define:
 LRP_CONFIG.supports_activation(::MyActivation) = true
 ```
 """
-supports_activation(σ) = (σ isa LRPSupportedActivation)
+supports_activation(σ) = false
+supports_activation(::LRPSupportedActivation) = true
 end # LRP_CONFIG module
 
 _check_layer(layer) = LRP_CONFIG.supports_layer(layer)
