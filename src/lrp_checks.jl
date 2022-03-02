@@ -33,11 +33,11 @@ end
 _check_activation(c::Chain) = all(_check_activation(l) for l in c)
 
 """
-    check_model(model)
+    check_model(model; verbose=true)
 
 Check whether LRP analyzers can be used on the given model.
 """
-function check_model(c::Chain)
+function check_model(c::Chain; verbose=true)
     layer_checks = collect(_check_layer.(c.layers))
     activation_checks = collect(_check_activation.(c.layers))
     passed_layer_checks = all(layer_checks)
@@ -48,10 +48,12 @@ function check_model(c::Chain)
     layer_names = [_print_name(l) for l in c]
     activation_names = [_print_activation(l) for l in c]
 
-    _show_check_summary(c, layer_names, layer_checks, activation_names, activation_checks)
+    verbose && _show_check_summary(
+        c, layer_names, layer_checks, activation_names, activation_checks
+    )
     if !passed_layer_checks
         @warn "Unknown layers found in model"
-        display(
+        verbose && display(
             Markdown.parse(
                 """# Layers failed model check
                 Found unknown layers `$(join(unique(layer_names[.!layer_checks]), ", "))`
@@ -81,7 +83,7 @@ function check_model(c::Chain)
     end
     if !passed_activation_checks
         @warn "Unknown or unsupported activation functions found in model"
-        display(
+        verbose && display(
             Markdown.parse(
                 """ # Activations failed model check
                 Found layers with unknown  or unsupported activation functions
