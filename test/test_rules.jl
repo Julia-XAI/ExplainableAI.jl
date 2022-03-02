@@ -156,3 +156,33 @@ layers = Dict(
         end
     end
 end
+
+## Test custom layers & default AD fallback using the ZeroRule
+## Compare with references of non-wrapped layers
+struct TestWrapper{T}
+    layer::T
+end
+(l::TestWrapper)(x) = l.layer(x)
+
+layers = Dict(
+    # "Dense_relu" => Dense(ins, outs, relu; init=pseudorandn),
+    "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
+    "flatten" => flatten,
+)
+@testset "Custom layers" begin
+    for (layername, layer) in layers
+        @testset "$layername" begin
+            rule = ZeroRule()
+            println(layer)
+            wrapped_layer = TestWrapper(layer)
+            Rₖ₊₁ = wrapped_layer(aₖ)
+            Rₖ = rule(wrapped_layer, aₖ, Rₖ₊₁)
+
+            @test typeof(Rₖ) == typeof(aₖ)
+            @test size(Rₖ) == size(aₖ)
+
+            @test_reference "references/rules/ZeroRule/$layername.jld2" Dict("R" => Rₖ) by =
+                (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+        end
+    end
+end
