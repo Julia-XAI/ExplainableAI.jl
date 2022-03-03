@@ -129,6 +129,8 @@ end
 ## Test ConvLayers and others
 layers = Dict(
     "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
+    "MaxPool" => MaxPool((3, 3)),
+    "MeanPool" => MaxPool((3, 3)),
     "DepthwiseConv" => DepthwiseConv((3, 3), 2 => 4; init=pseudorandn),
     "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
@@ -165,15 +167,14 @@ end
 (l::TestWrapper)(x) = l.layer(x)
 
 layers = Dict(
-    # "Dense_relu" => Dense(ins, outs, relu; init=pseudorandn),
-    "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
-    "flatten" => flatten,
+    "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
+    "flatten" => (flatten, aₖ),
+    "Dense" => (Dense(20, 10, relu; init=pseudorandn), pseudorandn(20)),
 )
 @testset "Custom layers" begin
-    for (layername, layer) in layers
+    for (layername, (layer, aₖ)) in layers
         @testset "$layername" begin
             rule = ZeroRule()
-            println(layer)
             wrapped_layer = TestWrapper(layer)
             Rₖ₊₁ = wrapped_layer(aₖ)
             Rₖ = rule(wrapped_layer, aₖ, Rₖ₊₁)
