@@ -29,7 +29,7 @@ expl, out = analyze(input, analyzer);
 
 heatmap(expl)
 
-model = flatten_chain(model)
+model = flatten_model(model)
 
 rules = [
     ZBoxRule(),
