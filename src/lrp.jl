@@ -4,6 +4,10 @@
 
 Analyze model by applying Layer-Wise Relevance Propagation.
 
+# Keyword arguments
+- `skip_checks::Bool`: Skip checks whether model is compatible with LRP and contains output softmax. Default is `false`.
+- `verbose::Bool`: Select whether the model checks should print a summary on failure. Default is `true`.
+
 # References
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
@@ -29,15 +33,15 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
         end
         return new{typeof(rules)}(model, rules)
     end
-    # Construct LRP analyzer by assigning a single rule to all layers
 end
 
-# Additional constructors for convenience:
+# Construct LRP analyzer by assigning a single rule to all layers
 function LRP(model::Chain, r::AbstractLRPRule; kwargs...)
     model = flatten_model(model)
     rules = repeat([r], length(model.layers))
     return LRP(model, rules; kwargs...)
 end
+# Additional constructors for convenience:
 LRPZero(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
 LRPEpsilon(model::Chain; kwargs...) = LRP(model, EpsilonRule(); kwargs...)
 LRPGamma(model::Chain; kwargs...) = LRP(model, GammaRule(); kwargs...)

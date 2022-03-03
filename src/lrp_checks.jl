@@ -2,7 +2,7 @@ module LRP_CONFIG
 using ExplainabilityMethods
 using ExplainabilityMethods: LRPSupportedLayer, LRPSupportedActivation
 """
-    supports_layer(layer)
+    LRP_CONFIG.supports_layer(layer)
 
 Check whether LRP can be used on a layer or a Chain.
 To extend LRP to your own layers, define:
@@ -13,7 +13,7 @@ LRP_CONFIG.supports_layer(::MyLayer) = true
 supports_layer(l) = false
 supports_layer(::LRPSupportedLayer) = true
 """
-    supports_activation(σ)
+    LRP_CONFIG.supports_activation(σ)
 
 Check whether LRP can be used on a given activation function.
 To extend LRP to your own activation functions, define:
