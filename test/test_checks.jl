@@ -1,4 +1,5 @@
 using ExplainabilityMethods
+using Suppressor
 
 # Flux layers
 unknown_function(x) = x
@@ -8,6 +9,15 @@ unknown_function(x) = x
 )
 @test_throws ArgumentError("Unknown layers found in model") check_model(
     :LRP, Chain(unknown_function); verbose=false
+)
+@test_throws ArgumentError("Unknown layers found in model") @suppress check_model(
+    :LRP,
+    Chain(
+        unknown_function,
+        Chain(unknown_function),
+        Parallel(+, unknown_function, unknown_function),
+    );
+    verbose=false,
 )
 
 # Custom layers

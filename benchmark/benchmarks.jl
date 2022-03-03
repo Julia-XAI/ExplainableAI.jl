@@ -1,6 +1,5 @@
 using BenchmarkTools
 using Flux
-using Metalhead
 using ExplainabilityMethods
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
