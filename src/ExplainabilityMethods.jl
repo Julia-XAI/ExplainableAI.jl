@@ -7,11 +7,15 @@ using ColorSchemes
 using ImageCore
 using Base.Iterators
 
+using Markdown
+using PrettyTables
+
 include("analyze_api.jl")
 include("flux.jl")
 include("utils.jl")
 include("neuron_selection.jl")
 include("gradient.jl")
+include("lrp_checks.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("heatmap.jl")
@@ -25,13 +29,15 @@ export LRP, LRPZero, LRPEpsilon, LRPGamma
 
 # LRP rules
 export AbstractLRPRule
+export LRP_CONFIG
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
 export modify_layer, modify_params, modify_denominator
+export check_model
 
 # heatmapping
 export heatmap
 
 # utils
-export strip_softmax, flatten_chain
+export strip_softmax, flatten_model, flatten_chain
 
 end # module

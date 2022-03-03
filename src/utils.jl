@@ -23,3 +23,30 @@ Drop dimensions of size 1 from array.
 function drop_singleton_dims(a::AbstractArray)
     return dropdims(a; dims=tuple(findall(size(a) .== 1)...))
 end
+
+# Utils for printing model check summary using PrettyTable.jl
+_print_name(layer) = "$layer"
+_print_name(layer::Parallel) = "Parallel(...)"
+_print_activation(layer) = hasproperty(layer, :σ) ? "$(layer.σ)" : "—"
+_print_activation(layer::Parallel) = "—"
+
+function _show_check_summary(
+    c::Chain, layer_names, layer_checks, activation_names, activation_checks
+)
+    hl_pass = Highlighter((data, i, j) -> j in (3, 5) && data[i, j]; foreground=:green)
+    hl_fail = Highlighter((data, i, j) -> j in (3, 5) && !data[i, j]; foreground=:red)
+    data = hcat(
+        collect(1:length(c)),
+        layer_names,
+        collect(layer_checks),
+        activation_names,
+        collect(activation_checks),
+    )
+    pretty_table(
+        data;
+        header=["", "Layer", "Layer supported", "Activation", "Act. supported"],
+        alignment=[:r, :l, :r, :c, :r],
+        highlighters=(hl_pass, hl_fail),
+    )
+    return nothing
+end
