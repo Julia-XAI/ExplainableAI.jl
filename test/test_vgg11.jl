@@ -17,22 +17,22 @@ img = pseudorand(Float32, input_size)
 # Load VGG model:
 # We run the reference test on the randomly intialized weights
 # so we don't have to download ~550 MB on every CI run.
-include("./vgg19.jl")
-vgg19 = VGG19(; pretrain=false)
-model = flatten_model(strip_softmax(vgg19.layers))
+include("./vgg11.jl")
+vgg11 = VGG11(; pretrain=false)
+model = flatten_model(strip_softmax(vgg11.layers))
 
 function LRPCustom(model::Chain)
     return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
 end
 
-function test_vgg16(name, method)
+function test_vgg11(name, method)
     @time @testset "$name" begin
         print("Timing $name...\t")
         analyzer = method(model)
         expl, _ = analyze(img, analyzer)
 
         @test size(expl) == size(img)
-        @test_reference "references/vgg19/$(name).jld2" Dict("expl" => expl) by =
+        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => expl) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
     end
     return nothing
@@ -41,15 +41,15 @@ end
 # Run analyzers
 @testset "LRP analyzers" begin
     for (name, method) in LRP_ANALYZERS
-        test_vgg16(name, method)
+        test_vgg11(name, method)
     end
 end
 @testset "Custom LRP composite" begin
-    test_vgg16("LRPCustom", LRPCustom)
+    test_vgg11("LRPCustom", LRPCustom)
 end
 
 @testset "Gradient analyzers" begin
     for (name, method) in GRADIENT_ANALYZERS
-        test_vgg16(name, method)
+        test_vgg11(name, method)
     end
 end

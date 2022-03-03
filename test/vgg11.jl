@@ -167,22 +167,19 @@ backbone(m::VGG) = m.layers[1]
 classifier(m::VGG) = m.layers[2]
 
 """
-    VGG19(; pretrain = false, batchnorm = false)
-
+    VGG11(; pretrain = false, batchnorm = false)
 Create a VGG-11 style model
 ([reference](https://arxiv.org/abs/1409.1556v6)).
 See also [`VGG`](#).
-
 !!! warning
-    `VGG19` does not currently support pretrained weights.
-
+    `VGG11` does not currently support pretrained weights.
 # Arguments
 - `pretrain`: set to `true` to load pre-trained model weights for ImageNet
 """
-function VGG19(; pretrain=false, batchnorm=false, init=fixedinit)
+function VGG11(; pretrain=false, batchnorm=false, init=fixedinit)
     model = VGG(
         (224, 224);
-        config=vgg_config[:E],
+        config=vgg_config[:A],
         inchannels=3,
         batchnorm=batchnorm,
         nclasses=1000,
@@ -192,9 +189,9 @@ function VGG19(; pretrain=false, batchnorm=false, init=fixedinit)
     )
 
     if pretrain && !batchnorm
-        loadpretrain!(model, "VGG19")
+        loadpretrain!(model, "VGG11")
     elseif pretrain
-        loadpretrain!(model, "VGG19-BN)")
+        loadpretrain!(model, "VGG11-BN)")
     end
     return model
 end
