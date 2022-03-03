@@ -110,9 +110,9 @@ equalpairs = Dict( # these pairs of layers are all equal
                 @testset "$layername" begin
                     l1, l2 = layers
                     Rₖ₊₁ = l1(aₖ)
-                    Rₖ₊₁ == l2(aₖ)
+                    @test Rₖ₊₁ == l2(aₖ)
                     Rₖ = rule(l1, aₖ, Rₖ₊₁)
-                    Rₖ == rule(l2, aₖ, Rₖ₊₁)
+                    @test Rₖ == rule(l2, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
