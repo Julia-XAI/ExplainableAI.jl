@@ -22,7 +22,7 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
         model = flatten_model(model)
         if !skip_checks
             check_ouput_softmax(model)
-            check_model(model; verbose=verbose)
+            check_model(Val(:LRP), model; verbose=verbose)
         end
         if length(model.layers) != length(rules)
             throw(ArgumentError("Length of rules doesn't match length of Flux chain."))

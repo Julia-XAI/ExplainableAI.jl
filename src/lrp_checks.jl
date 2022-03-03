@@ -25,23 +25,28 @@ supports_activation(σ) = false
 supports_activation(::LRPSupportedActivation) = true
 end # LRP_CONFIG module
 
-_check_layer(layer) = LRP_CONFIG.supports_layer(layer)
-_check_layer(c::Chain) = all(_check_layer(l) for l in c)
+_check_layer(::Val{:LRP}, layer) = LRP_CONFIG.supports_layer(layer)
+_check_layer(::Val{:LRP}, c::Chain) = all(_check_layer(Val(:LRP), l) for l in c)
 
-function _check_activation(layer)
+function _check_activation(::Val{:LRP}, layer)
     hasproperty(layer, :σ) && return LRP_CONFIG.supports_activation(layer.σ)
     return true
 end
-_check_activation(c::Chain) = all(_check_activation(l) for l in c)
+_check_activation(::Val{:LRP}, c::Chain) = all(_check_activation(Val(:LRP), l) for l in c)
 
 """
-    check_model(model; verbose=true)
+    check_model(method::Symbol, model; verbose=true)
 
-Check whether LRP analyzers can be used on the given model.
+Check whether the given method can be used on the model.
+Currently, model checks are only implemented for LRP, using the symbol `:LRP`.
+
+# Example
+julia> check_model(:LRP, model)
 """
-function check_model(c::Chain; verbose=true)
-    layer_checks = collect(_check_layer.(c.layers))
-    activation_checks = collect(_check_activation.(c.layers))
+check_model(method::Symbol, model; kwargs...) = check_model(Val(method), model; kwargs...)
+function check_model(::Val{:LRP}, c::Chain; verbose=true)
+    layer_checks = collect(_check_layer.(Val(:LRP), c.layers))
+    activation_checks = collect(_check_activation.(Val(:LRP), c.layers))
     passed_layer_checks = all(layer_checks)
     passed_activation_checks = all(activation_checks)
 
