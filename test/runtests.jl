@@ -1,5 +1,6 @@
 using ExplainabilityMethods
 using Test
+using ReferenceTests
 
 @testset "ExplainabilityMethods.jl" begin
     @testset "Utilities" begin
@@ -19,11 +20,11 @@ using Test
         include("test_checks.jl")
     end
     @testset "LRP rules" begin
-        println("Running tests on rules...")
+        println("Running tests on LRP rules...")
         include("test_rules.jl")
     end
-    @testset "VGG-19" begin
-        println("Running tests on VGG16...")
-        include("test_vgg19.jl")
+    @testset "VGG11" begin
+        println("Running tests on VGG11...")
+        include("test_vgg11.jl")
     end
 end

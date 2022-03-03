@@ -4,8 +4,8 @@ using ExplainabilityMethods
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
-include("../test/vgg19.jl")
-vgg19 = VGG19(; pretrain=false)
+include("../test/vgg11.jl")
+vgg11 = VGG11(; pretrain=false)
 model = flatten_model(strip_softmax(vgg19.layers))
 img = rand(MersenneTwister(123), Float32, (224, 224, 3, 1))
 
