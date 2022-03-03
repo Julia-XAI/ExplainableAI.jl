@@ -7,7 +7,8 @@ using ExplainabilityMethods: LRPSupportedLayer, LRPSupportedActivation
 Check whether LRP can be used on a layer or a Chain.
 To extend LRP to your own layers, define:
 ```julia
-LRP_CONFIG.supports_layer(::MyLayer) = true
+LRP_CONFIG.supports_layer(::MyLayer) = true          # for structs
+LRP_CONFIG.supports_layer(::typeof(mylayer)) = true  # for functions
 ```
 """
 supports_layer(l) = false
@@ -18,7 +19,8 @@ supports_layer(::LRPSupportedLayer) = true
 Check whether LRP can be used on a given activation function.
 To extend LRP to your own activation functions, define:
 ```julia
-LRP_CONFIG.supports_activation(::MyActivation) = true
+LRP_CONFIG.supports_activation(::typeof(myactivation)) = true  # for functions
+LRP_CONFIG.supports_activation(::MyActivation) = true          # for structs
 ```
 """
 supports_activation(σ) = false
@@ -73,7 +75,7 @@ function check_model(::Val{:LRP}, c::Chain; verbose=true)
                 If you implemented custom layers, register them via
                 ```julia
                 LRP_CONFIG.supports_layer(::MyLayer) = true               # for structs
-                LRP_CONFIG.supports_activation(::typeof(mylayer)) = true  # for functions
+                LRP_CONFIG.supports_layer(::typeof(mylayer)) = true  # for functions
                 ```
                 The default fallback for this layer will use Automatic Differentiation according to "Layer-Wise Relevance Propagation: An Overview".
                 You can also define a fully LRP-custom rule for your layer by using the interface
