@@ -89,9 +89,8 @@ heatmap(expl)
 # The rule has to be of type `AbstractLRPRule`.
 struct MyCustomLRPRule <: AbstractLRPRule end
 
-# It is then possible to dispatch on the utility functions [`modify_layer`](@ref),
-# [`modify_params`](@ref) and [`modify_denominator`](@ref) with our rule type
-# `MyCustomLRPRule` to define custom rules without writing boilerplate code.
+# It is then possible to dispatch on the utility functions  [`modify_params`](@ref) and [`modify_denominator`](@ref)
+# with our rule type `MyCustomLRPRule` to define custom rules without writing boilerplate code.
 function modify_params(::MyCustomLRPRule, W, b)
     ρW = W + 0.1 * relu.(W)
     return ρW, b
