@@ -19,11 +19,9 @@
 abstract type AbstractLRPRule end
 
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
-# It can be extended for new rules via `modify_denominator` and `modify_params`.
 # Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
-(rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁) = lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
-
-function lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+# It can be extended for new rules via `modify_denominator` and `modify_params`.
+function (rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁)
     layerᵨ = _modify_layer(rule, layer)
     function fwpass(a)
         z = layerᵨ(a)
@@ -35,20 +33,7 @@ function lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
     return Rₖ
 end
 
-# For linear layer types such as Dense layers, using autodiff is overkill.
-(rule::AbstractLRPRule)(layer::Dense, aₖ, Rₖ₊₁) = lrp_dense(rule, layer, aₖ, Rₖ₊₁)
-
-function lrp_dense(rule, l, aₖ, Rₖ₊₁)
-    ρW, ρb = modify_params(rule, get_weights(l)...)
-    # Foward pass: fwp_{ij} = ρW_{ij} * aₖ_{j}
-    fwp = ρW .* transpose(aₖ)
-    z = modify_denominator(rule, sum(fwp; dims=2) + ρb) # denominator
-    # Multiply columns of `fwp` (each column corresponding to the activations from a single input neuron)
-    # by rescaled relevances `Rₖ₊₁ ./ z` of all output neurons.
-    return reshape(transpose(fwp) * (Rₖ₊₁ ./ z), size(aₖ))
-end
-
-# Other special cases that are dispatched on layer type:
+# Special cases that are dispatched on layer type:
 (rule::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
 (rule::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
