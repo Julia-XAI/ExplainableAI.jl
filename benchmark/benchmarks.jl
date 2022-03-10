@@ -58,17 +58,15 @@ rules = Dict(
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(),
 )
-rulenames = [k for k in keys(rules)]
 
 test_rule(rule, layer, aₖ, Rₖ₊₁) = rule(layer, aₖ, Rₖ₊₁) # for use with @benchmarkable macro
 
+SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
 for (layername, (layer, aₖ)) in layers
-    SUITE[layername] = BenchmarkGroup(rulenames)
-    Rₖ₊₁ = layer(aₖ)
+    SUITE["Layer"][layername] = BenchmarkGroup([k for k in keys(rules)])
 
+    Rₖ₊₁ = layer(aₖ)
     for (rulename, rule) in rules
-        SUITE[layername][rulename] = BenchmarkGroup(["dispatch", "AD fallback"])
-        SUITE[layername][rulename]["dispatch"] = @benchmarkable test_rule($(rule), $(layer), $(aₖ), $(Rₖ₊₁))
-        SUITE[layername][rulename]["AD fallback"] = @benchmarkable test_rule($(rule), $(TestWrapper(layer)), $(aₖ), $(Rₖ₊₁))
+        SUITE["Layer"][layername][rulename] = @benchmarkable test_rule($(rule), $(layer), $(aₖ), $(Rₖ₊₁))
     end
 end
