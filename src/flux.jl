@@ -1,5 +1,5 @@
 ## Group layers by type:
-const ConvLayer = Union{Conv,DepthwiseConv,ConvTranspose,CrossCor}
+const ConvLayer = Union{Conv} # TODO: DepthwiseConv, ConvTranspose, CrossCor
 const DropoutLayer = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
 const ReshapingLayer = Union{typeof(Flux.flatten)}
 # Pooling layers
