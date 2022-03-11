@@ -1,5 +1,6 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: modify_params
+import ExplainabilityMethods: _modify_layer
 using Flux
 using LinearAlgebra
 using ReferenceTests
@@ -54,13 +55,13 @@ end
 
 ## Test Dense layer
 # Define Dense test input
-ins = 20 # input dimension
-outs = 10 # output dimension
-aₖ = pseudorandn(ins)
+ins_dense = 20 # input dimension
+outs_dense = 10 # output dimension
+aₖ = pseudorandn(ins_dense)
 
 layers = Dict(
-    "Dense_relu" => Dense(ins, outs, relu; init=pseudorandn),
-    "Dense_identity" => Dense(Matrix(I, outs, ins), false, identity),
+    "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
+    "Dense_identity" => Dense(Matrix(I, outs_dense, ins_dense), false, identity),
 )
 @testset "Dense" begin
     for (rulename, rule) in RULES
@@ -75,10 +76,10 @@ layers = Dict(
 
                     # println(Rₖ)
                     if rulename == "Dense_identity"
-                        # First `outs` dimensions should propagate
+                        # First `outs_dense` dimensions should propagate
                         # activations as relevances, rest should be ≈ 0.
-                        @test Rₖ[1:outs] ≈ aₖ[1:outs]
-                        @test all(Rₖ[outs:end] .< 1e-8)
+                        @test Rₖ[1:outs_dense] ≈ aₖ[1:outs_dense]
+                        @test all(Rₖ[outs_dense:end] .< 1e-8)
                     end
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
@@ -163,11 +164,13 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 _modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
+(rule::ZBoxRule)(w::TestWrapper, aₖ, Rₖ₊₁) = rule(w.layer, aₖ, Rₖ₊₁)
 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
+    "Dense_relu" =>
+        (Dense(ins_dense, outs_dense, relu; init=pseudorandn), pseudorandn(ins_dense)),
     "flatten" => (flatten, aₖ),
-    "Dense" => (Dense(20, 10, relu; init=pseudorandn), pseudorandn(20)),
 )
 @testset "Custom layers" begin
     for (rulename, rule) in RULES
