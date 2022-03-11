@@ -131,8 +131,6 @@ function lrp_zbox(layer, aₖ, Rₖ₊₁)
     layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
     layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
 
-    l, h = fill.(extrema(aₖ), (size(aₖ),))
-
     # Forward pass
     function fwpass(a, l, h)
         f = layer(a)
