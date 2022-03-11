@@ -53,7 +53,7 @@ modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # gene
 # This helper function applies `modify_params`:
 _modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
 function _modify_layer(rule::AbstractLRPRule, layer::Union{Dense,Conv})
-    return set_weights(layer, modify_params(rule, get_weights(layer)...)...)
+    return set_params(layer, modify_params(rule, get_params(layer)...)...)
 end
 
 """
@@ -105,11 +105,11 @@ struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
 function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
-    W, b = get_weights(layer)
+    W, b = get_params(layer)
     l, h = fill.(extrema(aₖ), (size(aₖ),))
 
-    layer⁺ = set_weights(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
-    layer⁻ = set_weights(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
+    layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
+    layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
 
     # Forward pass
     function fwpass(a, l, h)
