@@ -18,49 +18,43 @@
 abstract type AbstractLRPRule end
 
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
-# It can be extended for new rules via `modify_denominator` and `modify_layer`,
-# which in turn uses `modify_params`.
+# It can be extended for new rules via `modify_denominator` and `modify_params`.
+# Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
 function (rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁)
-    layerᵨ = modify_layer(rule, layer)
+    layerᵨ = _modify_layer(rule, layer)
     function fwpass(a)
         z = layerᵨ(a)
         s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
         return z ⋅ s
     end
-    c = gradient(fwpass, aₖ)[1]
-    Rₖ = aₖ .* c
-    return Rₖ
+    return aₖ .* gradient(fwpass, aₖ)[1] # Rₖ
 end
 
 # Special cases are dispatched on layer type:
-(rule::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
-(rule::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+(::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
+(::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
+# To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
+# If this isn't done, the following fallbacks are used by default:
 """
-    modify_layer(rule, layer)
-
-Applies `modify_params` to layer if it has parameters
-"""
-modify_layer(::AbstractLRPRule, l) = l # skip layers without params
-function modify_layer(rule::AbstractLRPRule, l::Union{Dense,Conv})
-    W, b = get_weights(l)
-    ρW, ρb = modify_params(rule, W, b)
-    return set_weights(l, ρW, ρb)
-end
-
-"""
-    modify_params!(rule, W, b)
+    modify_params(rule, W, b)
 
 Function that modifies weights and biases before applying relevance propagation.
 """
 modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
 
 """
-    modify_denominator!(d, rule)
+    modify_denominator(rule, d)
 
 Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
 modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # general fallback
+
+# This helper function applies `modify_params`:
+_modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
+function _modify_layer(rule::AbstractLRPRule, layer::Union{Dense,Conv})
+    return set_params(layer, modify_params(rule, get_params(layer)...)...)
+end
 
 """
     ZeroRule()
@@ -111,11 +105,11 @@ struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
 function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
-    layer, layer⁺, layer⁻ = modify_layer(rule, layer)
+    W, b = get_params(layer)
+    l, h = fill.(extrema(aₖ), (size(aₖ),))
 
-    onemat = ones(eltype(aₖ), size(aₖ))
-    l = onemat * minimum(aₖ)
-    h = onemat * maximum(aₖ)
+    layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
+    layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
 
     # Forward pass
     function fwpass(a, l, h)
@@ -128,20 +122,5 @@ function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
         return z ⋅ s
     end
     c, cₗ, cₕ = gradient(fwpass, aₖ, l, h) # w.r.t. three inputs
-
-    # Backward pass
-    Rₖ = aₖ .* c + l .* cₗ + h .* cₕ
-    return Rₖ
-end
-
-function modify_layer(::ZBoxRule, l::Union{Dense,Conv})
-    W, b = get_weights(l)
-    W⁻ = min.(0, W)
-    W⁺ = max.(0, W)
-    b⁻ = min.(0, b)
-    b⁺ = max.(0, b)
-
-    l⁺ = set_weights(l, W⁺, b⁺)
-    l⁻ = set_weights(l, W⁻, b⁻)
-    return l, l⁺, l⁻
+    return aₖ .* c + l .* cₗ + h .* cₕ # Rₖ from backward pass
 end

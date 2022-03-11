@@ -1,5 +1,5 @@
 ## Group layers by type:
-const ConvLayer = Union{Conv,DepthwiseConv,ConvTranspose,CrossCor}
+const ConvLayer = Union{Conv} # TODO: DepthwiseConv, ConvTranspose, CrossCor
 const DropoutLayer = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
 const ReshapingLayer = Union{typeof(Flux.flatten)}
 # Pooling layers
@@ -62,7 +62,7 @@ function strip_softmax(model::Chain)
 end
 
 # helper function to work around Flux.Zeros
-function get_weights(layer)
+function get_params(layer)
     W = layer.weight
     b = layer.bias
     if typeof(b) <: Flux.Zeros
@@ -72,9 +72,9 @@ function get_weights(layer)
 end
 
 """
-    set_weights(layer, W, b)
+    set_params(layer, W, b)
 
 Duplicate layer using weights W, b.
 """
-set_weights(l::Conv, W, b) = Conv(l.σ, W, b, l.stride, l.pad, l.dilation, l.groups)
-set_weights(l::Dense, W, b) = Dense(W, b, l.σ)
+set_params(l::Conv, W, b) = Conv(l.σ, W, b, l.stride, l.pad, l.dilation, l.groups)
+set_params(l::Dense, W, b) = Dense(W, b, l.σ)
