@@ -39,12 +39,8 @@ end
 
 function lrp_dense(rule, l, aₖ, Rₖ₊₁)
     ρW, ρb = modify_params(rule, get_params(l)...)
-    # Foward pass: fwp_{ij} = ρW_{ij} * aₖ_{j}
-    fwp = ρW .* transpose(aₖ)
-    z = modify_denominator(rule, sum(fwp; dims=2) + ρb) # denominator
-    # Multiply columns of `fwp` (each column corresponding to the activations from a single input neuron)
-    # by rescaled relevances `Rₖ₊₁ ./ z` of all output neurons.
-    return reshape(transpose(fwp) * (Rₖ₊₁ ./ z), size(aₖ))
+    ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
+    return @tullio Rₖ[j] := aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
 end
 
 # Other special cases that are dispatched on layer type:

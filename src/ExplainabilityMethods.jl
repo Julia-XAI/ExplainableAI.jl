@@ -6,6 +6,7 @@ using Zygote
 using ColorSchemes
 using ImageCore
 using Base.Iterators
+using Tullio
 
 using Markdown
 using PrettyTables
