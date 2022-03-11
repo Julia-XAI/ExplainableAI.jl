@@ -1,15 +1,16 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: modify_params
+import ExplainabilityMethods: _modify_layer
 using Flux
 using LinearAlgebra
 using ReferenceTests
 using Random
 
 const RULES = Dict(
-    "ZeroRule" => ZeroRule,
-    "EpsilonRule" => EpsilonRule,
-    "GammaRule" => GammaRule,
-    "ZBoxRule" => ZBoxRule,
+    "ZeroRule" => ZeroRule(),
+    "EpsilonRule" => EpsilonRule(),
+    "GammaRule" => GammaRule(),
+    "ZBoxRule" => ZBoxRule(),
 )
 
 ## Hand-written tests
@@ -54,17 +55,16 @@ end
 
 ## Test Dense layer
 # Define Dense test input
-ins = 20 # input dimension
-outs = 10 # output dimension
-aₖ = pseudorandn(ins)
+ins_dense = 20 # input dimension
+outs_dense = 10 # output dimension
+aₖ = pseudorandn(ins_dense)
 
 layers = Dict(
-    "Dense_relu" => Dense(ins, outs, relu; init=pseudorandn),
-    "Dense_identity" => Dense(Matrix(I, outs, ins), false, identity),
+    "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
+    "Dense_identity" => Dense(Matrix(I, outs_dense, ins_dense), false, identity),
 )
 @testset "Dense" begin
-    for (rulename, ruletype) in RULES
-        rule = ruletype()
+    for (rulename, rule) in RULES
         @testset "$rulename" begin
             for (layername, layer) in layers
                 @testset "$layername" begin
@@ -76,10 +76,10 @@ layers = Dict(
 
                     # println(Rₖ)
                     if rulename == "Dense_identity"
-                        # First `outs` dimensions should propagate
+                        # First `outs_dense` dimensions should propagate
                         # activations as relevances, rest should be ≈ 0.
-                        @test Rₖ[1:outs] ≈ aₖ[1:outs]
-                        @test all(Rₖ[outs:end] .< 1e-8)
+                        @test Rₖ[1:outs_dense] ≈ aₖ[1:outs_dense]
+                        @test all(Rₖ[outs_dense:end] .< 1e-8)
                     end
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
@@ -103,8 +103,7 @@ equalpairs = Dict( # these pairs of layers are all equal
 )
 
 @testset "PoolingLayers" begin
-    for (rulename, ruletype) in RULES
-        rule = ruletype()
+    for (rulename, rule) in RULES
         @testset "$rulename" begin
             for (layername, layers) in equalpairs
                 @testset "$layername" begin
@@ -139,8 +138,7 @@ layers = Dict(
     "AlphaDropout" => AlphaDropout(0.2),
 )
 @testset "Other Layers" begin
-    for (rulename, ruletype) in RULES
-        rule = ruletype()
+    for (rulename, rule) in RULES
         @testset "$rulename" begin
             for (layername, layer) in layers
                 @testset "$layername" begin
@@ -164,26 +162,33 @@ end
 struct TestWrapper{T}
     layer::T
 end
-(l::TestWrapper)(x) = l.layer(x)
+(w::TestWrapper)(x) = w.layer(x)
+_modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
+(rule::ZBoxRule)(w::TestWrapper, aₖ, Rₖ₊₁) = rule(w.layer, aₖ, Rₖ₊₁)
 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
+    "Dense_relu" =>
+        (Dense(ins_dense, outs_dense, relu; init=pseudorandn), pseudorandn(ins_dense)),
     "flatten" => (flatten, aₖ),
-    "Dense" => (Dense(20, 10, relu; init=pseudorandn), pseudorandn(20)),
 )
 @testset "Custom layers" begin
-    for (layername, (layer, aₖ)) in layers
-        @testset "$layername" begin
-            rule = ZeroRule()
-            wrapped_layer = TestWrapper(layer)
-            Rₖ₊₁ = wrapped_layer(aₖ)
-            Rₖ = rule(wrapped_layer, aₖ, Rₖ₊₁)
+    for (rulename, rule) in RULES
+        @testset "$rulename" begin
+            for (layername, (layer, aₖ)) in layers
+                @testset "$layername" begin
+                    wrapped_layer = TestWrapper(layer)
+                    Rₖ₊₁ = wrapped_layer(aₖ)
+                    Rₖ = rule(wrapped_layer, aₖ, Rₖ₊₁)
 
-            @test typeof(Rₖ) == typeof(aₖ)
-            @test size(Rₖ) == size(aₖ)
+                    @test typeof(Rₖ) == typeof(aₖ)
+                    @test size(Rₖ) == size(aₖ)
 
-            @test_reference "references/rules/ZeroRule/$layername.jld2" Dict("R" => Rₖ) by =
-                (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                    @test_reference "references/rules/$rulename/$layername.jld2" Dict(
+                        "R" => Rₖ
+                    ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                end
+            end
         end
     end
 end

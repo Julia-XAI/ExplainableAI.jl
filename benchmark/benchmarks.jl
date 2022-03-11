@@ -1,6 +1,7 @@
 using BenchmarkTools
 using Flux
 using ExplainabilityMethods
+import ExplainabilityMethods: _modify_layer
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
@@ -29,7 +30,9 @@ SUITE = BenchmarkGroup()
 SUITE["VGG"] = BenchmarkGroup([k for k in keys(algs)])
 for (name, alg) in algs
     SUITE["VGG"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
-    SUITE["VGG"][name]["construct analyzer"] = @benchmarkable contruct_analyzer($(alg), $(model))
+    SUITE["VGG"][name]["construct analyzer"] = @benchmarkable contruct_analyzer(
+        $(alg), $(model)
+    )
 
     analyzer = alg(model)
     SUITE["VGG"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
@@ -39,18 +42,22 @@ end
 struct TestWrapper{T}
     layer::T
 end
-(l::TestWrapper)(x) = l.layer(x)
+(w::TestWrapper)(x) = w.layer(x)
+_modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
+(rule::ZBoxRule)(w::TestWrapper, aₖ, Rₖ₊₁) = rule(w.layer, aₖ, Rₖ₊₁)
 
 # generate input for conv layers
-insize = (128, 128, 3, 1)
+insize = (64, 64, 3, 1)
+in_dense = 500
+out_dense = 100
 aₖ = randn(Float32, insize)
 
 layers = Dict(
     "MaxPool" => (MaxPool((3, 3); pad=0), aₖ),
-    "MeanPool" => (MeanPool((3, 3); pad=0), aₖ),
-    "Conv" => (Conv((3, 3), 3 => 6), aₖ),
-    "flatten" => (flatten, aₖ),
-    "Dense" => (Dense(1000, 200, relu), randn(Float32, 1000)),
+    "Conv" => (Conv((3, 3), 3 => 2), aₖ),
+    "Dense" => (Dense(in_dense, out_dense, relu), randn(Float32, in_dense)),
+    "WrappedDense" =>
+        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(Float32, in_dense)),
 )
 rules = Dict(
     "ZeroRule" => ZeroRule(),
@@ -58,17 +65,17 @@ rules = Dict(
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(),
 )
-rulenames = [k for k in keys(rules)]
 
 test_rule(rule, layer, aₖ, Rₖ₊₁) = rule(layer, aₖ, Rₖ₊₁) # for use with @benchmarkable macro
 
+SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
 for (layername, (layer, aₖ)) in layers
-    SUITE[layername] = BenchmarkGroup(rulenames)
-    Rₖ₊₁ = layer(aₖ)
+    SUITE["Layer"][layername] = BenchmarkGroup([k for k in keys(rules)])
 
+    Rₖ₊₁ = layer(aₖ)
     for (rulename, rule) in rules
-        SUITE[layername][rulename] = BenchmarkGroup(["dispatch", "AD fallback"])
-        SUITE[layername][rulename]["dispatch"] = @benchmarkable test_rule($(rule), $(layer), $(aₖ), $(Rₖ₊₁))
-        SUITE[layername][rulename]["AD fallback"] = @benchmarkable test_rule($(rule), $(TestWrapper(layer)), $(aₖ), $(Rₖ₊₁))
+        SUITE["Layer"][layername][rulename] = @benchmarkable test_rule(
+            $(rule), $(layer), $(aₖ), $(Rₖ₊₁)
+        )
     end
 end
