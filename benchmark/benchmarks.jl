@@ -1,6 +1,7 @@
 using BenchmarkTools
 using Flux
 using ExplainabilityMethods
+import ExplainabilityMethods: _modify_layer
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
@@ -43,7 +44,7 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 _modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
-
+(rule::ZBoxRule)(w::TestWrapper, aₖ, Rₖ₊₁) = rule(w.layer, aₖ, Rₖ₊₁)
 
 # generate input for conv layers
 insize = (64, 64, 3, 1)
