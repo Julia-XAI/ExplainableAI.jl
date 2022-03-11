@@ -4,23 +4,27 @@
 # can be implemented by dispatching on the functions `modify_params` & `modify_denominator`,
 # which make use of the generalized LRP implementation shown in [1].
 #
-# If the relevance propagation falls outside of this scheme, a custom function
+# If the relevance propagation falls outside of this scheme, custom functions
 # ```julia
 # (::MyLRPRule)(layer, aₖ, Rₖ₊₁) = ...
+# (::MyLRPRule)(layer::MyLayer, aₖ, Rₖ₊₁) = ...
+# (::AbstractLRPRule)(layer::MyLayer, aₖ, Rₖ₊₁) = ...
 # ```
-# can be implemented. This is used for the ZBoxRule.
+# that return `Rₖ` can be implemented.
+# This is used for the ZBoxRule and for faster computations on common layers.
 #
 # References:
 # [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
-# [2] W. Samek et al., Explaining Deep Neural Networks and Beyond:
-#     A Review of Methods and Applications
+# [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 
 abstract type AbstractLRPRule end
 
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
 # It can be extended for new rules via `modify_denominator` and `modify_params`.
 # Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
-function (rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁)
+(rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁) = lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+
+function lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
     layerᵨ = _modify_layer(rule, layer)
     function fwpass(a)
         z = layerᵨ(a)
@@ -30,7 +34,16 @@ function (rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁)
     return aₖ .* gradient(fwpass, aₖ)[1] # Rₖ
 end
 
-# Special cases are dispatched on layer type:
+# For linear layer types such as Dense layers, using autodiff is overkill.
+(rule::AbstractLRPRule)(layer::Dense, aₖ, Rₖ₊₁) = lrp_dense(rule, layer, aₖ, Rₖ₊₁)
+
+function lrp_dense(rule, l, aₖ, Rₖ₊₁)
+    ρW, ρb = modify_params(rule, get_params(l)...)
+    ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
+    return @tullio Rₖ[j] := aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
+end
+
+# Other special cases that are dispatched on layer type:
 (::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
 (::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
@@ -104,7 +117,10 @@ Commonly used on the first layer for pixel input.
 struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
+(rule::ZBoxRule)(layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
+(rule::ZBoxRule)(layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
+
+function lrp_zbox(layer, aₖ, Rₖ₊₁)
     W, b = get_params(layer)
     l, h = fill.(extrema(aₖ), (size(aₖ),))
 

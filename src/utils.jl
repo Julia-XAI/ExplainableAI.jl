@@ -3,7 +3,8 @@
 
 Replace zero terms of a matrix `d` with `eps`.
 """
-function stabilize_denom(d; eps=1.0f-9)
+stabilize_denom(d::Real; eps=1.0f-9) = ifelse(d ≈ 0, d + sign(d) * eps, d)
+function stabilize_denom(d::AbstractArray; eps=1.0f-9)
     return d + ((d .≈ 0) + sign.(d)) * eps
 end
 
