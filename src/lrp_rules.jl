@@ -31,8 +31,8 @@ function (rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁)
 end
 
 # Special cases are dispatched on layer type:
-(rule::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
-(rule::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+(::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
+(::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
 # To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
 # If this isn't done, the following fallbacks are used by default:
@@ -122,6 +122,5 @@ function (rule::ZBoxRule)(layer::Union{Dense,Conv}, aₖ, Rₖ₊₁)
         return z ⋅ s
     end
     c, cₗ, cₕ = gradient(fwpass, aₖ, l, h) # w.r.t. three inputs
-
     return aₖ .* c + l .* cₗ + h .* cₕ # Rₖ from backward pass
 end
