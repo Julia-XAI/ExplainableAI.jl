@@ -42,6 +42,9 @@ struct TestWrapper{T}
     layer::T
 end
 (l::TestWrapper)(x) = l.layer(x)
+function _modify_layer(rule::AbstractLRPRule, wrapper::TestWrapper)
+    return set_params(wrapper.layer, modify_params(rule, get_params(wrapper.layer)...)...)
+end
 
 # generate input for conv layers
 insize = (64, 64, 3, 1)
