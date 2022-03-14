@@ -31,7 +31,7 @@ function lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
         s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
         return z ⋅ s
     end
-    return aₖ .* gradient(fwpass, aₖ)[1] # Rₖ
+    return aₖ .* only(gradient(fwpass, aₖ)) # Rₖ
 end
 
 # For linear layer types such as Dense layers, using autodiff is overkill.
