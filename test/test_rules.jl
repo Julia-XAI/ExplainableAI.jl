@@ -48,7 +48,7 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 ## Test individual rules
 @testset "modify_params" begin
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
-    ρW, ρb = modify_params(GammaRule(; γ=0.42), W, b)
+    ρW, ρb = @inferred modify_params(GammaRule(; γ=0.42), W, b)
     @test ρW ≈ [1.42 -1.0; 2.84 0.0]
     @test ρb ≈ [-1.0, 1.42]
 end
@@ -69,7 +69,7 @@ layers = Dict(
             for (layername, layer) in layers
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
-                    Rₖ = rule(layer, aₖ, Rₖ₊₁)
+                    Rₖ = @inferred rule(layer, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
@@ -92,8 +92,7 @@ layers = Dict(
 end
 
 ## Test PoolingLayers
-insize = (6, 6, 2, 1)
-aₖ = pseudorandn(insize)
+R
 
 equalpairs = Dict( # these pairs of layers are all equal
     "AdaptiveMaxPool" => (AdaptiveMaxPool((3, 3)), MaxPool((2, 2); pad=0)),
@@ -110,7 +109,7 @@ equalpairs = Dict( # these pairs of layers are all equal
                     l1, l2 = layers
                     Rₖ₊₁ = l1(aₖ)
                     @test Rₖ₊₁ == l2(aₖ)
-                    Rₖ = rule(l1, aₖ, Rₖ₊₁)
+                    Rₖ = @inferred rule(l1, aₖ, Rₖ₊₁)
                     @test Rₖ == rule(l2, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
@@ -143,7 +142,7 @@ layers = Dict(
             for (layername, layer) in layers
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
-                    Rₖ = rule(layer, aₖ, Rₖ₊₁)
+                    Rₖ = @inferred rule(layer, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
@@ -179,7 +178,7 @@ layers = Dict(
                 @testset "$layername" begin
                     wrapped_layer = TestWrapper(layer)
                     Rₖ₊₁ = wrapped_layer(aₖ)
-                    Rₖ = rule(wrapped_layer, aₖ, Rₖ₊₁)
+                    Rₖ = @inferred rule(wrapped_layer, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)

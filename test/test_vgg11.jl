@@ -29,7 +29,7 @@ function test_vgg11(name, method)
     @time @testset "$name" begin
         print("Timing $name...\t")
         analyzer = method(model)
-        expl, _ = analyze(img, analyzer)
+        expl, _ = @inferred analyze(img, analyzer)
 
         @test size(expl) == size(img)
         @test_reference "references/vgg11/$(name).jld2" Dict("expl" => expl) by =
