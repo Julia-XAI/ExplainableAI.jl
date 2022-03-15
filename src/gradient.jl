@@ -10,8 +10,8 @@ end
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
     output = analyzer.model(input)
     output_neuron = ns(output)
-    expl = gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
-    return expl, output
+    attr = gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
+    return Explanation(attr, output, output_neuron, :Gradient, Nothing)
 end
 
 """
@@ -29,6 +29,6 @@ end
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     output = analyzer.model(input)
     output_neuron = ns(output)
-    expl = input .* gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
-    return expl, output
+    attr = input .* gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
+    return Explanation(attr, output, output_neuron, :InputTimesGradient, Nothing)
 end

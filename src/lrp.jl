@@ -66,9 +66,11 @@ function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances
         rels[i] .= rule(layers[i], acts[i], rels[i + 1]) # Rₖ = rule(layer, aₖ, Rₖ₊₁)
     end
 
-    if layerwise_relevances
-        return rels, acts
-    end
-
-    return rels[1], acts[end] # expl, output
+    return Explanation(
+        first(rels),
+        last(acts),
+        output_neuron,
+        :LRP,
+        ifelse(layerwise_relevances, rels, Nothing),
+    )
 end

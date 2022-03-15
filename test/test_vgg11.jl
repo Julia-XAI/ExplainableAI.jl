@@ -25,14 +25,15 @@ function LRPCustom(model::Chain)
     return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
 end
 
-function test_vgg11(name, method)
+function test_vgg11(name, method; kwargs...)
+    analyzer = method(model)
     @time @testset "$name" begin
         print("Timing $name...\t")
-        analyzer = method(model)
-        expl, _ = analyze(img, analyzer)
+        expl = analyze(img, analyzer; kwargs...)
+        attr = expl.attribution
 
-        @test size(expl) == size(img)
-        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => expl) by =
+        @test size(attr) == size(img)
+        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
     end
     return nothing
