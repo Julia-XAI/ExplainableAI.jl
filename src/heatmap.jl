@@ -36,8 +36,8 @@ function heatmap(
             """heatmap is only applicable to a single attribution, got a batch dimension of $(_size[end]).""",
         ),
     )
-    # drop batch dim -> reduce color channels -> normalize image -> apply color scheme
-    img = _normalize(_reduce(dropdims(expl; dims=4), reduce), normalize)
+
+    img = _normalize(dropdims(_reduce(dropdims(attr; dims=4), reduce); dims=3), normalize)
     permute && (img = permutedims(img))
     return ColorSchemes.get(cs, img)
 end
@@ -58,16 +58,20 @@ function _normalize(attr, method::Symbol)
     return (attr .- min) / (max - min)
 end
 
-# Reduces activation in a pixel with multiple color channels into a single activation
-function _reduce(attr, method::Symbol)
-    if method == :maxabs
-        return dropdims(maximum(abs, attr; dims=3); dims=3)
+# Reduce attributions across color channels into a single scalar – assumes WHCN convention
+function _reduce(attr::T, method::Symbol) where {T}
+    if size(attr, 3) == 1 # nothing need to reduce
+        return attr
+    elseif method == :maxabs
+        return maximum(abs, attr; dims=3)
+    elseif method == :norm
+        return mapslices(norm, attr; dims=3)::T
     elseif method == :sum
-        return dropdims(sum(attr; dims=3); dims=3)
+        return sum(attr; dims=3)
     end
     throw(
         ArgumentError(
-            "Color channel reducer :$method not supported, `reduce` should be :maxabs or :sum",
+            "Color channel reducer :$method not supported, `reduce` should be :maxabs, :sum or :norm",
         ),
     )
 end
