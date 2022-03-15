@@ -1,28 +1,46 @@
 # NOTE: Heatmapping assumes Flux's WHCN convention (width, height, color channels, batch size).
 
+const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
+    # Analyzer => (colorscheme, reduce, normalize)
+    :LRP => (ColorSchemes.bwr, :sum, :centered),
+    :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # same as LRP
+    :Gradient => (ColorSchemes.grays, :norm, :extrema),
+)
+
 """
-    heatmap(expl; kwargs...)
+    heatmap(expl::Explanation; kwargs...)
+    heatmap(attr::AbstractArray; kwargs...)
 
 Visualize explanation.
 Assumes the Flux's WHCN convention (width, height, color channels, batch size).
 
 ## Keyword arguments
--`cs::ColorScheme`: ColorScheme that is applied. Defaults to `ColorSchemes.bwr`.
+-`cs::ColorScheme`: ColorScheme that is applied.
+    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an array, the default is `ColorSchemes.bwr`.
 -`reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
-    Can be either `:sum` or `:maxabs`. `:sum` sums up all color channels for each pixel.
-    `:maxabs` selects the `maximum(abs, x)` over the color channel in each pixel.
-    Default is `:sum`.
+    The following methods can be selected, which are then applied over the color channels
+    for each "pixel" in the attribution:
+    - `:sum`: sum up color channels
+    - `:norm`: compute 2-norm over the color channels
+    - `:maxabs`: compute `maximum(abs, x)` over the color channels in
+    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an array, the default is `:sum`.
 -`normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
-    Can be either `:extrema` or `:centered`. Default for use with colorscheme `bwr` is `:centered`.
+    Can be either `:extrema` or `:centered`.
+    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
+-`permute::Bool`: Whether to flip W&H input channels. Default is `true`.
 """
+
 function heatmap(
-    expl::AbstractArray;
+    attr::AbstractArray;
     cs::ColorScheme=ColorSchemes.bwr,
     reduce::Symbol=:sum,
     normalize::Symbol=:centered,
     permute::Bool=true,
 )
-    _size = size(expl)
+    _size = size(attr)
     length(_size) != 4 && throw(
         DomainError(
             _size,
@@ -40,6 +58,17 @@ function heatmap(
     img = _normalize(dropdims(_reduce(dropdims(attr; dims=4), reduce); dims=3), normalize)
     permute && (img = permutedims(img))
     return ColorSchemes.get(cs, img)
+end
+# Use HEATMAPPING_PRESETS for default kwargs when dispatching on Explanation
+function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
+    _cs, _reduce, _normalize = HEATMAPPING_PRESETS[expl.analyzer]
+    return heatmap(
+        expl.attribution;
+        reduce=get(kwargs, :reduce, _reduce),
+        normalize=get(kwargs, :normalize, _normalize),
+        cs=get(kwargs, :cs, _cs),
+        permute=permute,
+    )
 end
 
 # Normalize activations across pixels
