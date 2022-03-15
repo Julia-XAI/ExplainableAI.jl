@@ -10,13 +10,15 @@ const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
 """
     heatmap(expl::Explanation; kwargs...)
     heatmap(attr::AbstractArray; kwargs...)
+    heatmap(input, analyzer::AbstractXAIMethod)
+    heatmap(input, analyzer::AbstractXAIMethod, neuron_selection::Int)
 
 Visualize explanation.
 Assumes the Flux's WHCN convention (width, height, color channels, batch size).
 
 ## Keyword arguments
 -`cs::ColorScheme`: ColorScheme that is applied.
-    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `ColorSchemes.bwr`.
 -`reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
     The following methods can be selected, which are then applied over the color channels
@@ -24,13 +26,15 @@ Assumes the Flux's WHCN convention (width, height, color channels, batch size).
     - `:sum`: sum up color channels
     - `:norm`: compute 2-norm over the color channels
     - `:maxabs`: compute `maximum(abs, x)` over the color channels in
-    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `:sum`.
 -`normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
     Can be either `:extrema` or `:centered`.
-    When calling `heatmap` with an `Explanation`, the method default is selected.
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
 -`permute::Bool`: Whether to flip W&H input channels. Default is `true`.
+
+**Note:** these keyword arguments can't be used when calling `heatmap` with an analyzer.
 """
 
 function heatmap(
@@ -70,6 +74,11 @@ function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
         permute=permute,
     )
 end
+# Analyze & heatmap in one go
+function heatmap(input, analyzer::AbstractXAIMethod, args...; kwargs...)
+    return heatmap(analyze(input, analyzer, args...; kwargs...))
+end
+
 
 # Normalize activations across pixels
 function _normalize(attr, method::Symbol)

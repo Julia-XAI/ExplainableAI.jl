@@ -27,20 +27,21 @@ end
 
 function test_vgg11(name, method; kwargs...)
     analyzer = method(model)
-    @time @testset "$name" begin
+    @testset "$name" begin
         print("Timing $name...\t")
-        expl = analyze(img, analyzer; kwargs...)
+        @time expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
 
         @test size(attr) == size(img)
         @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
-        h = heatmap(expl)
-        @test_reference "references/heatmaps/vgg11_$(name).txt" h
+        h1 = heatmap(expl)
+        h2 = heatmap(img, analyzer; kwargs...)
+        @test h1 ≈ h2
+        @test_reference "references/heatmaps/vgg11_$(name).txt" h1
     end
-    @time @testset "$name neuron selection" begin
-        print("Timing $name 2...\t")
+    @testset "$name neuron selection" begin
         neuron_selection = 1
         expl = analyze(img, analyzer, neuron_selection; kwargs...)
         attr = expl.attribution
