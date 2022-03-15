@@ -27,4 +27,5 @@ using ReferenceTests
         println("Running tests on VGG11...")
         include("test_vgg11.jl")
     end
+    @test_nowarn ExplainabilityMethods._precompile_() # temporary fix for codecov
 end
