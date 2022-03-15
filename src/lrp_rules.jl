@@ -22,30 +22,38 @@ abstract type AbstractLRPRule end
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
 # It can be extended for new rules via `modify_denominator` and `modify_params`.
 # Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
-(rule::AbstractLRPRule)(layer, aₖ, Rₖ₊₁) = lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+function lrp(rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
+    return lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+end
 
-function lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+function lrp_autodiff(
+    rule::R, layer::L, aₖ::T1, Rₖ₊₁::T2
+) where {R<:AbstractLRPRule,L,T1,T2}
     layerᵨ = _modify_layer(rule, layer)
-    function fwpass(a)
-        z = layerᵨ(a)
-        s = Zygote.dropgrad(Rₖ₊₁ ./ modify_denominator(rule, z))
-        return z ⋅ s
-    end
-    return aₖ .* only(gradient(fwpass, aₖ)) # Rₖ
+    c::T1 = only(
+        gradient(aₖ) do a
+            z::T2 = layerᵨ(a)
+            s = Zygote.@ignore Rₖ₊₁ ./ modify_denominator(rule, z)
+            z ⋅ s
+        end,
+    )
+    return aₖ .* c # Rₖ
 end
 
 # For linear layer types such as Dense layers, using autodiff is overkill.
-(rule::AbstractLRPRule)(layer::Dense, aₖ, Rₖ₊₁) = lrp_dense(rule, layer, aₖ, Rₖ₊₁)
+function lrp(rule::R, layer::Dense, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+    return lrp_dense(rule, layer, aₖ, Rₖ₊₁)
+end
 
-function lrp_dense(rule, l, aₖ, Rₖ₊₁)
+function lrp_dense(rule::R, l, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
     ρW, ρb = modify_params(rule, get_params(l)...)
     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
     return @tullio Rₖ[j] := aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
 end
 
 # Other special cases that are dispatched on layer type:
-(::AbstractLRPRule)(::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
-(::AbstractLRPRule)(::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+lrp(::AbstractLRPRule, ::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
+lrp(::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
 
 # To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
 # If this isn't done, the following fallbacks are used by default:
@@ -65,7 +73,7 @@ modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # gene
 
 # This helper function applies `modify_params`:
 _modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
-function _modify_layer(rule::AbstractLRPRule, layer::Union{Dense,Conv})
+function _modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule, L<:Union{Dense,Conv}}
     return set_params(layer, modify_params(rule, get_params(layer)...)...)
 end
 
@@ -117,26 +125,24 @@ Commonly used on the first layer for pixel input.
 struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-(rule::ZBoxRule)(layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
-(rule::ZBoxRule)(layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
+lrp(::ZBoxRule, layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
+lrp(::ZBoxRule, layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
 
-function lrp_zbox(layer, aₖ, Rₖ₊₁)
+function lrp_zbox(layer::L, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
     W, b = get_params(layer)
     l, h = fill.(extrema(aₖ), (size(aₖ),))
 
     layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
     layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
 
-    # Forward pass
-    function fwpass(a, l, h)
-        f = layer(a)
-        f⁺ = layer⁺(l)
-        f⁻ = layer⁻(h)
+    c::T1, cₗ::T1, cₕ::T1 = gradient(aₖ, l, h) do a, l, h
+        f::T2 = layer(a)
+        f⁺::T2 = layer⁺(l)
+        f⁻::T2 = layer⁻(h)
 
         z = f - f⁺ - f⁻
-        s = Zygote.dropgrad(safedivide(Rₖ₊₁, z; eps=1e-9))
-        return z ⋅ s
+        s = Zygote.@ignore safedivide(Rₖ₊₁, z; eps=1e-9)
+        z ⋅ s
     end
-    c, cₗ, cₕ = gradient(fwpass, aₖ, l, h) # w.r.t. three inputs
     return aₖ .* c + l .* cₗ + h .* cₕ # Rₖ from backward pass
 end

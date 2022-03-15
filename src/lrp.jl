@@ -63,7 +63,7 @@ function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances
 
     # Backward pass through layers, applying LRP rules
     for (i, rule) in Iterators.reverse(enumerate(analyzer.rules))
-        rels[i] .= rule(layers[i], acts[i], rels[i + 1]) # Rₖ = rule(layer, aₖ, Rₖ₊₁)
+        rels[i] .= lrp(rule, layers[i], acts[i], rels[i + 1])
     end
 
     if layerwise_relevances
