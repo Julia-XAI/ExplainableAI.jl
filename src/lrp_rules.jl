@@ -73,7 +73,7 @@ modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # gene
 
 # This helper function applies `modify_params`:
 _modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
-function _modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule, L<:Union{Dense,Conv}}
+function _modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule,L<:Union{Dense,Conv}}
     return set_params(layer, modify_params(rule, get_params(layer)...)...)
 end
 
