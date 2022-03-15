@@ -68,3 +68,7 @@ end
         test_vgg11(name, method)
     end
 end
+# Layerwise relevances in LRP methods
+@testset "Layerwise relevances" begin
+    test_vgg11("LRPZero", LRPZero; layerwise_relevances=true)
+end
