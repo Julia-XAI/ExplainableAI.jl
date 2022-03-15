@@ -25,20 +25,20 @@ input = apply(transform, item) |> itemdata
 input = permutedims(input, (2,1,3))[:,:,:,:] * 255; # flip X/Y axes, add batch dim. and rescale
 
 analyzer = LRPZero(model)
-expl, out = analyze(input, analyzer);
+expl = analyze(input, analyzer);
 
 heatmap(expl)
+
+heatmap(input, analyzer)
 
 model = flatten_model(model)
 
 rules = [
-    ZBoxRule(),
-    repeat([GammaRule()], 15)...,
-    repeat([ZeroRule()], length(model) - 16)...
+    ZBoxRule(), repeat([GammaRule()], 15)..., repeat([ZeroRule()], length(model) - 16)...
 ]
 
 analyzer = LRP(model, rules)
-expl, out = analyze(input, analyzer)
+expl = analyze(input, analyzer)
 heatmap(expl)
 
 struct MyCustomLRPRule <: AbstractLRPRule end
@@ -49,7 +49,7 @@ function modify_params(::MyCustomLRPRule, W, b)
 end
 
 analyzer = LRP(model, MyCustomLRPRule())
-expl, out = analyze(input, analyzer)
+expl = analyze(input, analyzer)
 heatmap(expl)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
