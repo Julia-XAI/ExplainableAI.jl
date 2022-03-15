@@ -25,15 +25,33 @@ function LRPCustom(model::Chain)
     return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
 end
 
-function test_vgg11(name, method)
-    @time @testset "$name" begin
+function test_vgg11(name, method; kwargs...)
+    analyzer = method(model)
+    @testset "$name" begin
         print("Timing $name...\t")
-        analyzer = method(model)
-        expl, _ = analyze(img, analyzer)
+        @time expl = analyze(img, analyzer; kwargs...)
+        attr = expl.attribution
 
-        @test size(expl) == size(img)
-        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => expl) by =
+        @test size(attr) == size(img)
+        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+
+        h1 = heatmap(expl)
+        h2 = heatmap(img, analyzer; kwargs...)
+        @test h1 ≈ h2
+        if name != "Gradient" # TODO: remove
+            @test_reference "references/heatmaps/vgg11_$(name).txt" h1
+        end
+    end
+    @testset "$name neuron selection" begin
+        neuron_selection = 1
+        expl = analyze(img, analyzer, neuron_selection; kwargs...)
+        attr = expl.attribution
+
+        @test size(attr) == size(img)
+        @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
+            "expl" => attr
+        ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
     end
     return nothing
 end
@@ -52,4 +70,8 @@ end
     for (name, method) in GRADIENT_ANALYZERS
         test_vgg11(name, method)
     end
+end
+# Layerwise relevances in LRP methods
+@testset "Layerwise relevances" begin
+    test_vgg11("LRPZero", LRPZero; layerwise_relevances=true)
 end

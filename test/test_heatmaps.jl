@@ -4,11 +4,11 @@ using ExplainabilityMethods
 shape = (2, 2, 3, 1)
 A = reshape(collect(Float32, 1:prod(shape)), shape)
 
-reducers = [:sum, :maxabs]
+reducers = [:sum, :maxabs, :norm]
 normalizers = [:extrema, :centered]
 for r in reducers
     for n in normalizers
-        h = @inferred heatmap(A; reduce=r, normalize=n)
+        h = heatmap(A; reduce=r, normalize=n)
         @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n).txt" h
     end
 end

@@ -1,28 +1,50 @@
 # NOTE: Heatmapping assumes Flux's WHCN convention (width, height, color channels, batch size).
 
+const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
+    # Analyzer => (colorscheme, reduce, normalize)
+    :LRP => (ColorSchemes.bwr, :sum, :centered),
+    :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # same as LRP
+    :Gradient => (ColorSchemes.grays, :norm, :extrema),
+)
+
 """
-    heatmap(expl; kwargs...)
+    heatmap(expl::Explanation; kwargs...)
+    heatmap(attr::AbstractArray; kwargs...)
+    heatmap(input, analyzer::AbstractXAIMethod)
+    heatmap(input, analyzer::AbstractXAIMethod, neuron_selection::Int)
 
 Visualize explanation.
 Assumes the Flux's WHCN convention (width, height, color channels, batch size).
 
 ## Keyword arguments
--`cs::ColorScheme`: ColorScheme that is applied. Defaults to `ColorSchemes.bwr`.
+-`cs::ColorScheme`: ColorScheme that is applied.
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
+    When calling `heatmap` with an array, the default is `ColorSchemes.bwr`.
 -`reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
-    Can be either `:sum` or `:maxabs`. `:sum` sums up all color channels for each pixel.
-    `:maxabs` selects the `maximum(abs, x)` over the color channel in each pixel.
-    Default is `:sum`.
+    The following methods can be selected, which are then applied over the color channels
+    for each "pixel" in the attribution:
+    - `:sum`: sum up color channels
+    - `:norm`: compute 2-norm over the color channels
+    - `:maxabs`: compute `maximum(abs, x)` over the color channels in
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
+    When calling `heatmap` with an array, the default is `:sum`.
 -`normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
-    Can be either `:extrema` or `:centered`. Default for use with colorscheme `bwr` is `:centered`.
+    Can be either `:extrema` or `:centered`.
+    When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
+    When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
+-`permute::Bool`: Whether to flip W&H input channels. Default is `true`.
+
+**Note:** these keyword arguments can't be used when calling `heatmap` with an analyzer.
 """
+
 function heatmap(
-    expl::AbstractArray;
+    attr::AbstractArray;
     cs::ColorScheme=ColorSchemes.bwr,
     reduce::Symbol=:sum,
     normalize::Symbol=:centered,
     permute::Bool=true,
 )
-    _size = size(expl)
+    _size = size(attr)
     length(_size) != 4 && throw(
         DomainError(
             _size,
@@ -36,11 +58,27 @@ function heatmap(
             """heatmap is only applicable to a single attribution, got a batch dimension of $(_size[end]).""",
         ),
     )
-    # drop batch dim -> reduce color channels -> normalize image -> apply color scheme
-    img = _normalize(_reduce(dropdims(expl; dims=4), reduce), normalize)
+
+    img = _normalize(dropdims(_reduce(dropdims(attr; dims=4), reduce); dims=3), normalize)
     permute && (img = permutedims(img))
     return ColorSchemes.get(cs, img)
 end
+# Use HEATMAPPING_PRESETS for default kwargs when dispatching on Explanation
+function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
+    _cs, _reduce, _normalize = HEATMAPPING_PRESETS[expl.analyzer]
+    return heatmap(
+        expl.attribution;
+        reduce=get(kwargs, :reduce, _reduce),
+        normalize=get(kwargs, :normalize, _normalize),
+        cs=get(kwargs, :cs, _cs),
+        permute=permute,
+    )
+end
+# Analyze & heatmap in one go
+function heatmap(input, analyzer::AbstractXAIMethod, args...; kwargs...)
+    return heatmap(analyze(input, analyzer, args...; kwargs...))
+end
+
 
 # Normalize activations across pixels
 function _normalize(attr, method::Symbol)
@@ -58,16 +96,20 @@ function _normalize(attr, method::Symbol)
     return (attr .- min) / (max - min)
 end
 
-# Reduces activation in a pixel with multiple color channels into a single activation
-function _reduce(attr, method::Symbol)
-    if method == :maxabs
-        return dropdims(maximum(abs, attr; dims=3); dims=3)
+# Reduce attributions across color channels into a single scalar – assumes WHCN convention
+function _reduce(attr::T, method::Symbol) where {T}
+    if size(attr, 3) == 1 # nothing need to reduce
+        return attr
+    elseif method == :maxabs
+        return maximum(abs, attr; dims=3)
+    elseif method == :norm
+        return mapslices(norm, attr; dims=3)::T
     elseif method == :sum
-        return dropdims(sum(attr; dims=3); dims=3)
+        return sum(attr; dims=3)
     end
     throw(
         ArgumentError(
-            "Color channel reducer :$method not supported, `reduce` should be :maxabs or :sum",
+            "Color channel reducer :$method not supported, `reduce` should be :maxabs, :sum or :norm",
         ),
     )
 end

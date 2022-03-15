@@ -13,7 +13,7 @@ Otherwise, the output neuron with the highest activation is automatically chosen
 function analyze(
     input::AbstractArray{<:Real},
     method::AbstractXAIMethod,
-    neuron_selection::Integer,
+    neuron_selection::Integer;
     kwargs...,
 )
     return method(input, IndexNS(neuron_selection); kwargs...)
@@ -21,4 +21,14 @@ end
 
 function analyze(input::AbstractArray{<:Real}, method::AbstractXAIMethod; kwargs...)
     return method(input, MaxActivationNS(); kwargs...)
+end
+
+# Explanations and outputs are returned in a wrapper.
+# Metadata such as the analyzer allows dispatching on functions like `heatmap`.
+struct Explanation{A,O,L}
+    attribution::A
+    output::O
+    neuron_selection::Int
+    analyzer::Symbol
+    layerwise_relevances::L
 end
