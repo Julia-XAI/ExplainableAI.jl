@@ -41,15 +41,22 @@ input = permutedims(input, (2,1,3))[:,:,:,:] * 255; # flip X/Y axes, add batch d
 # We can now select an analyzer of our choice
 # and call [`analyze`](@ref) to get an explanation `expl`:
 analyzer = LRPZero(model)
-expl, out = analyze(input, analyzer);
+expl = analyze(input, analyzer);
 
 # Finally, we can visualize the explanation through heatmapping:
 heatmap(expl)
 
+# Or do both in one combined step:
+heatmap(input, analyzer)
+
 #md # !!! tip "Neuron selection"
 #md #     To get an explanation with respect to a specific output neuron (e.g. class 42) call
 #md #     ```julia
-#md #     expl, out = analyze(img, analyzer, 42)
+#md #     expl = analyze(img, analyzer, 42)
+#md #     ```
+#md #     or using `heatmap`
+#md #     ```julia
+#md #     heatmap(img, analyzer, 42)
 #md #     ```
 #
 # Currently, the following analyzers are implemented:
@@ -75,13 +82,11 @@ model = flatten_model(model)
 #
 # Now we set a rule for each layer
 rules = [
-    ZBoxRule(),
-    repeat([GammaRule()], 15)...,
-    repeat([ZeroRule()], length(model) - 16)...
+    ZBoxRule(), repeat([GammaRule()], 15)..., repeat([ZeroRule()], length(model) - 16)...
 ]
 # and define a custom LRP analyzer:
 analyzer = LRP(model, rules)
-expl, out = analyze(input, analyzer)
+expl = analyze(input, analyzer)
 heatmap(expl)
 
 # ## Custom rules
@@ -98,7 +103,7 @@ end
 
 # We can directly use this rule to make an analyzer!
 analyzer = LRP(model, MyCustomLRPRule())
-expl, out = analyze(input, analyzer)
+expl = analyze(input, analyzer)
 heatmap(expl)
 
 #md # !!! tip "Pull requests welcome"
