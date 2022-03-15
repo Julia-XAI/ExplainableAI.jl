@@ -35,6 +35,9 @@ function test_vgg11(name, method; kwargs...)
         @test size(attr) == size(img)
         @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+
+        h = heatmap(expl)
+        @test_reference "references/heatmaps/vgg11_$(name).txt" h
     end
     return nothing
 end
