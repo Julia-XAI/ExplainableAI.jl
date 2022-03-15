@@ -39,6 +39,17 @@ function test_vgg11(name, method; kwargs...)
         h = heatmap(expl)
         @test_reference "references/heatmaps/vgg11_$(name).txt" h
     end
+    @time @testset "$name neuron selection" begin
+        print("Timing $name 2...\t")
+        neuron_selection = 1
+        expl = analyze(img, analyzer, neuron_selection; kwargs...)
+        attr = expl.attribution
+
+        @test size(attr) == size(img)
+        @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
+            "expl" => attr
+        ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+    end
     return nothing
 end
 
