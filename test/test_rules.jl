@@ -1,6 +1,6 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: modify_params
-import ExplainabilityMethods: _modify_layer, lrp
+import ExplainabilityMethods: _modify_layer, lrp!
 using Flux
 using LinearAlgebra
 using ReferenceTests
@@ -25,7 +25,9 @@ const RULES = Dict(
     Rₖ = [17 / 90, 316 / 675] # expected output
 
     layer = Dense(W, b, relu)
-    @test lrp(rule, layer, aₖ, Rₖ₊₁) ≈ Rₖ
+    R̂ₖ = similar(aₖ) # will be inplace updated
+    @inferred lrp!(rule, layer, R̂ₖ, aₖ, Rₖ₊₁)
+    @test R̂ₖ ≈ Rₖ
 
     ## Pooling layer
     Rₖ₊₁ = Float32.([1 2; 3 4]//30)
@@ -38,7 +40,9 @@ const RULES = Dict(
     Rₖ = reshape(repeat(Rₖ, 1, 3), 3, 3, 3, 1)
 
     layer = MaxPool((2, 2); stride=(1, 1))
-    @test lrp(rule, layer, aₖ, Rₖ₊₁) ≈ Rₖ
+    R̂ₖ = similar(aₖ) # will be inplace updated
+    @inferred lrp!(rule, layer, R̂ₖ, aₖ, Rₖ₊₁)
+    @test R̂ₖ ≈ Rₖ
 end
 
 # Fixed pseudo-random numbers
@@ -69,7 +73,8 @@ layers = Dict(
             for (layername, layer) in layers
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
-                    Rₖ = @inferred lrp(rule, layer, aₖ, Rₖ₊₁)
+                    Rₖ = similar(aₖ)
+                    @inferred lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
@@ -110,14 +115,17 @@ equalpairs = Dict( # these pairs of layers are all equal
                     l1, l2 = layers
                     Rₖ₊₁ = l1(aₖ)
                     @test Rₖ₊₁ == l2(aₖ)
-                    Rₖ = @inferred lrp(rule, l1, aₖ, Rₖ₊₁)
-                    @test Rₖ == lrp(rule, l2, aₖ, Rₖ₊₁)
+                    Rₖ1 = similar(aₖ)
+                    Rₖ2 = similar(aₖ)
+                    @inferred lrp!(rule, l1, Rₖ1, aₖ, Rₖ₊₁)
+                    @inferred lrp!(rule, l2, Rₖ2, aₖ, Rₖ₊₁)
+                    @test Rₖ1 == Rₖ2
 
-                    @test typeof(Rₖ) == typeof(aₖ)
-                    @test size(Rₖ) == size(aₖ)
+                    @test typeof(Rₖ1) == typeof(aₖ)
+                    @test size(Rₖ1) == size(aₖ)
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ
+                        "R" => Rₖ1
                     ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
                 end
             end
@@ -143,7 +151,8 @@ layers = Dict(
             for (layername, layer) in layers
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
-                    Rₖ = @inferred lrp(rule, layer, aₖ, Rₖ₊₁)
+                    Rₖ = similar(aₖ)
+                    @inferred lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
@@ -164,7 +173,7 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 _modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
-lrp(rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp(rule, w.layer, aₖ, Rₖ₊₁)
+lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
@@ -179,7 +188,8 @@ layers = Dict(
                 @testset "$layername" begin
                     wrapped_layer = TestWrapper(layer)
                     Rₖ₊₁ = wrapped_layer(aₖ)
-                    Rₖ = @inferred lrp(rule, wrapped_layer, aₖ, Rₖ₊₁)
+                    Rₖ = similar(aₖ)
+                    @inferred lrp!(rule, wrapped_layer, Rₖ, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)

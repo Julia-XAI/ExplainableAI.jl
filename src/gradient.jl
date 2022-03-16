@@ -1,3 +1,7 @@
+function gradient_wrt_input(model, input::T, output_neuron)::T where {T}
+    return only(gradient((in) -> model(in)[output_neuron], input))
+end
+
 """
     Gradient(model)
 
@@ -10,8 +14,8 @@ end
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
     output = analyzer.model(input)
     output_neuron = ns(output)
-    attr = gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
-    return Explanation(attr, output, output_neuron, :Gradient, Nothing)
+    grad = gradient_wrt_input(analyzer.model, input, output_neuron)
+    return Explanation(grad, output, output_neuron, :Gradient, Nothing)
 end
 
 """
@@ -29,6 +33,6 @@ end
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     output = analyzer.model(input)
     output_neuron = ns(output)
-    attr = input .* gradient((in) -> analyzer.model(in)[output_neuron], input)[1]
+    attr = input .* gradient_wrt_input(analyzer.model, input, output_neuron)
     return Explanation(attr, output, output_neuron, :InputTimesGradient, Nothing)
 end

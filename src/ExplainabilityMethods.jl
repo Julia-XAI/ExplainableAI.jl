@@ -1,13 +1,16 @@
 module ExplainabilityMethods
 
+using Base.Iterators
 using LinearAlgebra
 using Flux
 using Zygote
-using ColorSchemes
-using ImageCore
-using Base.Iterators
 using Tullio
 
+# Heatmapping:
+using ImageCore
+using ColorSchemes
+
+# Model checks:
 using Markdown
 using PrettyTables
 
@@ -20,8 +23,6 @@ include("lrp_checks.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("heatmap.jl")
-include("precompile.jl")
-_precompile_()
 
 export analyze
 
@@ -34,7 +35,7 @@ export LRP, LRPZero, LRPEpsilon, LRPGamma
 export AbstractLRPRule
 export LRP_CONFIG
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
-export lrp, modify_params, modify_denominator
+export modify_params, modify_denominator
 export check_model
 
 # heatmapping

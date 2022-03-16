@@ -4,13 +4,13 @@
 # can be implemented by dispatching on the functions `modify_params` & `modify_denominator`,
 # which make use of the generalized LRP implementation shown in [1].
 #
-# If the relevance propagation falls outside of this scheme, custom functions
+# If the relevance propagation falls outside of this scheme, custom low-level functions
 # ```julia
-# (::MyLRPRule)(layer, aₖ, Rₖ₊₁) = ...
-# (::MyLRPRule)(layer::MyLayer, aₖ, Rₖ₊₁) = ...
-# (::AbstractLRPRule)(layer::MyLayer, aₖ, Rₖ₊₁) = ...
+# lrp!(::MyLRPRule, layer, Rₖ, aₖ, Rₖ₊₁) = ...
+# lrp!(::MyLRPRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁) = ...
+# lrp!(::AbstractLRPRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁) = ...
 # ```
-# that return `Rₖ` can be implemented.
+# that inplace-update `Rₖ` can be implemented.
 # This is used for the ZBoxRule and for faster computations on common layers.
 #
 # References:
@@ -22,12 +22,13 @@ abstract type AbstractLRPRule end
 # This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
 # It can be extended for new rules via `modify_denominator` and `modify_params`.
 # Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
-function lrp(rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
-    return lrp_autodiff(rule, layer, aₖ, Rₖ₊₁)
+function lrp!(rule::R, layer::L, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
+    lrp_autodiff!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+    return nothing
 end
 
-function lrp_autodiff(
-    rule::R, layer::L, aₖ::T1, Rₖ₊₁::T2
+function lrp_autodiff!(
+     rule::R, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2
 ) where {R<:AbstractLRPRule,L,T1,T2}
     layerᵨ = _modify_layer(rule, layer)
     c::T1 = only(
@@ -37,23 +38,26 @@ function lrp_autodiff(
             z ⋅ s
         end,
     )
-    return aₖ .* c # Rₖ
+    Rₖ .= aₖ .* c
+    return nothing
 end
 
 # For linear layer types such as Dense layers, using autodiff is overkill.
-function lrp(rule::R, layer::Dense, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
-    return lrp_dense(rule, layer, aₖ, Rₖ₊₁)
+function lrp!(rule::R, layer::Dense, Rₖ,  aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+    lrp_dense!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+    return nothing
 end
 
-function lrp_dense(rule::R, l, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+function lrp_dense!(rule::R, l, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
     ρW, ρb = modify_params(rule, get_params(l)...)
     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
-    return @tullio Rₖ[j] := aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
+    @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
+    return nothing
 end
 
 # Other special cases that are dispatched on layer type:
-lrp(::AbstractLRPRule, ::DropoutLayer, aₖ, Rₖ₊₁) = Rₖ₊₁
-lrp(::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁) = reshape(Rₖ₊₁, size(aₖ))
+lrp!(::AbstractLRPRule, ::DropoutLayer, Rₖ, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
+lrp!(::AbstractLRPRule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
 
 # To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
 # If this isn't done, the following fallbacks are used by default:
@@ -125,10 +129,10 @@ Commonly used on the first layer for pixel input.
 struct ZBoxRule <: AbstractLRPRule end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-lrp(::ZBoxRule, layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
-lrp(::ZBoxRule, layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox(layer, aₖ, Rₖ₊₁)
+lrp!(::ZBoxRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(::ZBoxRule, layer::Conv, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(layer, Rₖ, aₖ, Rₖ₊₁)
 
-function lrp_zbox(layer::L, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
+function lrp_zbox!(layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
     W, b = get_params(layer)
     l, h = fill.(extrema(aₖ), (size(aₖ),))
 
@@ -144,5 +148,6 @@ function lrp_zbox(layer::L, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
         s = Zygote.@ignore safedivide(Rₖ₊₁, z; eps=1e-9)
         z ⋅ s
     end
-    return aₖ .* c + l .* cₗ + h .* cₕ # Rₖ from backward pass
+    Rₖ .= aₖ .* c + l .* cₗ + h .* cₕ
+    return nothing
 end
