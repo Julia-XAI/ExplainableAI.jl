@@ -47,18 +47,19 @@ LRPEpsilon(model::Chain; kwargs...) = LRP(model, EpsilonRule(); kwargs...)
 LRPGamma(model::Chain; kwargs...) = LRP(model, GammaRule(); kwargs...)
 
 # The call to the LRP analyzer.
-function (analyzer::LRP)(input, ns::AbstractNeuronSelector; layerwise_relevances=false)
+function (analyzer::LRP)(input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false) where {T}
     layers = analyzer.model.layers
-    acts = Vector{Any}([input])
-    # Forward pass through layers, keeping track of activations
-    for layer in layers
-        append!(acts, [layer(acts[end])])
-    end
-    rels = deepcopy(acts) # allocate arrays
+    # Compute layerwise activations on forward pass through model:
+    acts = [input, Flux.activations(analyzer.model, input)...]
+    # print(size.(acts))
+
+    # Allocate array for layerwise relevances:
+    rels = similar.(acts)
+    # print(size.(rels))
 
     # Mask output neuron
     output_neuron = ns(acts[end])
-    rels[end] *= 0
+    rels[end] .= zero(T)
     rels[end][output_neuron] = acts[end][output_neuron]
 
     # Backward pass through layers, applying LRP rules
