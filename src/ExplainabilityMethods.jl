@@ -23,8 +23,6 @@ include("lrp_checks.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("heatmap.jl")
-include("precompile.jl")
-_precompile_()
 
 export analyze
 
