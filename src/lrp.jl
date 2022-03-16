@@ -51,11 +51,9 @@ function (analyzer::LRP)(input::AbstractArray{T}, ns::AbstractNeuronSelector; la
     layers = analyzer.model.layers
     # Compute layerwise activations on forward pass through model:
     acts = [input, Flux.activations(analyzer.model, input)...]
-    # print(size.(acts))
 
     # Allocate array for layerwise relevances:
     rels = similar.(acts)
-    # print(size.(rels))
 
     # Mask output neuron
     output_neuron = ns(acts[end])
