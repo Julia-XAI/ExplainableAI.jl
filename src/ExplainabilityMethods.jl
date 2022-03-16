@@ -1,13 +1,16 @@
 module ExplainabilityMethods
 
+using Base.Iterators
 using LinearAlgebra
 using Flux
 using Zygote
-using ColorSchemes
-using ImageCore
-using Base.Iterators
 using Tullio
 
+# Heatmapping:
+using ImageCore
+using ColorSchemes
+
+# Model checks:
 using Markdown
 using PrettyTables
 
