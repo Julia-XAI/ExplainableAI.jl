@@ -1,7 +1,7 @@
 using BenchmarkTools
 using Flux
 using ExplainabilityMethods
-import ExplainabilityMethods: _modify_layer, lrp
+import ExplainabilityMethods: _modify_layer, lrp!
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
@@ -44,7 +44,7 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 _modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
-lrp(rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp(rule, w.layer, aₖ, Rₖ₊₁)
+lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
 
 # generate input for conv layers
 insize = (64, 64, 3, 1)
@@ -69,11 +69,11 @@ rules = Dict(
 SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
 for (layername, (layer, aₖ)) in layers
     SUITE["Layer"][layername] = BenchmarkGroup([k for k in keys(rules)])
-
+    Rₖ = similar(aₖ)
     Rₖ₊₁ = layer(aₖ)
     for (rulename, rule) in rules
-        SUITE["Layer"][layername][rulename] = @benchmarkable lrp(
-            $(rule), $(layer), $(aₖ), $(Rₖ₊₁)
+        SUITE["Layer"][layername][rulename] = @benchmarkable lrp!(
+            $(rule), $(layer), $(Rₖ), $(aₖ), $(Rₖ₊₁)
         )
     end
 end
