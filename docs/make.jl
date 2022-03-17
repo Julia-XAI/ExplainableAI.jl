@@ -17,13 +17,8 @@ end
 makedocs(;
     modules=[ExplainabilityMethods],
     authors="Adrian Hill",
-    repo="https://github.com/adrhill/ExplainabilityMethods.jl/blob/{commit}{path}#L{line}",
     sitename="ExplainabilityMethods.jl",
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://adrhill.github.io/ExplainabilityMethods.jl",
-        assets=String[],
-    ),
+    format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),
     pages=[
         "Home" => "index.md",
         "Getting started" => "generated/example.md",
