@@ -17,10 +17,10 @@ Visualize explanation.
 Assumes the Flux's WHCN convention (width, height, color channels, batch size).
 
 ## Keyword arguments
--`cs::ColorScheme`: ColorScheme that is applied.
+- `cs::ColorScheme`: ColorScheme that is applied.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `ColorSchemes.bwr`.
--`reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
+- `reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
     The following methods can be selected, which are then applied over the color channels
     for each "pixel" in the attribution:
     - `:sum`: sum up color channels
@@ -28,15 +28,14 @@ Assumes the Flux's WHCN convention (width, height, color channels, batch size).
     - `:maxabs`: compute `maximum(abs, x)` over the color channels in
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `:sum`.
--`normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
+- `normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
     Can be either `:extrema` or `:centered`.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
--`permute::Bool`: Whether to flip W&H input channels. Default is `true`.
+- `permute::Bool`: Whether to flip W&H input channels. Default is `true`.
 
 **Note:** these keyword arguments can't be used when calling `heatmap` with an analyzer.
 """
-
 function heatmap(
     attr::AbstractArray;
     cs::ColorScheme=ColorSchemes.bwr,
