@@ -22,6 +22,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Getting started" => "generated/example.md",
+        "Advanced LRP" => "generated/advanced_lrp.md",
         "API Reference" => "api.md",
     ],
 )
