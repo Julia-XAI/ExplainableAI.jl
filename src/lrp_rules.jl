@@ -28,9 +28,9 @@ function lrp!(rule::R, layer::L, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRu
 end
 
 function lrp_autodiff!(
-     rule::R, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2
+    rule::R, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2
 ) where {R<:AbstractLRPRule,L,T1,T2}
-    layerᵨ = _modify_layer(rule, layer)
+    layerᵨ = modify_layer(rule, layer)
     c::T1 = only(
         gradient(aₖ) do a
             z::T2 = layerᵨ(a)
@@ -43,7 +43,7 @@ function lrp_autodiff!(
 end
 
 # For linear layer types such as Dense layers, using autodiff is overkill.
-function lrp!(rule::R, layer::Dense, Rₖ,  aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+function lrp!(rule::R, layer::Dense, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
     lrp_dense!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
     return nothing
 end
@@ -65,6 +65,7 @@ lrp!(::AbstractLRPRule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁) = (Rₖ .= res
     modify_params(rule, W, b)
 
 Function that modifies weights and biases before applying relevance propagation.
+Returns modified weights and biases as a tuple `(ρW, ρb)`.
 """
 modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
 
@@ -75,9 +76,14 @@ Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
 modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # general fallback
 
-# This helper function applies `modify_params`:
-_modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
-function _modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule,L<:Union{Dense,Conv}}
+"""
+    modify_layer(rule, layer)
+
+Function that modifies a layer before applying relevance propagation.
+Returns a new, modified layer.
+"""
+modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
+function modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule,L<:Union{Dense,Conv}}
     return set_params(layer, modify_params(rule, get_params(layer)...)...)
 end
 

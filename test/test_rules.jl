@@ -1,6 +1,6 @@
 using ExplainabilityMethods
 using ExplainabilityMethods: modify_params
-import ExplainabilityMethods: _modify_layer, lrp!
+import ExplainabilityMethods: modify_layer, lrp!
 using Flux
 using LinearAlgebra
 using ReferenceTests
@@ -172,7 +172,7 @@ struct TestWrapper{T}
     layer::T
 end
 (w::TestWrapper)(x) = w.layer(x)
-_modify_layer(r::AbstractLRPRule, w::TestWrapper) = _modify_layer(r, w.layer)
+modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
 lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
 
 layers = Dict(
