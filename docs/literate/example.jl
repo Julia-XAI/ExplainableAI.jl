@@ -2,6 +2,7 @@
 # ExplainabilityMethods.jl can be used on any classifier.
 # In this first example, we will look at attributions on a LeNet5 model that was pretrained on MNIST.
 #
+# ### Loading the model
 #md # !!! note
 #md #
 #md #     Outside of these docs, you should be able to load the model using
@@ -24,6 +25,7 @@ model = BSON.load("../model.bson", @__MODULE__)[:model]
 #md #     ```
 #md #     before analyzing.
 
+# ### Loading MNIST
 # We use MLDatasets to load a single image from the MNIST dataset:
 using MLDatasets
 using ImageCore
@@ -45,20 +47,20 @@ input = reshape(x, 28, 28, 1, :);
 
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
-# and call [`analyze`](@ref) to get an attributions `expl`:
+# and call [`analyze`](@ref) to get an `Explanation`:
 analyzer = LRPZero(model)
 expl = analyze(input, analyzer);
 
-# This returns an `Explanation`, which contains
+# This `Explanation` bundles the following data:
 # * `expl.attribution`: the analyzer's attribution
 # * `expl.output`: the model output
 # * `expl.neuron_selection`: the neuron index of used for the attribution
-# * `expl.analyzer`: a symbol corresponding to the used analyzer
+# * `expl.analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
 
-# Finally, we can visualize the attribution through heatmapping:
+# Finally, we can visualize the `Explanation` through heatmapping:
 heatmap(expl)
 
-# Or get the same result by doing both analysis and heatmapping in one combined step:
+# Or get the same result by combining both analysis and heatmapping into one step:
 heatmap(input, analyzer)
 
 # ## Neuron selection
@@ -67,8 +69,8 @@ heatmap(input, analyzer)
 # Let's see why the output wasn't interpreted as a 4 (output neuron at index 5)
 heatmap(input, analyzer, 5)
 
-# We can now see that the "upper loop" of the hand-drawn 9 has negative relevance
-# and differentiates it from a 4!
+# This heatmap shows us that the "upper loop" of the hand-drawn 9 has negative relevance
+# with respect to the output neuron corresponding to digit 4!
 
 #md # !!! note
 #md #
@@ -97,7 +99,7 @@ heatmap(input, analyzer)
 analyzer = Gradient(model)
 heatmap(input, analyzer)
 
-# As you can see, the function `heatmap` automatically appplies common presets for each method.
+# As you can see, the function `heatmap` automatically applies common presets for each method.
 #
 # Since `InputTimesGradient` and LRP both compute attributions, their presets are similar.
 # Gradient methods however are typically shown in grayscale.
@@ -105,8 +107,8 @@ heatmap(input, analyzer)
 # ## Custom heatmap settings
 # We can partially or fully override presets by passing keyword arguments to `heatmap`:
 using ColorSchemes
-heatmap(expl, cs=ColorSchemes.jet)
+heatmap(expl; cs=ColorSchemes.jet)
 #
-heatmap(expl, normalize=:extrema, cs=ColorSchemes.inferno)
+heatmap(expl; reduce=:sum, normalize=:extrema, cs=ColorSchemes.inferno)
 
 # For the full list of keyword arguments, refer to the [`heatmap`](@ref) documentation.
