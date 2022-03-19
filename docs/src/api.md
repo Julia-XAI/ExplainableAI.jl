@@ -25,8 +25,11 @@ ZBoxRule
 ## Custom rules 
 These utilities can be used to define custom rules without writing boilerplate code:
 ```@docs
-modify_params
 modify_denominator
+modify_params
+modify_layer
+LRP_CONFIG.supports_layer
+LRP_CONFIG.supports_activation
 ```
 
 # Utilities

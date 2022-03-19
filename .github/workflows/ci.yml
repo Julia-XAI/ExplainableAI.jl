@@ -63,5 +63,6 @@ jobs:
             doctest(ExplainabilityMethods)'
       - run: julia --project=docs docs/make.jl
         env:
+          DATADEPS_ALWAYS_ACCEPT: true # for MLDatasets download
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
