@@ -1,28 +1,18 @@
 using ExplainabilityMethods
 using Flux
-using Metalhead
-using Metalhead: weights
+using BSON
 
-vgg = VGG19()
-Flux.loadparams!(vgg, Metalhead.weights("vgg19"))
+model = BSON.load("../model.bson", @__MODULE__)[:model]
 
-model = strip_softmax(vgg.layers);
+using MLDatasets
+using ImageCore
 
-using Images
-using TestImages
+index = 10
+x, y = MNIST.testdata(Float32, index)
 
-img = testimage("chelsea")
+MNIST.convert2image(x)
 
-using DataAugmentation
-
-# Coefficients taken from PyTorch's ImageNet normalization code
-μ = [0.485, 0.456, 0.406]
-σ = [0.229, 0.224, 0.225]
-transform = CenterResizeCrop((224, 224)) |> ImageToTensor() |> Normalize(μ, σ)
-
-item = Image(img)
-input = apply(transform, item) |> itemdata
-input = permutedims(input, (2,1,3))[:,:,:,:] * 255; # flip X/Y axes, add batch dim. and rescale
+input = reshape(x, 28, 28, 1, :);
 
 analyzer = LRPZero(model)
 expl = analyze(input, analyzer);
@@ -31,26 +21,18 @@ heatmap(expl)
 
 heatmap(input, analyzer)
 
-model = flatten_model(model)
+heatmap(input, analyzer, 5)
 
-rules = [
-    ZBoxRule(), repeat([GammaRule()], 15)..., repeat([ZeroRule()], length(model) - 16)...
-]
+analyzer = InputTimesGradient(model)
+heatmap(input, analyzer)
 
-analyzer = LRP(model, rules)
-expl = analyze(input, analyzer)
-heatmap(expl)
+analyzer = Gradient(model)
+heatmap(input, analyzer)
 
-struct MyCustomLRPRule <: AbstractLRPRule end
+using ColorSchemes
+heatmap(expl; cs=ColorSchemes.jet)
 
-function modify_params(::MyCustomLRPRule, W, b)
-    ρW = W + 0.1 * relu.(W)
-    return ρW, b
-end
-
-analyzer = LRP(model, MyCustomLRPRule())
-expl = analyze(input, analyzer)
-heatmap(expl)
+heatmap(expl; reduce=:sum, normalize=:extrema, cs=ColorSchemes.inferno)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
