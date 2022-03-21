@@ -1,11 +1,10 @@
 # # Advanced LRP usage
-# One of the design goals of ExplainabilityMethods.jl is to combine ease of use with
-# **extensibility** for the purpose of research.
+# One of the design goals of ExplainabilityMethods.jl is to combine ease of use and
+# extensibility for the purpose of research.
 #
 #
 # This example will show you how to implement custom LRP rules and register custom layers
 # and activation functions.
-#
 # For this purpose, we will quickly load our model from the previous section:
 using ExplainabilityMethods
 using Flux
@@ -25,8 +24,8 @@ input = reshape(x, 28, 28, 1, :);
 struct MyGammaRule <: AbstractLRPRule end
 
 # It is then possible to dispatch on the utility functions  [`modify_params`](@ref) and [`modify_denominator`](@ref)
-# with our rule type `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
-# to extend internal functions, import them explicitly:
+# with the rule type `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
+# To extend internal functions, import them explicitly:
 import ExplainabilityMethods: modify_params
 
 function modify_params(::MyGammaRule, W, b)
@@ -48,7 +47,7 @@ heatmap(input, analyzer)
 # lower-level variant of [`modify_params`](@ref) called [`modify_layer`](@ref).
 # This function is expected to take a layer and return a new, modified layer.
 
-#md # !!! warning "Using `modify_layer`"
+#md # !!! warning "Using modify_layer"
 #md #
 #md #     Use of the function `modify_layer` will overwrite functionality of `modify_params`
 #md #     for the implemented combination of rule and layer types.
@@ -96,12 +95,12 @@ model = Chain(model..., MyDoublingLayer())
 #   [...]
 # ```
 
-# LRP should only be used on "Deep ReLU" networks and ExplainabilityMethods doesn't
+# LRP should only be used on deep rectifier networks and ExplainabilityMethods doesn't
 # recognize `MyDoublingLayer` as a compatible layer.
 # By default, it will therefore return an error and a model check summary
 # instead of returning an incorrect explanation.
 #
-# However, if we know `MyDoublingLayer` is compatible with "Deep ReLU" networks,
+# However, if we know `MyDoublingLayer` is compatible with deep rectifier networks,
 # we can register it to tell ExplainabilityMethods that it is ok to use.
 # This will be shown in the following section.
 
@@ -114,7 +113,8 @@ model = Chain(model..., MyDoublingLayer())
 # The error in the model check will stop after registering our custom layer type
 # `MyDoublingLayer` as "supported" by ExplainabilityMethods.
 #
-# This is done using the function [`LRP_CONFIG.supports_layer`](@ref), which should be set to return `true`:
+# This is done using the function [`LRP_CONFIG.supports_layer`](@ref),
+# which should be set to return `true` for the type `MyDoublingLayer`:
 LRP_CONFIG.supports_layer(::MyDoublingLayer) = true
 
 # Now we can create and run an analyzer without getting an error:
@@ -166,12 +166,55 @@ analyzer = LRPZero(model)
 # ## How it works internally
 # Internally, ExplainabilityMethods dispatches to low level functions
 # ```julia
-# lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+#     Rₖ .= ...
+# end
 # ```
-# These functions dispatch on rule and layer type and inplace-modify pre-allocated arrays `Rₖ`
-# based on the inputs `aₖ` and `Rₖ₊₁`.
+# These functions use the arguments `rule` and `layer` to dispatch
+# `modify_params` and `modify_denominator` on the rule and layer type.
+# They in-place modify a pre-allocated array of the input relevance `Rₖ`
+# based on the input activation `aₖ` and output relevance `Rₖ₊₁`.
 #
-# The default LRP fallback for unknown layers uses automatic differentiation (AD) via Zygote:
+# Calling `analyze` then applies a foward-pass of the model, keeping track of
+# the activations `aₖ` for each layer `k`.
+# The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
+# in a backward-pass over the model layers and previous activations.
+
+# ### Generic rule implementation using automatic differentiation
+# The generic LRP rule–of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases–reads[^1][^2]:
+# ```math
+# R_{j}=\sum_{k} \frac{a_{j} \cdot \rho\left(w_{j k}\right)}{\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right)} R_{k}
+# ```
+#
+# where ``\rho`` is a function that modifies parameters – what we have so far called `modify_params`.
+#
+# The computation of this propagation rule can be decomposed into four steps:
+# ```math
+# \begin{array}{lr}
+# \forall_{k}: z_{k}=\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right) & \text { (forward pass) } \\
+# \forall_{k}: s_{k}=R_{k} / z_{k} & \text { (element-wise division) } \\
+# \forall_{j}: c_{j}=\sum_{k} \rho\left(w_{j k}\right) \cdot s_{k} & \text { (backward pass) } \\
+# \forall_{j}: R_{j}=a_{j} c_{j} & \text { (element-wise product) }
+# \end{array}
+# ```
+#
+# For deep rectifier networks, the third step can also be written as the gradient computation
+# ```math
+# c_{j}=\left[\nabla\left(\sum_{k} z_{k}(\boldsymbol{a}) \cdot s_{k}\right)\right]_{j}
+# ```
+#
+# and can be implemented via automatic differentiation (AD).
+#
+# This equation is implemented in ExplainabilityMethods as the default method
+# for all layer types that don't have a specialized implementation.
+# We will refer to it as the "AD fallback".
+#
+# [^1]: G. Montavon et al., [Layer-Wise Relevance Propagation: An Overview](https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10)
+# [^2]: W. Samek et al., [Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications](https://ieeexplore.ieee.org/document/9369420)
+
+# ### AD fallback
+# The default LRP fallback for unknown layers uses AD via [Zygote](https://github.com/FluxML/Zygote.jl).
+# For `lrp!`, we end up with something that looks very similar to the previous four step computation:
 # ```julia
 # function lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
 #     layerᵨ = modify_layer(rule, layer)
@@ -179,36 +222,41 @@ analyzer = LRPZero(model)
 #             z = layerᵨ(a)
 #             s = Zygote.@ignore Rₖ₊₁ ./ modify_denominator(rule, z)
 #             z ⋅ s
-# 		end |> only
+# 	      end |> only
 #     Rₖ .= aₖ .* c
 # end
 # ```
 #
-# Here you can clearly see how this AD-fallback dispatches on `modify_layer` and `modify_denominator`
-# based on the rule and layer type. This is how we implemented our own `MyGammaRule`!
+# You can see how `modify_layer` and `modify_denominator` dispatch on the rule and layer type.
+# This is how we implemented our own `MyGammaRule`.
 # Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
+
+# ### Specialized implementations
+# We can also implement specialized versions of `lrp!` based on the type of `layer`,
+# e.g. reshaping layers.
 #
-# We can also implement versions of `lrp!` that are specialized for specific layer type.
-# For example, reshaping layers don't affect attributions, therefore no AD is required.
-# ExplainabilityMethods implements:
+# Reshaping layers don't affect attributions. We can therefore avoid the computational
+# overhead of AD by writing a specialized implementation that simply reshapes back:
 # ```julia
-# function lrp!(rule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(::AbstractLRPRule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁)
 #     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
 # end
 # ```
 #
-# Even Dense layers have a specialized implementation:
+# Since the rule type didn't matter in this case, we didn't specify it.
+#
+# We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
-# function lrp!(rule, layer::Dense, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(rule::AbstractLRPRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁)
 #     ρW, ρb = modify_params(rule, get_params(layer)...)
 #     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
-#     @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k] # Tullio = fast einsum
+#     @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k] # Tullio ≈ fast einsum
 # end
 # ```
-# Just like in the LRP papers!
 #
-# For maximum low-level control, you can also implement your own `lrp!` function
-# and dispatch on individual rule types `MyRule` and layer types `MyLayer`:
+# For maximum low-level control beyond `modify_layer`, `modify_params` and `modify_denominator`,
+# you can also implement your own `lrp!` function and dispatch
+# on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
 # function lrp!(rule::MyRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
