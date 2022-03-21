@@ -18,6 +18,31 @@ index = 10
 x, y = MNIST.testdata(Float32, index)
 input = reshape(x, 28, 28, 1, :);
 
+# ## Custom LRP composites
+# Instead of creating an LRP-analyzer from a single rule (e.g. `LRP(model, GammaRule())`),
+# we can also assign rules to each layer individually.
+# For this purpose, we create an array of rules that matches the length of the Flux chain:
+rules = [
+    ZBoxRule(),
+    GammaRule(),
+    GammaRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
+]
+
+analyzer = LRP(model, rules)
+heatmap(input, analyzer)
+
+# Since some Flux Chains contain other Flux Chains, ExplainabilityMethods provides
+# a utility function called [`flatten_model`](@ref).
+#
+#md # !!! warning "Flattening models"
+#md #     Not all models can be flattened, e.g. those using
+#md #     `Parallel` and `SkipConnection` layers.
+
 # ## Custom LRP rules
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.
 # The rule has to be of type `AbstractLRPRule`.
