@@ -28,7 +28,7 @@ model = strip_softmax(vgg.layers)
 
 # Run XAI method
 analyzer = LRPEpsilon(model)
-expl, out = analyze(img, analyzer)
+expl = analyze(img, analyzer)
 
 # Show heatmap
 heatmap(expl)
