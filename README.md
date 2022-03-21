@@ -69,8 +69,8 @@ Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` 
 [codecov-img]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrhill/ExplainabilityMethods.jl
 
-[docs-composites]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-composites
-[docs-custom-rules]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/example/#Custom-rules
+[docs-composites]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/advanced_lrp/#Custom-LRP-composites
+[docs-custom-rules]: https://adrhill.github.io/ExplainabilityMethods.jl/dev/generated/advanced_lrp/#Custom-LRP-rules
 
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
