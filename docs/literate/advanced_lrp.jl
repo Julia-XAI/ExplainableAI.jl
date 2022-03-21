@@ -23,14 +23,14 @@ input = reshape(x, 28, 28, 1, :);
 # we can also assign rules to each layer individually.
 # For this purpose, we create an array of rules that matches the length of the Flux chain:
 rules = [
-	ZBoxRule(),
+    ZBoxRule(),
     GammaRule(),
     GammaRule(),
-	EpsilonRule(),
-	EpsilonRule(),
-	EpsilonRule(),
-	ZeroRule(),
-	ZeroRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
 ]
 
 analyzer = LRP(model, rules)
