@@ -10,6 +10,20 @@ index = 10
 x, y = MNIST.testdata(Float32, index)
 input = reshape(x, 28, 28, 1, :);
 
+rules = [
+    ZBoxRule(),
+    GammaRule(),
+    GammaRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
+]
+
+analyzer = LRP(model, rules)
+heatmap(input, analyzer)
+
 struct MyGammaRule <: AbstractLRPRule end
 
 import ExplainabilityMethods: modify_params
