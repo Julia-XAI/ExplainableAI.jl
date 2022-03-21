@@ -1,12 +1,11 @@
-# API Reference
-
+# Basics
 All methods in ExplainabilityMethods.jl work by calling `analyze` on an input and an analyzer:
 ```@docs
 analyze
 heatmap
 ```
 
-## Analyzers
+# Analyzers
 ```@docs
 LRP
 Gradient

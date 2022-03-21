@@ -11,3 +11,18 @@ To install this package and its dependencies, open the Julia REPL and run
 ```julia-repl
 julia> ]add ExplainabilityMethods
 ```
+
+## Manual
+```@contents
+Pages = [
+    "generated/example.md",
+    "generated/advanced_lrp.md",
+]
+Depth = 2
+```
+
+## API reference
+```@contents
+Pages = ["api.md",]
+Depth = 2
+```

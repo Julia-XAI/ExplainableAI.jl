@@ -10,11 +10,12 @@ const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
 """
     heatmap(expl::Explanation; kwargs...)
     heatmap(attr::AbstractArray; kwargs...)
+
     heatmap(input, analyzer::AbstractXAIMethod)
     heatmap(input, analyzer::AbstractXAIMethod, neuron_selection::Int)
 
 Visualize explanation.
-Assumes the Flux's WHCN convention (width, height, color channels, batch size).
+Assumes Flux's WHCN convention (width, height, color channels, batch size).
 
 ## Keyword arguments
 - `cs::ColorScheme`: ColorScheme that is applied.
