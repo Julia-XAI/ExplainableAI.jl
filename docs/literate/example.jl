@@ -35,7 +35,7 @@ x, y = MNIST.testdata(Float32, index)
 
 MNIST.convert2image(x)
 
-# By convention in Flux.jl, this input needs to be resized to to WHCN format by adding a color channel and batch dimensions.
+# By convention in Flux.jl, this input needs to be resized to WHCN format by adding a color channel and batch dimensions.
 input = reshape(x, 28, 28, 1, :);
 
 #md # !!! warning "Input format"
