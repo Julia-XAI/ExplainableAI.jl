@@ -1,4 +1,4 @@
-using ExplainabilityMethods
+using ExplainableAI
 using Flux
 using JLD2
 

@@ -1,4 +1,4 @@
-module ExplainabilityMethods
+module ExplainableAI
 
 using Base.Iterators
 using LinearAlgebra

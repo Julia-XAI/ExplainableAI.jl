@@ -1,7 +1,7 @@
 using BenchmarkTools
 using Flux
-using ExplainabilityMethods
-import ExplainabilityMethods: modify_layer, lrp!
+using ExplainableAI
+import ExplainableAI: modify_layer, lrp!
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 

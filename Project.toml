@@ -1,7 +1,7 @@
-name = "ExplainabilityMethods"
-uuid = "cd722a4f-8d55-446b-8550-a4aabc9151ab"
+name = "ExplainableAI"
+uuid = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 authors = ["Adrian Hill"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"

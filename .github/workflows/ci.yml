@@ -60,8 +60,8 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
-            using ExplainabilityMethods
-            doctest(ExplainabilityMethods)'
+            using ExplainableAI
+            doctest(ExplainableAI)'
       - run: julia --project=docs docs/make.jl
         env:
           DATADEPS_ALWAYS_ACCEPT: true # for MLDatasets download
