@@ -75,3 +75,9 @@ end
 @testset "Layerwise relevances" begin
     test_vgg11("LRPZero", LRPZero; layerwise_relevances=true)
 end
+
+# Test LRP constructor with no rules
+a1 = LRP(model)
+a2 = LRPZero(model)
+@test a1.model == a2.model
+@test a1.rules == a2.rules
