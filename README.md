@@ -1,11 +1,15 @@
 ![ExplainableAI.jl][banner-img]
 ___
 
+*Formerly known as ExplainabilityMethods.jl*
+
 | **Documentation**                                                     | **Build Status**                                      | **DOI**                 |
 |:--------------------------------------------------------------------- |:----------------------------------------------------- |:----------------------- |
 | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![][doi-img]][doi-url] |
 
 Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
+
+This package implements interpretability methods and visualizations for neural networks, similar to [Captum](https://github.com/pytorch/captum) for PyTorch and [iNNvestigate](https://github.com/albermax/innvestigate) for Keras models. 
 
 ## Installation 
 To install this package and its dependencies, open the Julia REPL and run 
@@ -27,14 +31,13 @@ vgg = VGG19()
 model = strip_softmax(vgg.layers)
 
 # Run XAI method
-analyzer = LRPEpsilon(model)
+analyzer = LRP(model)
 expl = analyze(img, analyzer)
 
 # Show heatmap
 heatmap(expl)
 ```
 ![][heatmap]
-
 
 ## Methods
 Currently, the following analyzers are implemented:
@@ -50,6 +53,17 @@ Currently, the following analyzers are implemented:
 
 One of the design goals of ExplainableAI.jl is extensibility.
 Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
+
+## Roadmap
+In the future, we would like to include:
+- [SmoothGrad](https://arxiv.org/abs/1706.03825)
+- [Integrated Gradients](https://arxiv.org/abs/1703.01365)
+- [PatternNet](https://arxiv.org/abs/1705.05598)
+- [DeepLift](https://arxiv.org/abs/1704.02685)
+- [LIME](https://arxiv.org/abs/1602.04938)
+- Shapley values via  [ShapML.jl](https://github.com/nredell/ShapML.jl)
+
+Contributions are welcome!
 
 ## Acknowledgements
 > Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
