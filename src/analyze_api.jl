@@ -22,6 +22,9 @@ end
 function analyze(input::AbstractArray{<:Real}, method::AbstractXAIMethod; kwargs...)
     return method(input, MaxActivationNS(); kwargs...)
 end
+function (method::AbstractXAIMethod)(input::AbstractArray{<:Real}; kwargs...)
+    return method(input, MaxActivationNS(); kwargs...)
+end
 
 # Explanations and outputs are returned in a wrapper.
 # Metadata such as the analyzer allows dispatching on functions like `heatmap`.
