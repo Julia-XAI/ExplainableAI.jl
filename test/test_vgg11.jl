@@ -28,14 +28,19 @@ end
 function test_vgg11(name, method; kwargs...)
     analyzer = method(model)
     @testset "$name" begin
+        # Reference test attribution
         print("Timing $name...\t")
         @time expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
-
         @test size(attr) == size(img)
         @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
+        # Test direct call of analyzer
+        expl2 = analyzer(img; kwargs...)
+        @test expl.attribution ≈ expl2.attribution
+
+        # Test direct call of heatmap
         h1 = heatmap(expl)
         h2 = heatmap(img, analyzer; kwargs...)
         @test h1 ≈ h2
@@ -75,3 +80,9 @@ end
 @testset "Layerwise relevances" begin
     test_vgg11("LRPZero", LRPZero; layerwise_relevances=true)
 end
+
+# Test LRP constructor with no rules
+a1 = LRP(model)
+a2 = LRPZero(model)
+@test a1.model == a2.model
+@test a1.rules == a2.rules

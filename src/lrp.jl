@@ -42,6 +42,7 @@ function LRP(model::Chain, r::AbstractLRPRule; kwargs...)
     return LRP(model, rules; kwargs...)
 end
 # Additional constructors for convenience:
+LRP(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
 LRPZero(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
 LRPEpsilon(model::Chain; kwargs...) = LRP(model, EpsilonRule(); kwargs...)
 LRPGamma(model::Chain; kwargs...) = LRP(model, GammaRule(); kwargs...)
