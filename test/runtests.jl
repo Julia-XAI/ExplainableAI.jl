@@ -1,8 +1,8 @@
-using ExplainabilityMethods
+using ExplainableAI
 using Test
 using ReferenceTests
 
-@testset "ExplainabilityMethods.jl" begin
+@testset "ExplainableAI.jl" begin
     @testset "Utilities" begin
         println("Running tests on utilities...")
         include("test_utils.jl")

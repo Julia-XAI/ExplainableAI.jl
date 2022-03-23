@@ -1,5 +1,5 @@
 # # Getting started
-# ExplainabilityMethods.jl can be used on any classifier.
+# ExplainableAI.jl can be used on any classifier.
 # In this first example, we will look at attributions on a LeNet5 model that was pretrained on MNIST.
 #
 # ### Loading the model
@@ -11,7 +11,7 @@
 #md #     @load "model.bson" model
 #md #     ```
 
-using ExplainabilityMethods
+using ExplainableAI
 using Flux
 using BSON
 
@@ -40,7 +40,7 @@ input = reshape(x, 28, 28, 1, :);
 
 #md # !!! warning "Input format"
 #md #
-#md #     For any attribution of a model, ExplainabilityMethods.jl assumes the batch dimension to be come last in the input.
+#md #     For any attribution of a model, ExplainableAI.jl assumes the batch dimension to be come last in the input.
 #md #
 #md #     For the purpose of heatmapping, the input is assumed to be in WHCN order
 #md #     (width, height, channels, batch), which is Flux.jl's convention.

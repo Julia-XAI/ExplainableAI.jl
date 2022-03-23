@@ -1,6 +1,6 @@
 module LRP_CONFIG
-using ExplainabilityMethods
-using ExplainabilityMethods: LRPSupportedLayer, LRPSupportedActivation
+using ExplainableAI
+using ExplainableAI: LRPSupportedLayer, LRPSupportedActivation
 """
     LRP_CONFIG.supports_layer(layer)
 
@@ -65,9 +65,9 @@ function check_model(::Val{:LRP}, c::Chain; verbose=true)
             Markdown.parse(
                 """# Layers failed model check
                 Found unknown layers `$(join(unique(layer_names[.!layer_checks]), ", "))`
-                that are not supported by ExplainabilityMethods' LRP implementation yet.
+                that are not supported by ExplainableAI's LRP implementation yet.
 
-                If you think the missing layer should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainabilityMethods.jl/issues).
+                If you think the missing layer should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
 
                 These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument `skip_checks=true`.
 
@@ -99,7 +99,7 @@ function check_model(::Val{:LRP}, c::Chain; verbose=true)
                 `$(join(unique(activation_names[.!activation_checks]), ", "))`.
                 LRP assumes that the model is a "deep rectifier network" that only contains ReLU-like activation functions.
 
-                If you think the missing activation function should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainabilityMethods.jl/issues).
+                If you think the missing activation function should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
 
                 These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument `skip_checks=true`.
 

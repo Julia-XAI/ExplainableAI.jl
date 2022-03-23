@@ -1,12 +1,12 @@
 # # Advanced LRP usage
-# One of the design goals of ExplainabilityMethods.jl is to combine ease of use and
+# One of the design goals of ExplainableAI.jl is to combine ease of use and
 # extensibility for the purpose of research.
 #
 #
 # This example will show you how to implement custom LRP rules and register custom layers
 # and activation functions.
 # For this purpose, we will quickly load our model from the previous section:
-using ExplainabilityMethods
+using ExplainableAI
 using Flux
 using MLDatasets
 using ImageCore
@@ -36,7 +36,7 @@ rules = [
 analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
-# Since some Flux Chains contain other Flux Chains, ExplainabilityMethods provides
+# Since some Flux Chains contain other Flux Chains, ExplainableAI provides
 # a utility function called [`flatten_model`](@ref).
 #
 #md # !!! warning "Flattening models"
@@ -51,7 +51,7 @@ struct MyGammaRule <: AbstractLRPRule end
 # It is then possible to dispatch on the utility functions  [`modify_params`](@ref) and [`modify_denominator`](@ref)
 # with the rule type `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
 # To extend internal functions, import them explicitly:
-import ExplainabilityMethods: modify_params
+import ExplainableAI: modify_params
 
 function modify_params(::MyGammaRule, W, b)
     ρW = W + 0.25 * relu.(W)
@@ -68,7 +68,7 @@ heatmap(input, analyzer)
 analyzer = LRP(model, GammaRule())
 heatmap(input, analyzer)
 
-# If the layer doesn't use weights and biases `W` and `b`, ExplainabilityMethods provides a
+# If the layer doesn't use weights and biases `W` and `b`, ExplainableAI provides a
 # lower-level variant of [`modify_params`](@ref) called [`modify_layer`](@ref).
 # This function is expected to take a layer and return a new, modified layer.
 
@@ -111,22 +111,22 @@ model = Chain(model..., MyDoublingLayer())
 #   Layers failed model check
 #   ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
 #
-#   Found unknown layers MyDoublingLayer() that are not supported by ExplainabilityMethods' LRP implementation yet.
+#   Found unknown layers MyDoublingLayer() that are not supported by ExplainableAI's LRP implementation yet.
 #
-#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainabilityMethods.jl/issues).
+#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
 #
 #   These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument skip_checks=true.
 #
 #   [...]
 # ```
 
-# LRP should only be used on deep rectifier networks and ExplainabilityMethods doesn't
+# LRP should only be used on deep rectifier networks and ExplainableAI doesn't
 # recognize `MyDoublingLayer` as a compatible layer.
 # By default, it will therefore return an error and a model check summary
 # instead of returning an incorrect explanation.
 #
 # However, if we know `MyDoublingLayer` is compatible with deep rectifier networks,
-# we can register it to tell ExplainabilityMethods that it is ok to use.
+# we can register it to tell ExplainableAI that it is ok to use.
 # This will be shown in the following section.
 
 #md # !!! warning "Skipping model checks"
@@ -136,7 +136,7 @@ model = Chain(model..., MyDoublingLayer())
 
 # ### Registering custom layers
 # The error in the model check will stop after registering our custom layer type
-# `MyDoublingLayer` as "supported" by ExplainabilityMethods.
+# `MyDoublingLayer` as "supported" by ExplainableAI.
 #
 # This is done using the function [`LRP_CONFIG.supports_layer`](@ref),
 # which should be set to return `true` for the type `MyDoublingLayer`:
@@ -175,7 +175,7 @@ model = Chain(flatten, Dense(784, 100, myrelu), Dense(100, 10))
 #
 #   Found layers with unknown or unsupported activation functions myrelu. LRP assumes that the model is a "deep rectifier network" that only contains ReLU-like activation functions.
 #
-#   If you think the missing activation function should be supported by default, please submit an issue (https://github.com/adrhill/ExplainabilityMethods.jl/issues).
+#   If you think the missing activation function should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
 #
 #   These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument skip_checks=true.
 #
@@ -189,7 +189,7 @@ LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 analyzer = LRPZero(model)
 
 # ## How it works internally
-# Internally, ExplainabilityMethods dispatches to low level functions
+# Internally, ExplainableAI dispatches to low level functions
 # ```julia
 # function lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
@@ -230,7 +230,7 @@ analyzer = LRPZero(model)
 #
 # and can be implemented via automatic differentiation (AD).
 #
-# This equation is implemented in ExplainabilityMethods as the default method
+# This equation is implemented in ExplainableAI as the default method
 # for all layer types that don't have a specialized implementation.
 # We will refer to it as the "AD fallback".
 #

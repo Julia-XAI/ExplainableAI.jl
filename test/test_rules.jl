@@ -1,6 +1,6 @@
-using ExplainabilityMethods
-using ExplainabilityMethods: modify_params
-import ExplainabilityMethods: modify_layer, lrp!
+using ExplainableAI
+using ExplainableAI: modify_params
+import ExplainableAI: modify_layer, lrp!
 using Flux
 using LinearAlgebra
 using ReferenceTests

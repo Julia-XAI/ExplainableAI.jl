@@ -1,4 +1,4 @@
-using ExplainabilityMethods
+using ExplainableAI
 
 # NOTE: Heatmapping assumes Flux's WHCN convention (width, height, color channels, batch size).
 shape = (2, 2, 3, 1)

@@ -1,4 +1,4 @@
-using ExplainabilityMethods
+using ExplainableAI
 using Documenter
 using Literate
 
@@ -15,9 +15,9 @@ for example in readdir(EXAMPLE_DIR)
 end
 
 makedocs(;
-    modules=[ExplainabilityMethods],
+    modules=[ExplainableAI],
     authors="Adrian Hill",
-    sitename="ExplainabilityMethods.jl",
+    sitename="ExplainableAI.jl",
     format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),
     pages=[
         "Home" => "index.md",
@@ -27,4 +27,4 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo="github.com/adrhill/ExplainabilityMethods.jl")
+deploydocs(; repo="github.com/adrhill/ExplainableAI.jl")

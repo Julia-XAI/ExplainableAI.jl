@@ -1,5 +1,5 @@
 # Basics
-All methods in ExplainabilityMethods.jl work by calling `analyze` on an input and an analyzer:
+All methods in ExplainableAI.jl work by calling `analyze` on an input and an analyzer:
 ```@docs
 analyze
 heatmap

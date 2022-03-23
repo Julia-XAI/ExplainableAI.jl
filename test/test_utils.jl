@@ -1,5 +1,5 @@
 using Flux
-using ExplainabilityMethods: flatten_model, has_output_softmax, stabilize_denom
+using ExplainableAI: flatten_model, has_output_softmax, stabilize_denom
 
 # flatten_model
 @test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
