@@ -1,21 +1,29 @@
 abstract type AbstractNeuronSelector end
-(ns::AbstractNeuronSelector)(output::AbstractArray) = ns(drop_singleton_dims(output))
 
 """
-    MaxActivationNS()
+    MaxActivationSelector()
 
 Neuron selector that picks the output neuron with the highest activation.
 """
-struct MaxActivationNS <: AbstractNeuronSelector end
-(::MaxActivationNS)(output::AbstractVector) = argmax(output)
+struct MaxActivationSelector <: AbstractNeuronSelector end
+function (::MaxActivationSelector)(out::AbstractArray{T,N}) where {T,N}
+    N < 2 && throw(BATCHDIM_MISSING)
+    return Vector{CartesianIndex{N}}([argmax(out; dims=1:(N - 1))...])
+end
 
 """
-    IndexNS(index)
+    IndexSelector(index)
 
 Neuron selector that picks the output neuron at the given index.
 """
-struct IndexNS{T} <: AbstractNeuronSelector
-    index::T
-    IndexNS(index::Integer) = new{typeof(index)}(index)
+struct IndexSelector{I} <: AbstractNeuronSelector
+    index::I
 end
-(ns::IndexNS)(output::AbstractVector) = ns.index
+function (s::IndexSelector{<:Integer})(out::AbstractArray{T,N}) where {T,N}
+    N < 2 && throw(BATCHDIM_MISSING)
+    return CartesianIndex{N}.(s.index, 1:size(out, N))
+end
+function (s::IndexSelector{I})(out::AbstractArray{T,N}) where {I,T,N}
+    N < 2 && throw(BATCHDIM_MISSING)
+    return CartesianIndex{N}.(s.index..., 1:size(out, N))
+end
