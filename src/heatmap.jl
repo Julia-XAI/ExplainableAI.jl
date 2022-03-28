@@ -107,8 +107,8 @@ end
 
 # Reduce attributions across color channels into a single scalar – assumes WHCN convention
 function _reduce(attr::AbstractArray{T,3}, method::Symbol) where {T}
-    if size(attr, 3) == 1 # nothing need to reduce
-        return attr[:, :, 1]
+    if size(attr, 3) == 1 # nothing to reduce
+        return attr
     elseif method == :sum
         return reduce(+, attr; dims=3)
     elseif method == :maxabs
