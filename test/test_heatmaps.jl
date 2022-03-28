@@ -4,12 +4,20 @@ using ExplainableAI
 shape = (2, 2, 3, 1)
 A = reshape(collect(Float32, 1:prod(shape)), shape)
 
+shape = (2, 2, 3, 2)
+batch = reshape(collect(Float32, 1:prod(shape)), shape)
+
 reducers = [:sum, :maxabs, :norm]
 normalizers = [:extrema, :centered]
 for r in reducers
     for n in normalizers
         h = heatmap(A; reduce=r, normalize=n)
         @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n).txt" h
+        @test h ≈ heatmap(A; reduce=r, normalize=n, unpack_singleton=false)[1]
+
+        h = heatmap(batch; reduce=r, normalize=n)
+        @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n).txt" h[1]
+        @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n)2.txt" h[2]
     end
 end
 
@@ -19,6 +27,4 @@ end
 B = reshape(A, 2, 2, 3, 1, 1)
 @test_throws DomainError heatmap(B)
 B = reshape(A, 2, 2, 3)
-@test_throws DomainError heatmap(B)
-B = reshape(A, 2, 2, 1, 3)
 @test_throws DomainError heatmap(B)
