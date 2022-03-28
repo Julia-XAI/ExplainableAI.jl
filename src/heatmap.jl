@@ -2,9 +2,9 @@
 
 const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
     # Analyzer => (colorscheme, reduce, normalize)
-    :LRP => (ColorSchemes.bwr, :sum, :centered),
-    :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # same as LRP
-    :Gradient => (ColorSchemes.grays, :norm, :extrema),
+    :LRP => (ColorSchemes.bwr, :sum, :centered), # attribution
+    :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # attribution
+    :Gradient => (ColorSchemes.grays, :norm, :extrema), # gradient
 )
 
 """
@@ -34,35 +34,32 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
 - `permute::Bool`: Whether to flip W&H input channels. Default is `true`.
+- `unpack_singleton::Bool`: When heatmapping a batch with a single sample, setting `unpack_singleton=true`
+    will return an image instead of an Vector containing a single image.
 
 **Note:** these keyword arguments can't be used when calling `heatmap` with an analyzer.
 """
 function heatmap(
-    attr::AbstractArray;
+    attr::AbstractArray{T,N};
     cs::ColorScheme=ColorSchemes.bwr,
     reduce::Symbol=:sum,
     normalize::Symbol=:centered,
     permute::Bool=true,
-)
-    _size = size(attr)
-    length(_size) != 4 && throw(
+    unpack_singleton::Bool=true,
+) where {T,N}
+    N != 4 && throw(
         DomainError(
-            _size,
+            N,
             """heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
             Please reshape your attribution to match this format if your model doesn't adhere to this convention.""",
         ),
     )
-    _size[end] != 1 && throw(
-        DomainError(
-            _size[end],
-            """heatmap is only applicable to a single attribution, got a batch dimension of $(_size[end]).""",
-        ),
-    )
-
-    img = _normalize(dropdims(_reduce(dropdims(attr; dims=4), reduce); dims=3), normalize)
-    permute && (img = permutedims(img))
-    return ColorSchemes.get(cs, img)
+    if unpack_singleton && size(attr, 4) == 1
+        return _heatmap(attr[:, :, :, 1], cs, reduce, normalize, permute)
+    end
+    return map(a -> _heatmap(a, cs, reduce, normalize, permute), eachslice(attr; dims=4))
 end
+
 # Use HEATMAPPING_PRESETS for default kwargs when dispatching on Explanation
 function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
     _cs, _reduce, _normalize = HEATMAPPING_PRESETS[expl.analyzer]
@@ -79,6 +76,18 @@ function heatmap(input, analyzer::AbstractXAIMethod, args...; kwargs...)
     return heatmap(analyze(input, analyzer, args...; kwargs...))
 end
 
+# Lower level function that is mapped along batch dimension
+function _heatmap(
+    attr::AbstractArray{T,3},
+    cs::ColorScheme,
+    reduce::Symbol,
+    normalize::Symbol,
+    permute::Bool,
+) where {T<:Real}
+    img = _normalize(dropdims(_reduce(attr, reduce); dims=3), normalize)
+    permute && (img = permutedims(img))
+    return ColorSchemes.get(cs, img)
+end
 
 # Normalize activations across pixels
 function _normalize(attr, method::Symbol)
@@ -97,19 +106,20 @@ function _normalize(attr, method::Symbol)
 end
 
 # Reduce attributions across color channels into a single scalar – assumes WHCN convention
-function _reduce(attr::T, method::Symbol) where {T}
+function _reduce(attr::AbstractArray{T,3}, method::Symbol) where {T}
     if size(attr, 3) == 1 # nothing need to reduce
-        return attr
-    elseif method == :maxabs
-        return maximum(abs, attr; dims=3)
-    elseif method == :norm
-        return mapslices(norm, attr; dims=3)::T
+        return attr[:, :, 1]
     elseif method == :sum
-        return sum(attr; dims=3)
+        return reduce(+, attr; dims=3)
+    elseif method == :maxabs
+        return reduce((c...) -> maximum(abs.(c)), attr; dims=3, init=zero(T))
+    elseif method == :norm
+        return reduce((c...) -> sqrt(sum(c .^ 2)), attr; dims=3, init=zero(T))
     end
     throw(
         ArgumentError(
             "Color channel reducer :$method not supported, `reduce` should be :maxabs, :sum or :norm",
         ),
     )
+    return nothing
 end
