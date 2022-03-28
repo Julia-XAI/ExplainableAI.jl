@@ -1,27 +1,7 @@
-# Generic implementation of LRP according to [1, 2].
-# LRP-rules are implemented as structs of type `AbstractLRPRule`.
-# Through the magic of multiple dispatch, rule modifications such as LRP-γ and -ϵ
-# can be implemented by dispatching on the functions `modify_params` & `modify_denominator`,
-# which make use of the generalized LRP implementation shown in [1].
-#
-# If the relevance propagation falls outside of this scheme, custom low-level functions
-# ```julia
-# lrp!(::MyLRPRule, layer, Rₖ, aₖ, Rₖ₊₁) = ...
-# lrp!(::MyLRPRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁) = ...
-# lrp!(::AbstractLRPRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁) = ...
-# ```
-# that inplace-update `Rₖ` can be implemented.
-# This is used for the ZBoxRule and for faster computations on common layers.
-#
-# References:
-# [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
-# [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
-
+# https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
-# This is the generic relevance propagation rule which is used for the 0, γ and ϵ rules.
-# It can be extended for new rules via `modify_denominator` and `modify_params`.
-# Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
+# Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
 function lrp!(rule::R, layer::L, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
     lrp_autodiff!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
     return nothing
