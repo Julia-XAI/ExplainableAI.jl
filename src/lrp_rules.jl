@@ -50,8 +50,8 @@ end
 
 function lrp_dense!(rule::R, l, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
     ρW, ρb = modify_params(rule, get_params(l)...)
-    ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
-    @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k]
+    ãₖ₊₁ = modify_denominator(rule, ρW * aₖ .+ ρb)
+    @tullio Rₖ[j, b] = aₖ[j, b] * ρW[k, j] / ãₖ₊₁[k, b] * Rₖ₊₁[k, b]
     return nothing
 end
 

@@ -59,9 +59,9 @@ function (analyzer::LRP)(
     rels = similar.(acts)
 
     # Mask output neuron
-    output_neuron = ns(acts[end])
+    output_indices = ns(acts[end])
     rels[end] .= zero(T)
-    rels[end][output_neuron] = acts[end][output_neuron]
+    rels[end][output_indices] = acts[end][output_indices]
 
     # Backward pass through layers, applying LRP rules
     for (i, rule) in Iterators.reverse(enumerate(analyzer.rules))
@@ -71,7 +71,7 @@ function (analyzer::LRP)(
     return Explanation(
         first(rels),
         last(acts),
-        output_neuron,
+        output_indices,
         :LRP,
         ifelse(layerwise_relevances, rels, Nothing),
     )
