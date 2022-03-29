@@ -25,7 +25,7 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     )
         model = flatten_model(model)
         if !skip_checks
-            check_ouput_softmax(model)
+            check_output_softmax(model)
             check_model(Val(:LRP), model; verbose=verbose)
         end
         if length(model.layers) != length(rules)
