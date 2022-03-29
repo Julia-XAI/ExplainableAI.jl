@@ -121,5 +121,4 @@ function _reduce(attr::AbstractArray{T,3}, method::Symbol) where {T}
             "Color channel reducer :$method not supported, `reduce` should be :maxabs, :sum or :norm",
         ),
     )
-    return nothing
 end

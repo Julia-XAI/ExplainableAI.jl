@@ -28,3 +28,7 @@ B = reshape(A, 2, 2, 3, 1, 1)
 @test_throws DomainError heatmap(B)
 B = reshape(A, 2, 2, 3)
 @test_throws DomainError heatmap(B)
+
+A1 = rand(3, 3, 1)
+A2 = ExplainableAI._reduce(A1, :sum)
+@test A1 == A2

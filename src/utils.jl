@@ -17,15 +17,6 @@ in the denominator by replacing them with `± eps`.
 safedivide(a, b; eps=1.0f-9) = a ./ stabilize_denom(b; eps=eps)
 
 """
-    drop_singleton_dims(a)
-
-Drop dimensions of size 1 from array.
-"""
-function drop_singleton_dims(a::AbstractArray)
-    return dropdims(a; dims=tuple(findall(size(a) .== 1)...))
-end
-
-"""
     batch_dim_view(A)
 
 Return a view onto the array `A` that contains an extra singleton batch dimension at the end.
