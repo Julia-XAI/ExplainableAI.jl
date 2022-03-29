@@ -1,4 +1,4 @@
-using ExplainabilityMethods
+using ExplainableAI
 using Flux
 using MLDatasets
 using ImageCore
@@ -26,7 +26,7 @@ heatmap(input, analyzer)
 
 struct MyGammaRule <: AbstractLRPRule end
 
-import ExplainabilityMethods: modify_params
+import ExplainableAI: modify_params
 
 function modify_params(::MyGammaRule, W, b)
     ρW = W + 0.25 * relu.(W)

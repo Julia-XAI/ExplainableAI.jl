@@ -12,7 +12,7 @@ function compare(
     fig = Figure(; backgroundcolor=backgroundcolor)
 
     # Add supertitle
-    fig[0, :] = Label(fig, "ExplainabilityMethods.jl"; textsize=24, color=(:black, 0.6))
+    fig[0, :] = Label(fig, "ExplainableAI.jl"; textsize=24, color=(:black, 0.6))
 
     for (row, img) in enumerate(imgs)
         # Run first analyzer to get class probs
