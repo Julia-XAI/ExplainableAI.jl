@@ -1,20 +1,23 @@
 """
-    stabilize_denom(d; eps = 1f-6)
+    stabilize_denom(d, [eps = 1f-9])
 
 Replace zero terms of a matrix `d` with `eps`.
 """
-stabilize_denom(d::Real; eps=1.0f-9) = ifelse(d ≈ 0, d + sign(d) * eps, d)
-function stabilize_denom(d::AbstractArray; eps=1.0f-9)
-    return d + ((d .≈ 0) + sign.(d)) * eps
+function stabilize_denom(d::T, eps=T(1.0f-9)) where {T}
+    iszero(d) && (return T(eps))
+    return d + sign(d) * T(eps)
 end
+stabilize_denom(D::AbstractArray{T}, eps=T(1.0f-9)) where {T} = stabilize_denom.(D, eps)
 
 """
-    safedivide(a, b; eps = 1f-6)
+    safedivide(a, b, [eps = 1f-6])
 
 Elementwise division of two matrices avoiding near zero terms
 in the denominator by replacing them with `± eps`.
 """
-safedivide(a, b; eps=1.0f-9) = a ./ stabilize_denom(b; eps=eps)
+function safedivide(a::AbstractArray{T}, b::AbstractArray{T}, eps=T(1.0f-9)) where {T}
+    return a ./ stabilize_denom(b, T(eps))
+end
 
 """
     batch_dim_view(A)

@@ -54,7 +54,7 @@ modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
 
 Function that modifies zₖ on the forward pass, e.g. for numerical stability.
 """
-modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d; eps=1.0f-9) # general fallback
+modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d, 1.0f-9) # general fallback
 
 """
     modify_layer(rule, layer)
@@ -104,7 +104,7 @@ struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
     EpsilonRule(; ϵ=1.0f-6) = new{Float32}(ϵ)
 end
-modify_denominator(r::EpsilonRule, d) = stabilize_denom(d; eps=r.ϵ)
+modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 
 """
     ZBoxRule()
@@ -131,7 +131,7 @@ function lrp_zbox!(layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
         f⁻::T2 = layer⁻(h)
 
         z = f - f⁺ - f⁻
-        s = Zygote.@ignore safedivide(Rₖ₊₁, z; eps=1e-9)
+        s = Zygote.@ignore safedivide(Rₖ₊₁, z, 1e-9)
         z ⋅ s
     end
     Rₖ .= aₖ .* c + l .* cₗ + h .* cₕ

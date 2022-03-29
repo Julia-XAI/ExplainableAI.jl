@@ -1,6 +1,6 @@
 using Flux
-using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax
-using ExplainableAI: stabilize_denom
+using ExplainableAI:
+    flatten_model, has_output_softmax, check_output_softmax, stabilize_denom
 
 # flatten_model
 @test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
@@ -22,5 +22,8 @@ using ExplainableAI: stabilize_denom
     Chain(Chain(abs), Chain(Chain(softmax)), sqrt) # don't do anything if there is no softmax at the end
 
 # stabilize_denom
-A = [1.0 0; -0 -1.0e-25]
-@test stabilize_denom(A; eps=1e-3) ≈ [1.001 1e-3; 1e-3 -1e-3]
+A = [1.0 0.0 1.0e-25; -1.0 -0.0 -1.0e-25]
+S = @inferred stabilize_denom(A, 1e-3)
+@test S ≈ [1.001 1e-3 1e-3; -1.001 1e-3 -1e-3]
+S = @inferred stabilize_denom(Float32.(A), 1e-2)
+@test S ≈ [1.01 1f-2 1f-2; -1.01 1f-2 -1f-2]
