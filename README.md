@@ -20,22 +20,31 @@ julia> ]add ExplainableAI
 ⚠️ This package is still in early development, expect breaking changes. ⚠️
 
 ## Example
-Let's use LRP to explain why an image of a cat gets classified as a cat:
+Let's use LRP to explain why an MNIST digit gets classified as a 9 using a small pre-trained LeNet5 model.
+If you want to follow along, the model can be found [here][model-bson-url].
 ```julia
 using ExplainableAI
 using Flux
-using Metalhead
+using MLDatasets
+using BSON: @load
 
 # Load model
-vgg = VGG19()
-model = strip_softmax(vgg.layers)
+@load "model.bson" model
+model = strip_softmax(model)
+
+# Load input
+x, _ = MNIST.testdata(Float32, 10)
+input = reshape(x, 28, 28, 1, :)   # reshape to WHCN format
 
 # Run XAI method
 analyzer = LRP(model)
-expl = analyze(img, analyzer)
+expl = analyze(input, analyzer)    # or: expl = analyzer(input)
 
 # Show heatmap
 heatmap(expl)
+
+# Or analyze & show heatmap directly
+heatmap(input, analyzer)
 ```
 ![][heatmap]
 
@@ -69,7 +78,7 @@ Contributions are welcome!
 > Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/banner.png
-[heatmap]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmap.png
+[heatmap]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/mnist9.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://adrhill.github.io/ExplainableAI.jl/stable
@@ -88,3 +97,5 @@ Contributions are welcome!
 
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
+
+[model-bson-url]: https://github.com/adrhill/ExplainableAI.jl/blob/master/docs/src/model.bson
