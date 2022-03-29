@@ -9,7 +9,7 @@ ___
 
 Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
 
-This package implements interpretability methods and visualizations for neural networks, similar to [Captum](https://github.com/pytorch/captum) for PyTorch and [iNNvestigate](https://github.com/albermax/innvestigate) for Keras models. 
+This package implements interpretability methods and visualizations for neural networks, similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch and [iNNvestigate][innvestigate-repo] for Keras models. 
 
 ## Installation 
 To install this package and its dependencies, open the Julia REPL and run 
@@ -99,3 +99,7 @@ Contributions are welcome!
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
 
 [model-bson-url]: https://github.com/adrhill/ExplainableAI.jl/blob/master/docs/src/model.bson
+
+[captum-repo]: https://github.com/pytorch/captum
+[zennit-repo]: https://github.com/chr5tphr/zennit
+[innvestigate-repo]: https://github.com/albermax/innvestigate
