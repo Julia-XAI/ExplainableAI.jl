@@ -31,7 +31,7 @@ end
 Return a view onto the array `A` that contains an extra singleton batch dimension at the end.
 This avoids allocating a new array.
 
-## Examples
+## Example
 ```juliarepl
 julia> A = [1 2; 3 4]
 2×2 Matrix{Int64}:
@@ -45,12 +45,16 @@ julia> batch_dim_view(A)
  3  4
 ```
 """
-batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, repeat([:], N + 1)...)
+batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, ntuple(_ -> :, Val(N + 1))...)
 
 """
     drop_batch_dim(I)
 
-Drop batch dimension (last value) from CartesianIndex.
+Drop batch dimension index (last value) from CartesianIndex.
+
+## Example
+julia> drop_batch_dim(CartesianIndex(5,3,2))
+CartesianIndex(5, 3)
 """
 drop_batch_dim(C::CartesianIndex) = CartesianIndex(C.I[1:(end - 1)])
 
