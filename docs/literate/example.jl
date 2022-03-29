@@ -48,7 +48,7 @@ input = reshape(x, 28, 28, 1, :);
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
 # and call [`analyze`](@ref) to get an `Explanation`:
-analyzer = LRPZero(model)
+analyzer = LRP(model)
 expl = analyze(input, analyzer);
 
 # This `Explanation` bundles the following data:
@@ -78,6 +78,26 @@ heatmap(input, analyzer, 5)
 #md #     ```julia
 #md #     expl = analyze(img, analyzer, 5)
 #md #     ```
+
+# ## Input batches
+# ExplainableAI also supports input batches:
+batchsize = 100
+xs, _ = MNIST.testdata(Float32, 1:batchsize)
+batch = reshape(xs, 28, 28, 1, :) # reshape to WHCN format
+expl_batch = analyze(batch, analyzer);
+
+# This will once again return a single `Explanation` `expl_batch` for the entire batch.
+# Calling `heatmap` on `expl_batch` will detect the batch dimension and return a vector of heatmaps.
+#
+# Let's check if the digit at `index = 10` still matches.
+hs = heatmap(expl_batch)
+hs[index]
+
+# JuliaImages' `mosaic` can be used to return a tiled view of all heatmaps:
+mosaic(hs; nrow=10)
+
+# We can also evaluate a batch with respect to a specific output neuron, e.g. for the digit zero at index `1`:
+mosaic(heatmap(batch, analyzer, 1); nrow=10)
 
 # ## Automatic heatmap presets
 # Currently, the following analyzers are implemented:
@@ -110,5 +130,8 @@ using ColorSchemes
 heatmap(expl; cs=ColorSchemes.jet)
 #
 heatmap(expl; reduce=:sum, normalize=:extrema, cs=ColorSchemes.inferno)
+
+# This also works with batches
+mosaic(heatmap(expl_batch; normalize=:extrema, cs=ColorSchemes.inferno); nrow=10)
 
 # For the full list of keyword arguments, refer to the [`heatmap`](@ref) documentation.
