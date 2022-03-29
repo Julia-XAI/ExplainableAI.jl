@@ -23,8 +23,12 @@ using ReferenceTests
         println("Running tests on LRP rules...")
         include("test_rules.jl")
     end
+    @testset "Batches" begin
+        println("Running analyzer tests on batches...")
+        include("test_batches.jl")
+    end
     @testset "VGG11" begin
-        println("Running tests on VGG11...")
+        println("Running analyzer tests on VGG11...")
         include("test_vgg11.jl")
     end
 end

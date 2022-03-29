@@ -35,12 +35,12 @@ has_output_softmax(x) = is_softmax(x)
 has_output_softmax(model::Chain) = has_output_softmax(model[end])
 
 """
-    check_ouput_softmax(model)
+    check_output_softmax(model)
 
 Check whether model has softmax activation on output.
 Return the model if it doesn't, throw error otherwise.
 """
-function check_ouput_softmax(model::Chain)
+function check_output_softmax(model::Chain)
     if has_output_softmax(model)
         throw(ArgumentError("""Model contains softmax activation on output.
                             Call `strip_softmax` on your model first."""))

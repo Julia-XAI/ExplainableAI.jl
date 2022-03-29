@@ -1,7 +1,6 @@
 module ExplainableAI
 
 using Base.Iterators
-using LinearAlgebra
 using Flux
 using Zygote
 using Tullio
@@ -14,10 +13,10 @@ using ColorSchemes
 using Markdown
 using PrettyTables
 
+include("neuron_selection.jl")
 include("analyze_api.jl")
 include("flux.jl")
 include("utils.jl")
-include("neuron_selection.jl")
 include("gradient.jl")
 include("lrp_checks.jl")
 include("lrp_rules.jl")

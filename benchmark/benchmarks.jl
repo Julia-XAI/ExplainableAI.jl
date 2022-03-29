@@ -55,9 +55,9 @@ aₖ = randn(Float32, insize)
 layers = Dict(
     "MaxPool" => (MaxPool((3, 3); pad=0), aₖ),
     "Conv" => (Conv((3, 3), 3 => 2), aₖ),
-    "Dense" => (Dense(in_dense, out_dense, relu), randn(Float32, in_dense)),
+    "Dense" => (Dense(in_dense, out_dense, relu), randn(Float32, in_dense, 1)),
     "WrappedDense" =>
-        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(Float32, in_dense)),
+        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(Float32, in_dense, 1)),
 )
 rules = Dict(
     "ZeroRule" => ZeroRule(),

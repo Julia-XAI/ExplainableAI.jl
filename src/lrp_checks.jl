@@ -114,5 +114,4 @@ function check_model(::Val{:LRP}, c::Chain; verbose=true)
         )
         throw(ArgumentError("Unknown or unsupported activation functions found in model"))
     end
-    return false
 end

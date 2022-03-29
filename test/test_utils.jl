@@ -1,5 +1,6 @@
 using Flux
-using ExplainableAI: flatten_model, has_output_softmax, stabilize_denom
+using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax
+using ExplainableAI: stabilize_denom
 
 # flatten_model
 @test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
@@ -11,6 +12,9 @@ using ExplainableAI: flatten_model, has_output_softmax, stabilize_denom
 @test has_output_softmax(Chain(abs, sqrt, relu, tanh)) == false
 @test has_output_softmax(Chain(Chain(abs), sqrt, Chain(Chain(softmax)))) == true
 @test has_output_softmax(Chain(Chain(abs), Chain(Chain(softmax)), sqrt)) == false
+
+# check_output_softmax
+@test_throws ArgumentError check_output_softmax(Chain(abs, sqrt, relu, softmax))
 
 # strip_softmax
 @test strip_softmax(Chain(Chain(abs), sqrt, Chain(Chain(softmax)))) == Chain(abs, sqrt) # flatten to remove softmax

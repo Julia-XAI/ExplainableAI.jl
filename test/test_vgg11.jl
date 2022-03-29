@@ -57,6 +57,9 @@ function test_vgg11(name, method; kwargs...)
         @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
             "expl" => attr
         ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+
+        expl2 = analyzer(img, neuron_selection; kwargs...)
+        @test expl.attribution ≈ expl2.attribution
     end
     return nothing
 end

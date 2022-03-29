@@ -18,11 +18,11 @@ const RULES = Dict(
     rule = ZeroRule()
 
     ## Simple dense layer
-    Rₖ₊₁ = [1 / 3, 2 / 3]
-    aₖ = [1.0, 2.0]
+    Rₖ₊₁ = reshape([1 / 3 2 / 3], 2, 1)
+    aₖ = reshape([1.0 2.0;], 2, 1)
     W = [3.0 4.0; 5.0 6.0]
     b = [7.0, 8.0]
-    Rₖ = [17 / 90, 316 / 675] # expected output
+    Rₖ = reshape([17 / 90, 316 / 675], 2, 1) # expected output
 
     layer = Dense(W, b, relu)
     R̂ₖ = similar(aₖ) # will be inplace updated
@@ -62,6 +62,7 @@ end
 ins_dense = 20 # input dimension
 outs_dense = 10 # output dimension
 aₖ = pseudorandn(ins_dense)
+aₖ = reshape(aₖ, size(aₖ)..., 1)
 
 layers = Dict(
     "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
@@ -88,7 +89,7 @@ layers = Dict(
                     end
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ
+                        "R" => Rₖ[:, 1]
                     ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
                 end
             end

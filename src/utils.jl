@@ -17,13 +17,37 @@ in the denominator by replacing them with `± eps`.
 safedivide(a, b; eps=1.0f-9) = a ./ stabilize_denom(b; eps=eps)
 
 """
-    drop_singleton_dims(a)
+    batch_dim_view(A)
 
-Drop dimensions of size 1 from array.
+Return a view onto the array `A` that contains an extra singleton batch dimension at the end.
+This avoids allocating a new array.
+
+## Example
+```juliarepl
+julia> A = [1 2; 3 4]
+2×2 Matrix{Int64}:
+ 1  2
+ 3  4
+
+julia> batch_dim_view(A)
+2×2×1 view(::Array{Int64, 3}, 1:2, 1:2, :) with eltype Int64:
+[:, :, 1] =
+ 1  2
+ 3  4
+```
 """
-function drop_singleton_dims(a::AbstractArray)
-    return dropdims(a; dims=tuple(findall(size(a) .== 1)...))
-end
+batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, ntuple(_ -> :, Val(N + 1))...)
+
+"""
+    drop_batch_dim(I)
+
+Drop batch dimension index (last value) from CartesianIndex.
+
+## Example
+julia> drop_batch_dim(CartesianIndex(5,3,2))
+CartesianIndex(5, 3)
+"""
+drop_batch_dim(C::CartesianIndex) = CartesianIndex(C.I[1:(end - 1)])
 
 # Utils for printing model check summary using PrettyTable.jl
 _print_name(layer) = "$layer"
