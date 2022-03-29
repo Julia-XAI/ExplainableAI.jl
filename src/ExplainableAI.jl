@@ -1,6 +1,7 @@
 module ExplainableAI
 
 using Base.Iterators
+using LinearAlgebra
 using Flux
 using Zygote
 using Tullio
