@@ -54,5 +54,8 @@ end
 Analyze model by calculating a smoothed sensitivity map.
 This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
 in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
+
+# References
+[1] Smilkov et al., SmoothGrad: removing noise by adding noise
 """
 SmoothGrad(model, n=50, args...) = InputAugmentation(Gradient(model), n, args...)
