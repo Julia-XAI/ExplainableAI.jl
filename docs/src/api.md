@@ -10,6 +10,12 @@ heatmap
 LRP
 Gradient
 InputTimesGradient
+SmoothGrad
+```
+
+`SmoothGrad` is a special case of `InputAugmentation`, which can be applied as a wrapper to any analyzer:
+```@doc
+InputAugmentation
 ```
 
 # LRP
