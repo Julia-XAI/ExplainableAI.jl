@@ -2,6 +2,8 @@ module ExplainableAI
 
 using Base.Iterators
 using LinearAlgebra
+using Distributions
+using Random: AbstractRNG, GLOBAL_RNG
 using Flux
 using Zygote
 using Tullio
@@ -30,6 +32,7 @@ export analyze
 # Analyzers
 export AbstractXAIMethod
 export Gradient, InputTimesGradient
+export InputAugmentation, SmoothGrad
 export LRP, LRPZero, LRPEpsilon, LRPGamma
 
 # LRP rules

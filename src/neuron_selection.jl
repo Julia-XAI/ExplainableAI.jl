@@ -27,3 +27,13 @@ function (s::IndexSelector{I})(out::AbstractArray{T,N}) where {I,T,N}
     N < 2 && throw(BATCHDIM_MISSING)
     return CartesianIndex{N}.(s.index..., 1:size(out, N))
 end
+
+"""
+    AugmentationSelector(index)
+
+Neuron selector that passes through an augmented neuron selection.
+"""
+struct AugmentationSelector{I} <: AbstractNeuronSelector
+    indices::I
+end
+(s::AugmentationSelector)(out) = s.indices
