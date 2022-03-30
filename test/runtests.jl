@@ -11,6 +11,10 @@ using ReferenceTests
         println("Running tests on neuron selection...")
         include("test_neuron_selection.jl")
     end
+    @testset "Input augmentation" begin
+        println("Running tests on input augmentation...")
+        include("test_input_augmentation.jl")
+    end
     @testset "Heatmaps" begin
         println("Running tests on heatmaps...")
         include("test_heatmaps.jl")
