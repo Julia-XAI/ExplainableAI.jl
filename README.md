@@ -54,6 +54,7 @@ Currently, the following analyzers are implemented:
 ```
 ├── Gradient
 ├── InputTimesGradient
+├── SmoothGrad
 └── LRP
     ├── LRPZero
     ├── LRPEpsilon
@@ -65,7 +66,6 @@ Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` 
 
 ## Roadmap
 In the future, we would like to include:
-- [SmoothGrad](https://arxiv.org/abs/1706.03825)
 - [Integrated Gradients](https://arxiv.org/abs/1703.01365)
 - [PatternNet](https://arxiv.org/abs/1705.05598)
 - [DeepLift](https://arxiv.org/abs/1704.02685)

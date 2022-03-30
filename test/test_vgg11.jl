@@ -3,7 +3,9 @@ using Flux
 using JLD2
 
 const GRADIENT_ANALYZERS = Dict(
-    "Gradient" => Gradient, "InputTimesGradient" => InputTimesGradient
+    "Gradient" => Gradient,
+    "InputTimesGradient" => InputTimesGradient,
+    "SmoothGrad" => model -> SmoothGrad(model, 5, 0.1, MersenneTwister(123)),
 )
 const LRP_ANALYZERS = Dict(
     "LRPZero" => LRPZero, "LRPEpsilon" => LRPEpsilon, "LRPGamma" => LRPGamma
@@ -26,10 +28,10 @@ function LRPCustom(model::Chain)
 end
 
 function test_vgg11(name, method; kwargs...)
-    analyzer = method(model)
     @testset "$name" begin
         # Reference test attribution
-        print("Timing $name...\t")
+        analyzer = method(model)
+        print("Timing $name cold...\t")
         @time expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
         @test size(attr) == size(img)
@@ -37,18 +39,22 @@ function test_vgg11(name, method; kwargs...)
             (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
         # Test direct call of analyzer
-        expl2 = analyzer(img; kwargs...)
+        analyzer = method(model)
+        print("Timing $name warm...\t")
+        @time expl2 = analyzer(img; kwargs...)
         @test expl.attribution ≈ expl2.attribution
 
         # Test direct call of heatmap
         h1 = heatmap(expl)
+        analyzer = method(model)
         h2 = heatmap(img, analyzer; kwargs...)
         @test h1 ≈ h2
-        if name != "Gradient" # TODO: remove
+        if expl.analyzer != :Gradient # TODO: remove
             @test_reference "references/heatmaps/vgg11_$(name).txt" h1
         end
     end
     @testset "$name neuron selection" begin
+        analyzer = method(model)
         neuron_selection = 1
         expl = analyze(img, analyzer, neuron_selection; kwargs...)
         attr = expl.attribution
@@ -58,6 +64,7 @@ function test_vgg11(name, method; kwargs...)
             "expl" => attr
         ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
+        analyzer = method(model)
         expl2 = analyzer(img, neuron_selection; kwargs...)
         @test expl.attribution ≈ expl2.attribution
     end

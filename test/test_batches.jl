@@ -1,6 +1,7 @@
 using Flux
 using ExplainableAI
 using Random
+using Distributions: Laplace
 
 ## Test `fuse_batchnorm` on Dense and Conv layers
 ins = 20
@@ -20,24 +21,35 @@ input2_bd = rand(MersenneTwister(2), Float32, ins, 1)
 input_batch = cat(input1_bd, input2_bd; dims=2)
 
 ANALYZERS = Dict(
-    "Gradient" => Gradient, "InputTimesGradient" => InputTimesGradient, "LRPZero" => LRPZero
+    "LRPZero" => LRPZero,
+    "Gradient" => Gradient,
+    "InputTimesGradient" => InputTimesGradient,
+    "SmoothGrad" => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
+    "SmoothLRP" =>
+        m -> InputAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
 )
 
 for (name, method) in ANALYZERS
     @testset "$name" begin
-        analyzer = method(model)
-
         # Using `add_batch_dim=true` should result in same attribution
         # as input reshaped to have a batch dimension
+        analyzer = method(model)
         expl1_no_bd = analyzer(input1_no_bd; add_batch_dim=true)
+        analyzer = method(model)
         expl1_bd = analyzer(input1_bd)
         @test expl1_bd.attribution ≈ expl1_no_bd.attribution
 
         # Analyzing a batch should have the same result
         # as analyzing inputs in batch individually
+        analyzer = method(model)
         expl2_bd = analyzer(input2_bd)
+        analyzer = method(model)
         expl_batch = analyzer(input_batch)
         @test expl1_bd.attribution ≈ expl_batch.attribution[:, 1]
-        @test expl2_bd.attribution ≈ expl_batch.attribution[:, 2]
+        if !(analyzer isa InputAugmentation)
+            # InputAugmentation methods generate random numbers for the entire batch.
+            # therefore explanations don't match except for the first input in the batch.
+            @test expl2_bd.attribution ≈ expl_batch.attribution[:, 2]
+        end
     end
 end

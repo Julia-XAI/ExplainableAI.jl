@@ -42,15 +42,15 @@ julia> batch_dim_view(A)
 batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, ntuple(_ -> :, Val(N + 1))...)
 
 """
-    drop_batch_dim(I)
+    drop_batch_index(I)
 
 Drop batch dimension index (last value) from CartesianIndex.
 
 ## Example
-julia> drop_batch_dim(CartesianIndex(5,3,2))
+julia> drop_batch_index(CartesianIndex(5,3,2))
 CartesianIndex(5, 3)
 """
-drop_batch_dim(C::CartesianIndex) = CartesianIndex(C.I[1:(end - 1)])
+drop_batch_index(C::CartesianIndex) = CartesianIndex(C.I[1:(end - 1)])
 
 # Utils for printing model check summary using PrettyTable.jl
 _print_name(layer) = "$layer"

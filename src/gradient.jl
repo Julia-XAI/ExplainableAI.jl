@@ -1,4 +1,4 @@
-function gradient_wrt_input(model, input::T, output_indices) where {T}
+function gradient_wrt_input(model, input, output_indices)
     return only(gradient((in) -> model(in)[output_indices], input))
 end
 
@@ -8,7 +8,7 @@ function gradients_wrt_batch(model, input::AbstractArray{T,N}, output_indices) w
     return mapreduce(
         (gs...) -> cat(gs...; dims=N), zip(eachslice(input; dims=N), output_indices)
     ) do (in, idx)
-        gradient_wrt_input(model, batch_dim_view(in), drop_batch_dim(idx))
+        gradient_wrt_input(model, batch_dim_view(in), drop_batch_index(idx))
     end
 end
 
@@ -46,3 +46,16 @@ function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     attr = input .* gradients_wrt_batch(analyzer.model, input, output_indices)
     return Explanation(attr, output, output_indices, :InputTimesGradient, Nothing)
 end
+
+"""
+    SmoothGrad(analyzer, [n=50, std=0.1, rng=GLOBAL_RNG])
+    SmoothGrad(analyzer, [n=50, distribution=Normal(0, σ²=0.01), rng=GLOBAL_RNG])
+
+Analyze model by calculating a smoothed sensitivity map.
+This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
+in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
+
+# References
+[1] Smilkov et al., SmoothGrad: removing noise by adding noise
+"""
+SmoothGrad(model, n=50, args...) = InputAugmentation(Gradient(model), n, args...)

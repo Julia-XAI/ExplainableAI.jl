@@ -2,6 +2,8 @@ module ExplainableAI
 
 using Base.Iterators
 using LinearAlgebra
+using Distributions
+using Random: AbstractRNG, GLOBAL_RNG
 using Flux
 using Zygote
 using Tullio
@@ -18,6 +20,7 @@ include("neuron_selection.jl")
 include("analyze_api.jl")
 include("flux.jl")
 include("utils.jl")
+include("input_augmentation.jl")
 include("gradient.jl")
 include("lrp_checks.jl")
 include("lrp_rules.jl")
@@ -29,6 +32,7 @@ export analyze
 # Analyzers
 export AbstractXAIMethod
 export Gradient, InputTimesGradient
+export InputAugmentation, SmoothGrad
 export LRP, LRPZero, LRPEpsilon, LRPGamma
 
 # LRP rules
