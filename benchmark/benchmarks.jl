@@ -21,6 +21,7 @@ algs = Dict(
     "InputTimesGradient" => InputTimesGradient,
     "LRPZero" => LRPZero,
     "LRPCustom" => LRPCustom, #modifies weights
+    "SmoothGrad" => model -> SmoothGrad(model, 10),
 )
 
 # Define benchmark
