@@ -1,4 +1,4 @@
-function gradient_wrt_input(model, input::T, output_indices) where {T}
+function gradient_wrt_input(model, input, output_indices)
     return only(gradient((in) -> model(in)[output_indices], input))
 end
 
@@ -8,7 +8,7 @@ function gradients_wrt_batch(model, input::AbstractArray{T,N}, output_indices) w
     return mapreduce(
         (gs...) -> cat(gs...; dims=N), zip(eachslice(input; dims=N), output_indices)
     ) do (in, idx)
-        gradient_wrt_input(model, batch_dim_view(in), drop_batch_dim(idx))
+        gradient_wrt_input(model, batch_dim_view(in), drop_batch_index(idx))
     end
 end
 
