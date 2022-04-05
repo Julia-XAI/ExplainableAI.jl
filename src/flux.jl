@@ -1,21 +1,15 @@
-## Group layers by type:
-const ConvLayer = Union{Conv} # TODO: DepthwiseConv, ConvTranspose, CrossCor
-const DropoutLayer = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
-const ReshapingLayer = Union{typeof(Flux.flatten)}
-# Pooling layers
-const MaxPoolLayer = Union{MaxPool,AdaptiveMaxPool,GlobalMaxPool}
-const MeanPoolLayer = Union{MeanPool,AdaptiveMeanPool,GlobalMeanPool}
-const PoolingLayer = Union{MaxPoolLayer,MeanPoolLayer}
-# Activation functions that are similar to ReLU
-const ReluLikeActivation = Union{
-    typeof(relu),typeof(gelu),typeof(swish),typeof(softplus),typeof(mish)
-}
-# Layers & activation functions supported by LRP
-const LRPSupportedLayer = Union{Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer}
-const LRPSupportedActivation = Union{typeof(identity),ReluLikeActivation}
+# Utilies
+"""
+activation(layer)
 
-_flatten_model(x) = x
-_flatten_model(c::Chain) = [c.layers...]
+Return activation function of the layer.
+In case the layer is unknown or no activation function is found, `nothing` is returned.
+"""
+activation(l::Dense) = l.σ
+activation(l::Conv) = l.σ
+activation(l::BatchNorm) = l.λ
+activation(layer) = nothing # default for all other layer types
+
 """
     flatten_model(c)
 
@@ -30,8 +24,11 @@ function flatten_model(chain::Chain)
 end
 @deprecate flatten_chain(c) flatten_model(c)
 
-is_softmax(layer) = layer isa Union{typeof(softmax),typeof(softmax!)}
-has_output_softmax(x) = is_softmax(x)
+_flatten_model(x) = x
+_flatten_model(c::Chain) = [c.layers...]
+
+is_softmax(x) = x isa SoftmaxActivation
+has_output_softmax(x) = is_softmax(x) || is_softmax(activation(x))
 has_output_softmax(model::Chain) = has_output_softmax(model[end])
 
 """
@@ -56,10 +53,14 @@ Remove softmax activation on model output if it exists.
 function strip_softmax(model::Chain)
     if has_output_softmax(model)
         model = flatten_model(model)
-        return Chain(model.layers[1:(end - 1)]...)
+        if is_softmax(model[end])
+            return Chain(model.layers[1:(end - 1)]...)
+        end
+        return Chain(model.layers[1:(end - 1)]..., strip_softmax(model[end]))
     end
     return model
 end
+strip_softmax(l::Union{Dense,Conv}) = set_params(l, l.weight, l.bias, identity)
 
 # helper function to work around Flux.Zeros
 function get_params(layer)
@@ -76,5 +77,5 @@ end
 
 Duplicate layer using weights W, b.
 """
-set_params(l::Conv, W, b) = Conv(l.σ, W, b, l.stride, l.pad, l.dilation, l.groups)
-set_params(l::Dense, W, b) = Dense(W, b, l.σ)
+set_params(l::Conv, W, b, σ=l.σ) = Conv(σ, W, b, l.stride, l.pad, l.dilation, l.groups)
+set_params(l::Dense, W, b, σ=l.σ) = Dense(W, b, σ)
