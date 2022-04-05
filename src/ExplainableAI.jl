@@ -21,6 +21,7 @@ include("analyze_api.jl")
 include("types.jl")
 include("flux.jl")
 include("utils.jl")
+include("canonize.jl")
 include("input_augmentation.jl")
 include("gradient.jl")
 include("lrp_checks.jl")
@@ -47,6 +48,6 @@ export check_model
 export heatmap
 
 # utils
-export strip_softmax, flatten_model, flatten_chain
+export strip_softmax, flatten_model, flatten_chain, canonize
 
 end # module
