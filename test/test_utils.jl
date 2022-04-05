@@ -1,9 +1,15 @@
 using Flux
-using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax
+using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax, activation
 using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index
 using Random
 
 pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
+
+# Test `activation`
+@test activation(Dense(5, 2, gelu)) == gelu
+@test activation(Conv((5, 5), 3 => 2, softplus)) == softplus
+@test activation(BatchNorm(5, selu)) == selu
+@test isnothing(activation(flatten))
 
 # flatten_model
 @test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
