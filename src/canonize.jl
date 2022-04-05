@@ -37,10 +37,11 @@ end
 """
     canonize(model)
 
-Canonize model by flattening it and fusing BatchNorm layers into preciding Dense and Conv
+Canonize model by flattening it and fusing BatchNorm layers into preceding Dense and Conv
 layers with linear activation functions.
 """
 function canonize(model::Chain)
+    model = flatten_model(model)
     i = 1
     while i < length(model)
         model, fused = try_fusing(model, i)
