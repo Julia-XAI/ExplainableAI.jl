@@ -19,6 +19,10 @@ using ReferenceTests
         println("Running tests on heatmaps...")
         include("test_heatmaps.jl")
     end
+    @testset "Canonize" begin
+        println("Running tests on model canonization...")
+        include("test_canonize.jl")
+    end
     @testset "LRP model checks" begin
         println("Running tests on LRP model checks...")
         include("test_checks.jl")

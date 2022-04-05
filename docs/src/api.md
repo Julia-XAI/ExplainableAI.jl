@@ -14,7 +14,7 @@ SmoothGrad
 ```
 
 `SmoothGrad` is a special case of `InputAugmentation`, which can be applied as a wrapper to any analyzer:
-```@doc
+```@docs
 InputAugmentation
 ```
 
@@ -41,6 +41,7 @@ LRP_CONFIG.supports_activation
 ```@docs
 strip_softmax
 flatten_model
+canonize
 ```
 
 # Index
