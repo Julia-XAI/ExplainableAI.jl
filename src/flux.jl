@@ -1,4 +1,3 @@
-# Utilies
 """
 activation(layer)
 
