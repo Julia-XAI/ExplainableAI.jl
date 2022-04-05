@@ -18,6 +18,7 @@ using PrettyTables
 
 include("neuron_selection.jl")
 include("analyze_api.jl")
+include("types.jl")
 include("flux.jl")
 include("utils.jl")
 include("input_augmentation.jl")
