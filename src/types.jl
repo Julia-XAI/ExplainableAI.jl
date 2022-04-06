@@ -19,9 +19,7 @@ const PoolingLayer = Union{MaxPoolLayer,MeanPoolLayer}
 
 # Activation functions
 """Union type for ReLU-like activation functions."""
-const ReluLikeActivation = Union{
-    typeof(relu),typeof(gelu),typeof(swish),typeof(softplus),typeof(mish)
-}
+const ReluLikeActivation = Union{typeof(relu),typeof(gelu),typeof(swish),typeof(mish)}
 
 """Union type for softmax activation functions."""
 const SoftmaxActivation = Union{typeof(softmax),typeof(softmax!)}
