@@ -19,7 +19,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 ColorSchemes = "3"
 Distributions = "0.25"
-Flux = "0.12"
+Flux = "0.12, 0.13"
 ImageCore = "0.8, 0.9"
 PrettyTables = "1"
 Tullio = "0.3"
