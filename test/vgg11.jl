@@ -1,7 +1,7 @@
 # Code copied from Metalheads 0.6.0:
 # https://github.com/FluxML/Metalhead.jl/blob/8d22166bc9545b596a68926e20d744a0f4f5a61e/src/vgg.jl
 # due to need to fix initializer RNG across Julia versions.
-using Flux: @functor, outputsize
+using Flux: @functor, outputsize, flatten
 using Random
 fixedinit(dims...) = Flux.glorot_uniform(MersenneTwister(123), dims...)
 
