@@ -1,4 +1,5 @@
 using Flux
+using Flux: flatten
 using ExplainableAI
 using ExplainableAI: fuse_batchnorm
 using Random

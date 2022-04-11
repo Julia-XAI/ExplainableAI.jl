@@ -1,4 +1,5 @@
 using Flux
+using Flux: flatten
 using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax, activation
 using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index
 using Random
