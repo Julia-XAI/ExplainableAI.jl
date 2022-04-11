@@ -139,7 +139,6 @@ layers = Dict(
     "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
     "MaxPool" => MaxPool((3, 3)),
     "MeanPool" => MaxPool((3, 3)),
-    "DepthwiseConv" => DepthwiseConv((3, 3), 2 => 4; init=pseudorandn),
     "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
     "flatten" => flatten,

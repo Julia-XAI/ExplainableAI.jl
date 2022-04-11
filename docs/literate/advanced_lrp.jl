@@ -157,7 +157,7 @@ heatmap(input, analyzer)
 # ### Registering activation functions
 # The mechanism for registering custom activation functions is analogous to that of custom layers:
 myrelu(x) = max.(0, x)
-model = Chain(flatten, Dense(784, 100, myrelu), Dense(100, 10))
+model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 
 # Once again, creating an LRP analyzer for this model will throw an `ArgumentError`
 # and display the following model check summary:
