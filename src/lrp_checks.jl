@@ -78,14 +78,6 @@ function check_model(::Val{:LRP}, c::Chain; verbose=true)
                 LRP_CONFIG.supports_layer(::typeof(mylayer)) = true  # for functions
                 ```
                 The default fallback for this layer will use Automatic Differentiation according to "Layer-Wise Relevance Propagation: An Overview".
-                You can also define a fully LRP-custom rule for your layer by using the interface
-                ```julia
-                function (rule::AbstractLRPRule)(layer::MyLayer, aₖ, Rₖ₊₁)
-                    # ...
-                    return Rₖ
-                end
-                ```
-                This pattern can also be used to dispatch on specific rules.
                 """,
             ),
         )
