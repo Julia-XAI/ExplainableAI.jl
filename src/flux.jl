@@ -61,11 +61,11 @@ function strip_softmax(model::Chain)
 end
 strip_softmax(l::Union{Dense,Conv}) = set_params(l, l.weight, l.bias, identity)
 
-# helper function to work around Flux.Zeros
+# helper function to work around `bias=false` (Flux v0.13) and `bias=Flux.Zeros` (v0.12)
 function get_params(layer)
     W = layer.weight
     b = layer.bias
-    if typeof(b) <: Flux.Zeros
+    if b == false || typeof(b) <: Flux.Zeros
         b = zeros(eltype(W), size(W, 1))
     end
     return W, b
