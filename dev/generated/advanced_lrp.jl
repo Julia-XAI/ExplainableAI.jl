@@ -54,7 +54,7 @@ analyzer = LRPZero(model)
 heatmap(input, analyzer)
 
 myrelu(x) = max.(0, x)
-model = Chain(flatten, Dense(784, 100, myrelu), Dense(100, 10))
+model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 
 LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 
