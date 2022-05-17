@@ -44,9 +44,9 @@ heatmap(input, analyzer)
 using ColorSchemes
 heatmap(expl; cs=ColorSchemes.jet)
 
-heatmap(expl; reduce=:sum, normalize=:extrema, cs=ColorSchemes.inferno)
+heatmap(expl; reduce=:sum, rangescale=:extrema, cs=ColorSchemes.inferno)
 
-mosaic(heatmap(expl_batch; normalize=:extrema, cs=ColorSchemes.inferno); nrow=10)
+mosaic(heatmap(expl_batch; rangescale=:extrema, cs=ColorSchemes.inferno); nrow=10)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
