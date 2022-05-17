@@ -39,7 +39,7 @@ julia> batch_dim_view(A)
  3  4
 ```
 """
-batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, ntuple(_ -> :, Val(N + 1))...)
+batch_dim_view(A::AbstractArray{T,N}) where {T,N} = view(A, ntuple(Returns(:), N + 1)...)
 
 """
     drop_batch_index(I)

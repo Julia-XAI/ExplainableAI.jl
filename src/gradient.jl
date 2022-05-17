@@ -4,12 +4,15 @@ end
 
 function gradients_wrt_batch(model, input::AbstractArray{T,N}, output_indices) where {T,N}
     # To avoid computing a sparse jacobian, we compute individual gradients
-    # by mapping `gradient_wrt_input` on slices of the input along the batch dimension.
-    return mapreduce(
-        (gs...) -> cat(gs...; dims=N), zip(eachslice(input; dims=N), output_indices)
-    ) do (in, idx)
-        gradient_wrt_input(model, batch_dim_view(in), drop_batch_index(idx))
+    # by calling `gradient_wrt_input` on slices of the input along the batch dimension.
+    out = similar(input)
+    inds_before_N = ntuple(Returns(:), N - 1)
+    for (i, ax) in enumerate(axes(input, N))
+        view(out, inds_before_N..., ax, :) .= gradient_wrt_input(
+            model, view(input, inds_before_N..., ax, :), drop_batch_index(output_indices[i])
+        )
     end
+    return out
 end
 
 """
