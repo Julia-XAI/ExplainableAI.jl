@@ -8,21 +8,21 @@ shape = (2, 2, 3, 2)
 batch = reshape(collect(Float32, 1:prod(shape)), shape)
 
 reducers = [:sum, :maxabs, :norm]
-normalizers = [:extrema, :centered]
+rangescales = [:extrema, :centered]
 for r in reducers
-    for n in normalizers
-        h = heatmap(A; reduce=r, normalize=n)
-        @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n).txt" h
-        @test h ≈ heatmap(A; reduce=r, normalize=n, unpack_singleton=false)[1]
+    for n in rangescales
+        h = heatmap(A; reduce=r, rangescale=n)
+        @test_reference "references/heatmaps/reduce_$(r)_rangescale_$(n).txt" h
+        @test h ≈ heatmap(A; reduce=r, rangescale=n, unpack_singleton=false)[1]
 
-        h = heatmap(batch; reduce=r, normalize=n)
-        @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n).txt" h[1]
-        @test_reference "references/heatmaps/reduce_$(r)_normalize_$(n)2.txt" h[2]
+        h = heatmap(batch; reduce=r, rangescale=n)
+        @test_reference "references/heatmaps/reduce_$(r)_rangescale_$(n).txt" h[1]
+        @test_reference "references/heatmaps/reduce_$(r)_rangescale_$(n)2.txt" h[2]
     end
 end
 
 @test_throws ArgumentError heatmap(A, reduce=:foo)
-@test_throws ArgumentError heatmap(A, normalize=:bar)
+@test_throws "rangescale (bar) not supported" heatmap(A, rangescale=:bar)
 
 B = reshape(A, 2, 2, 3, 1, 1)
 @test_throws DomainError heatmap(B)

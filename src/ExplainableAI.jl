@@ -28,7 +28,6 @@ include("lrp_checks.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("heatmap.jl")
-include("deprecated.jl")
 
 export analyze
 
