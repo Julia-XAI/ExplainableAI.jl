@@ -1,7 +1,7 @@
 # NOTE: Heatmapping assumes Flux's WHCN convention (width, height, color channels, batch size).
 
 const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
-    # Analyzer => (colorscheme, reduce, normalize)
+    # Analyzer => (colorscheme, reduce, rangescale)
     :LRP => (ColorSchemes.bwr, :sum, :centered), # attribution
     :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # attribution
     :Gradient => (ColorSchemes.grays, :norm, :extrema), # gradient
@@ -29,7 +29,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
     - `:maxabs`: compute `maximum(abs, x)` over the color channels in
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `:sum`.
-- `normalize::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
+- `rangescale::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
     Can be either `:extrema` or `:centered`.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
@@ -43,7 +43,7 @@ function heatmap(
     attr::AbstractArray{T,N};
     cs::ColorScheme=ColorSchemes.bwr,
     reduce::Symbol=:sum,
-    normalize::Symbol=:centered,
+    rangescale::Symbol=:centered,
     permute::Bool=true,
     unpack_singleton::Bool=true,
 ) where {T,N}
@@ -55,18 +55,18 @@ function heatmap(
         ),
     )
     if unpack_singleton && size(attr, 4) == 1
-        return _heatmap(attr[:, :, :, 1], cs, reduce, normalize, permute)
+        return _heatmap(attr[:, :, :, 1], cs, reduce, rangescale, permute)
     end
-    return map(a -> _heatmap(a, cs, reduce, normalize, permute), eachslice(attr; dims=4))
+    return map(a -> _heatmap(a, cs, reduce, rangescale, permute), eachslice(attr; dims=4))
 end
 
 # Use HEATMAPPING_PRESETS for default kwargs when dispatching on Explanation
 function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
-    _cs, _reduce, _normalize = HEATMAPPING_PRESETS[expl.analyzer]
+    _cs, _reduce, _rangescale = HEATMAPPING_PRESETS[expl.analyzer]
     return heatmap(
         expl.attribution;
         reduce=get(kwargs, :reduce, _reduce),
-        normalize=get(kwargs, :normalize, _normalize),
+        rangescale=get(kwargs, :rangescale, _rangescale),
         cs=get(kwargs, :cs, _cs),
         permute=permute,
     )
@@ -81,28 +81,12 @@ function _heatmap(
     attr::AbstractArray{T,3},
     cs::ColorScheme,
     reduce::Symbol,
-    normalize::Symbol,
+    rangescale::Symbol,
     permute::Bool,
 ) where {T<:Real}
-    img = _normalize(dropdims(_reduce(attr, reduce); dims=3), normalize)
+    img = dropdims(_reduce(attr, reduce); dims=3)
     permute && (img = permutedims(img))
-    return ColorSchemes.get(cs, img)
-end
-
-# Normalize activations across pixels
-function _normalize(attr, method::Symbol)
-    if method == :centered
-        min, max = (-1, 1) .* maximum(abs, attr)
-    elseif method == :extrema
-        min, max = extrema(attr)
-    else
-        throw(
-            ArgumentError(
-                "Color scheme normalizer :$method not supported, `normalize` should be :extrema or :centered",
-            ),
-        )
-    end
-    return (attr .- min) / (max - min)
+    return ColorSchemes.get(cs, img, rangescale)
 end
 
 # Reduce attributions across color channels into a single scalar – assumes WHCN convention
