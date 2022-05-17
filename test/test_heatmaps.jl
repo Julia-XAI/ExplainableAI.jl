@@ -22,7 +22,7 @@ for r in reducers
 end
 
 @test_throws ArgumentError heatmap(A, reduce=:foo)
-@test_throws "rangescale (bar) not supported" heatmap(A, rangescale=:bar)
+@test_throws ErrorException heatmap(A, rangescale=:bar)
 
 B = reshape(A, 2, 2, 3, 1, 1)
 @test_throws DomainError heatmap(B)
