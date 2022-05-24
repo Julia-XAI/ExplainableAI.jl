@@ -29,6 +29,7 @@ model = BSON.load("../model.bson", @__MODULE__)[:model]
 # We use MLDatasets to load a single image from the MNIST dataset:
 using MLDatasets
 using ImageCore
+using ImageShow
 
 index = 10
 x, y = MNIST.testdata(Float32, index)
