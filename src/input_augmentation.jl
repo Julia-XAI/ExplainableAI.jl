@@ -129,8 +129,11 @@ struct IntegrationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
 end
 
 function (aug::IntegrationAugmentation)(
-    input, ns::AbstractNeuronSelector, input_ref=zero(x)
+    input, ns::AbstractNeuronSelector, input_ref=zero(input)
 )
+    size(input) != size(input_ref) &&
+        throw(ArgumentError("Input reference size doesn't match input size."))
+
     # Regular forward pass of model
     output = aug.analyzer.model(input)
     output_indices = ns(output)
@@ -174,8 +177,8 @@ julia> interpolate_batch(x, x0, 5)
 ```
 """
 function interpolate_batch(
-    x::A, x0::A, nsamples
-) where {T<:AbstractFloat,N,A<:AbstractArray{T,N}}
+    x::AbstractArray{T,N}, x0::AbstractArray{T,N}, nsamples
+) where {T,N}
     in_size = size(x)
     outs = similar(x, (in_size[1:(end - 1)]..., in_size[end] * nsamples))
     colons = ntuple(Returns(:), N - 1)
