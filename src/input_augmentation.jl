@@ -63,7 +63,7 @@ julia> augment_batch_dim(A, 3)
 ```
 """
 function augment_batch_dim(input::AbstractArray{T,N}, n) where {T,N}
-    return repeat(input; inner=(ntuple(_ -> 1, Val(N - 1))..., n))
+    return repeat(input; inner=(ntuple(Returns(1), N - 1)..., n))
 end
 
 """
@@ -72,14 +72,20 @@ end
 Reduce augmented input batch by averaging the explanation for each augmented sample.
 """
 function reduce_augmentation(input::AbstractArray{T,N}, n) where {T<:AbstractFloat,N}
-    return cat(
-        (
-            Iterators.map(1:n:size(input, N)) do i
-                augmentation_range = ntuple(_ -> :, Val(N - 1))..., i:(i + n - 1)
-                sum(view(input, augmentation_range...); dims=N) / n
-            end
-        )...; dims=N
-    )::Array{T,N}
+    # Allocate output array
+    in_size = size(input)
+    in_size[end] % n != 0 &&
+        throw(ArgumentError("Can't reduce augmented batch size of $(in_size[end]) by $n"))
+    out_size = (in_size[1:(end - 1)]..., div(in_size[end], n))
+    out = similar(input, eltype(input), out_size)
+
+    axs = axes(input, N)
+    inds_before_N = ntuple(Returns(:), N - 1)
+    for (i, ax) in enumerate(first(axs):n:last(axs))
+        view(out, inds_before_N..., i) .=
+            sum(view(input, inds_before_N..., ax:(ax + n - 1)); dims=N) / n
+    end
+    return out
 end
 """
     augment_indices(indices, n)
