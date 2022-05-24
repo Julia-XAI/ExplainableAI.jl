@@ -11,11 +11,13 @@ LRP
 Gradient
 InputTimesGradient
 SmoothGrad
+IntegratedGradients
 ```
 
-`SmoothGrad` is a special case of `NoiseAugmentation`, which can be applied as a wrapper to any analyzer:
+`SmoothGrad` and `IntegratedGradients` are special cases of the input augmentation wrappers `NoiseAugmentation` and `IntegrationAugmentation`, which can be applied as a wrapper to any analyzer:
 ```@docs
 NoiseAugmentation
+IntegrationAugmentation
 ```
 
 # LRP
