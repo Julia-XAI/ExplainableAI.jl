@@ -26,7 +26,7 @@ ANALYZERS = Dict(
     "InputTimesGradient" => InputTimesGradient,
     "SmoothGrad" => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
     "SmoothLRP" =>
-        m -> InputAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
+        m -> NoiseAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
 )
 
 for (name, method) in ANALYZERS
@@ -46,8 +46,8 @@ for (name, method) in ANALYZERS
         analyzer = method(model)
         expl_batch = analyzer(input_batch)
         @test expl1_bd.attribution ≈ expl_batch.attribution[:, 1]
-        if !(analyzer isa InputAugmentation)
-            # InputAugmentation methods generate random numbers for the entire batch.
+        if !(analyzer isa NoiseAugmentation)
+            # NoiseAugmentation methods generate random numbers for the entire batch.
             # therefore explanations don't match except for the first input in the batch.
             @test expl2_bd.attribution ≈ expl_batch.attribution[:, 2]
         end

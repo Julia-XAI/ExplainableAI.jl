@@ -13,9 +13,9 @@ InputTimesGradient
 SmoothGrad
 ```
 
-`SmoothGrad` is a special case of `InputAugmentation`, which can be applied as a wrapper to any analyzer:
+`SmoothGrad` is a special case of `NoiseAugmentation`, which can be applied as a wrapper to any analyzer:
 ```@docs
-InputAugmentation
+NoiseAugmentation
 ```
 
 # LRP

@@ -61,4 +61,4 @@ in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
 # References
 [1] Smilkov et al., SmoothGrad: removing noise by adding noise
 """
-SmoothGrad(model, n=50, args...) = InputAugmentation(Gradient(model), n, args...)
+SmoothGrad(model, n=50, args...) = NoiseAugmentation(Gradient(model), n, args...)
