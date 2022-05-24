@@ -28,7 +28,7 @@ ANALYZERS = Dict(
     "SmoothLRP" =>
         m -> NoiseAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
-    "IntegratedLRP" => m -> IntegrationAugmentation(LRP(m), 2),
+    "IntegratedLRP" => m -> InterpolationAugmentation(LRP(m), 2),
 )
 
 for (name, method) in ANALYZERS

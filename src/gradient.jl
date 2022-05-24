@@ -72,4 +72,4 @@ Analyze model by using the Integrated Gradients method.
 # References
 [1] Sundararajan et al., Axiomatic Attribution for Deep Networks
 """
-IntegratedGradients(model, n=50) = IntegrationAugmentation(Gradient(model), n)
+IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)

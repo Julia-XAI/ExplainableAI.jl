@@ -106,6 +106,7 @@ mosaic(heatmap(batch, analyzer, 1); nrow=10)
 # ├── Gradient
 # ├── InputTimesGradient
 # ├── SmoothGrad
+# ├── IntegratedGradients
 # └── LRP
 #     ├── LRPZero
 #     ├── LRPEpsilon

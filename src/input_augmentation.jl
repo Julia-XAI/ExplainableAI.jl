@@ -117,18 +117,18 @@ function add_noise(A::AbstractArray{T}, distr::Distribution, rng::AbstractRNG) w
 end
 
 """
-    IntegrationAugmentation(model, [n=50])
+    InterpolationAugmentation(model, [n=50])
 
 A wrapper around analyzers that augments the input with `n` steps of linear interpolation
 between the input and a reference input (typically `zero(input)`).
 This augmentated input is then averaged to return an `Explanation`.
 """
-struct IntegrationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
+struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
     analyzer::A
     n::Int
 end
 
-function (aug::IntegrationAugmentation)(
+function (aug::InterpolationAugmentation)(
     input, ns::AbstractNeuronSelector, input_ref=zero(input)
 )
     size(input) != size(input_ref) &&
