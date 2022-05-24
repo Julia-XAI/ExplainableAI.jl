@@ -1,3 +1,4 @@
+using LoopVectorization
 using ExplainableAI
 using ExplainableAI: modify_params
 import ExplainableAI: modify_layer, lrp!

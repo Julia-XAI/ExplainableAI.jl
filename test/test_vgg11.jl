@@ -1,3 +1,4 @@
+using LoopVectorization
 using ExplainableAI
 using Flux
 using JLD2
