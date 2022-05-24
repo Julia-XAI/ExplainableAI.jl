@@ -115,3 +115,72 @@ end
 function add_noise(A::AbstractArray{T}, distr::Distribution, rng::AbstractRNG) where {T}
     return A + T.(rand(rng, distr, size(A)))
 end
+
+"""
+    IntegrationAugmentation(model, [n=50])
+
+A wrapper around analyzers that augments the input with `n` steps of linear interpolation
+between the input and a reference input (typically `zero(input)`).
+This augmentated input is then averaged to return an `Explanation`.
+"""
+struct IntegrationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
+    analyzer::A
+    n::Int
+end
+
+function (aug::IntegrationAugmentation)(
+    input, ns::AbstractNeuronSelector, input_ref=zero(x)
+)
+    # Regular forward pass of model
+    output = aug.analyzer.model(input)
+    output_indices = ns(output)
+
+    # Call regular analyzer on augmented batch
+    augmented_input = interpolate_batch(input, input_ref, aug.n)
+    augmented_indices = augment_indices(output_indices, aug.n)
+    augmented_expl = aug.analyzer(augmented_input, AugmentationSelector(augmented_indices))
+
+    # Average explanation
+    return Explanation(
+        reduce_augmentation(augmented_expl.attribution, aug.n),
+        output,
+        output_indices,
+        augmented_expl.analyzer,
+        Nothing,
+    )
+end
+
+"""
+    interpolate_batch(x, x0, nsamples)
+
+Augment batch along batch dimension using linear interpolation between input `x` and a reference input `x0`.
+
+## Example
+```julia-repl
+julia> x = Float16.(reshape(1:4, 2, 2))
+2×2 Matrix{Float16}:
+ 1.0  3.0
+ 2.0  4.0
+
+julia> x0 = zero(x)
+2×2 Matrix{Float16}:
+ 0.0  0.0
+ 0.0  0.0
+
+julia> interpolate_batch(x, x0, 5)
+2×10 Matrix{Float16}:
+ 0.0  0.25  0.5  0.75  1.0  0.0  0.75  1.5  2.25  3.0
+ 0.0  0.5   1.0  1.5   2.0  0.0  1.0   2.0  3.0   4.0
+```
+"""
+function interpolate_batch(
+    x::A, x0::A, nsamples
+) where {T<:AbstractFloat,N,A<:AbstractArray{T,N}}
+    in_size = size(x)
+    outs = similar(x, (in_size[1:(end - 1)]..., in_size[end] * nsamples))
+    colons = ntuple(Returns(:), N - 1)
+    for (i, t) in enumerate(range(zero(T), oneunit(T); length=nsamples))
+        outs[colons..., i:nsamples:end] .= x0 + t * (x - x0)
+    end
+    return outs
+end
