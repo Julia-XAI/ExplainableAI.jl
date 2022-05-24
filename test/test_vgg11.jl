@@ -6,6 +6,7 @@ const GRADIENT_ANALYZERS = Dict(
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
     "SmoothGrad" => model -> SmoothGrad(model, 5, 0.1, MersenneTwister(123)),
+    "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
 const LRP_ANALYZERS = Dict(
     "LRPZero" => LRPZero, "LRPEpsilon" => LRPEpsilon, "LRPGamma" => LRPGamma
