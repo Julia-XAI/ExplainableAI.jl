@@ -65,7 +65,7 @@ function (analyzer::LRP)(
 
     # Backward pass through layers, applying LRP rules
     for (i, rule) in Iterators.reverse(enumerate(analyzer.rules))
-        lrp!(rule, layers[i], rels[i], acts[i], rels[i + 1]) # inplace update rels[i]
+        lrp!(rels[i], rule, layers[i], acts[i], rels[i + 1]) # inplace update rels[i]
     end
 
     return Explanation(

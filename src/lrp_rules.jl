@@ -2,13 +2,13 @@
 abstract type AbstractLRPRule end
 
 # Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
-function lrp!(rule::R, layer::L, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
-    lrp_autodiff!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
+    lrp_autodiff!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
     return nothing
 end
 
 function lrp_autodiff!(
-    rule::R, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2
+    Rₖ::T1, rule::R, layer::L, aₖ::T1, Rₖ₊₁::T2
 ) where {R<:AbstractLRPRule,L,T1,T2}
     layerᵨ = modify_layer(rule, layer)
     c::T1 = only(
@@ -23,12 +23,12 @@ function lrp_autodiff!(
 end
 
 # For linear layer types such as Dense layers, using autodiff is overkill.
-function lrp!(rule::R, layer::Dense, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
-    lrp_dense!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::R, layer::Dense, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+    lrp_dense!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
     return nothing
 end
 
-function lrp_dense!(rule::R, l, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
+function lrp_dense!(Rₖ, rule::R, l, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
     ρW, ρb = modify_params(rule, get_params(l)...)
     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ .+ ρb)
     @tullio Rₖ[j, b] = aₖ[j, b] * ρW[k, j] / ãₖ₊₁[k, b] * Rₖ₊₁[k, b]
@@ -36,8 +36,8 @@ function lrp_dense!(rule::R, l, Rₖ, aₖ, Rₖ₊₁) where {R<:AbstractLRPRul
 end
 
 # Other special cases that are dispatched on layer type:
-lrp!(::AbstractLRPRule, ::DropoutLayer, Rₖ, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
-lrp!(::AbstractLRPRule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
+lrp!(Rₖ, ::AbstractLRPRule, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
+lrp!(Rₖ, ::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
 
 # To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
 # If this isn't done, the following fallbacks are used by default:
@@ -75,7 +75,7 @@ Constructor for LRP-0 rule. Commonly used on upper layers.
 struct ZeroRule <: AbstractLRPRule end
 
 """
-    GammaRule(; γ=0.25)
+    GammaRule([γ=0.25])
 
 Constructor for LRP-``γ`` rule. Commonly used on lower layers.
 
@@ -84,16 +84,17 @@ Arguments:
 """
 struct GammaRule{T} <: AbstractLRPRule
     γ::T
-    GammaRule(; γ=0.25) = new{Float32}(γ)
+    GammaRule(γ=0.25f0) = new{Float32}(γ)
 end
 function modify_params(r::GammaRule, W, b)
-    ρW = W + r.γ * relu.(W)
-    ρb = b + r.γ * relu.(b)
+    T = eltype(W)
+    ρW = W + convert(T, r.γ) * relu.(W)
+    ρb = b + convert(T, r.γ) * relu.(b)
     return ρW, ρb
 end
 
 """
-    EpsilonRule(; ϵ=1f-6)
+    EpsilonRule([ϵ=1.0f-6])
 
 Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
 
@@ -102,7 +103,7 @@ Arguments:
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(; ϵ=1.0f-6) = new{Float32}(ϵ)
+    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 
@@ -122,8 +123,8 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-lrp!(r::ZBoxRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(r, layer, Rₖ, aₖ, Rₖ₊₁)
-lrp!(r::ZBoxRule, layer::Conv, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(r, layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(Rₖ, r::ZBoxRule, layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox!(Rₖ, r, layer, aₖ, Rₖ₊₁)
+lrp!(Rₖ, r::ZBoxRule, layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox!(Rₖ, r, layer, aₖ, Rₖ₊₁)
 
 _zbox_bound(T, c::Real, in_size) = fill(convert(T, c), in_size)
 function _zbox_bound(T, A::AbstractArray, in_size)
@@ -135,7 +136,7 @@ function _zbox_bound(T, A::AbstractArray, in_size)
     return convert.(T, A)
 end
 
-function lrp_zbox!(r::ZBoxRule, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
+function lrp_zbox!(Rₖ::T1, r::ZBoxRule, layer::L, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
     T = eltype(aₖ)
     in_size = size(aₖ)
     l = _zbox_bound(T, r.low, in_size)

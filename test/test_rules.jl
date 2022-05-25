@@ -27,7 +27,7 @@ const RULES = Dict(
 
     layer = Dense(W, b, relu)
     R̂ₖ = similar(aₖ) # will be inplace updated
-    @inferred lrp!(rule, layer, R̂ₖ, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
 
     ## Pooling layer
@@ -42,7 +42,7 @@ const RULES = Dict(
 
     layer = MaxPool((2, 2); stride=(1, 1))
     R̂ₖ = similar(aₖ) # will be inplace updated
-    @inferred lrp!(rule, layer, R̂ₖ, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
 end
 
@@ -53,7 +53,7 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 ## Test individual rules
 @testset "modify_params" begin
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
-    ρW, ρb = @inferred modify_params(GammaRule(; γ=0.42), W, b)
+    ρW, ρb = @inferred modify_params(GammaRule(0.42), W, b)
     @test ρW ≈ [1.42 -1.0; 2.84 0.0]
     @test ρb ≈ [-1.0, 1.42]
 end
@@ -67,7 +67,7 @@ aₖ_dense = pseudorandn(ins_dense, batchsize)
 
 layers = Dict(
     "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
-    "Dense_identity" => Dense(Matrix(I, outs_dense, ins_dense), false, identity),
+    "Dense_identity" => Dense(Matrix{Float32}(I, outs_dense, ins_dense), false, identity),
 )
 @testset "Dense" begin
     for (rulename, rule) in RULES
@@ -76,7 +76,7 @@ layers = Dict(
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ_dense)
                     Rₖ = similar(aₖ_dense)
-                    @inferred lrp!(rule, layer, Rₖ, aₖ_dense, Rₖ₊₁)
+                    @inferred lrp!(Rₖ, rule, layer, aₖ_dense, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ_dense)
                     @test size(Rₖ) == size(aₖ_dense)
@@ -118,8 +118,8 @@ equalpairs = Dict( # these pairs of layers are all equal
                     @test Rₖ₊₁ == l2(aₖ)
                     Rₖ1 = similar(aₖ)
                     Rₖ2 = similar(aₖ)
-                    @inferred lrp!(rule, l1, Rₖ1, aₖ, Rₖ₊₁)
-                    @inferred lrp!(rule, l2, Rₖ2, aₖ, Rₖ₊₁)
+                    @inferred lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
+                    @inferred lrp!(Rₖ2, rule, l2, aₖ, Rₖ₊₁)
                     @test Rₖ1 == Rₖ2
 
                     @test typeof(Rₖ1) == typeof(aₖ)
@@ -152,7 +152,7 @@ layers = Dict(
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
                     Rₖ = similar(aₖ)
-                    @inferred lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+                    @inferred lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
@@ -173,7 +173,7 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
-lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
@@ -188,7 +188,7 @@ layers = Dict(
                     wrapped_layer = TestWrapper(layer)
                     Rₖ₊₁ = wrapped_layer(aₖ)
                     Rₖ = similar(aₖ)
-                    @inferred lrp!(rule, wrapped_layer, Rₖ, aₖ, Rₖ₊₁)
+                    @inferred lrp!(Rₖ, rule, wrapped_layer, aₖ, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)

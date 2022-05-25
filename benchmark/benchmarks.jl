@@ -52,7 +52,7 @@ struct TestWrapper{T}
 end
 (w::TestWrapper)(x) = w.layer(x)
 modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
-lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
 
 # generate input for conv layers
 insize = (64, 64, 3, 1)
@@ -81,7 +81,7 @@ for (layername, (layer, aₖ)) in layers
     Rₖ₊₁ = layer(aₖ)
     for (rulename, rule) in rules
         SUITE["Layer"][layername][rulename] = @benchmarkable lrp!(
-            $(rule), $(layer), $(Rₖ), $(aₖ), $(Rₖ₊₁)
+            $(Rₖ), $(rule), $(layer), $(aₖ), $(Rₖ₊₁)
         )
     end
 end
