@@ -29,11 +29,13 @@ model = BSON.load("../model.bson", @__MODULE__)[:model]
 # We use MLDatasets to load a single image from the MNIST dataset:
 using MLDatasets
 using ImageCore
+using ImageIO
+using ImageShow
 
 index = 10
-x, y = MNIST.testdata(Float32, index)
+x, _ = MNIST(Float32, :test)[10]
 
-MNIST.convert2image(x)
+convert2image(MNIST, x)
 
 # By convention in Flux.jl, this input needs to be resized to WHCN format by adding a color channel and batch dimensions.
 input = reshape(x, 28, 28, 1, :);
@@ -82,7 +84,7 @@ heatmap(input, analyzer, 5)
 # ## Input batches
 # ExplainableAI also supports input batches:
 batchsize = 100
-xs, _ = MNIST.testdata(Float32, 1:batchsize)
+xs, _ = MNIST(Float32, :test)[1:batchsize]
 batch = reshape(xs, 28, 28, 1, :) # reshape to WHCN format
 expl_batch = analyze(batch, analyzer);
 
@@ -106,6 +108,7 @@ mosaic(heatmap(batch, analyzer, 1); nrow=10)
 # ├── Gradient
 # ├── InputTimesGradient
 # ├── SmoothGrad
+# ├── IntegratedGradients
 # └── LRP
 #     ├── LRPZero
 #     ├── LRPEpsilon
