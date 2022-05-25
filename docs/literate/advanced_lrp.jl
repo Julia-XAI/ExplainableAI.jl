@@ -195,12 +195,16 @@ analyzer = LRPZero(model)
 #     Rₖ .= ...
 # end
 # ```
-# These functions use the arguments `rule` and `layer` to dispatch
-# `modify_params` and `modify_denominator` on the rule and layer type.
-# They in-place modify a pre-allocated array of the input relevance `Rₖ`
-# based on the input activation `aₖ` and output relevance `Rₖ₊₁`.
+# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`
+# (the `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
+# in Julia to denote functions that modify their arguments).
+
+# The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
+# on the types of the arguments `rule` and `layer`.
+# The relevance `Rₖ` is then computed based on the input activation `aₖ` and the output relevance `Rₖ₊₁`.
+# Multiple dispatch is also used to dispatch `modify_params` and `modify_denominator` on the rule and layer type.
 #
-# Calling `analyze` then applies a forward-pass of the model, keeping track of
+# Calling `analyze` on a LRP-model applies a forward-pass of the model, keeping track of
 # the activations `aₖ` for each layer `k`.
 # The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
 # in a backward-pass over the model layers and previous activations.
