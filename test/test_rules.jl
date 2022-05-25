@@ -62,8 +62,8 @@ end
 # Define Dense test input
 ins_dense = 20 # input dimension
 outs_dense = 10 # output dimension
-aₖ = pseudorandn(ins_dense)
-aₖ = reshape(aₖ, size(aₖ)..., 1)
+batchsize = 2
+aₖ_dense = pseudorandn(ins_dense, batchsize)
 
 layers = Dict(
     "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
@@ -74,23 +74,22 @@ layers = Dict(
         @testset "$rulename" begin
             for (layername, layer) in layers
                 @testset "$layername" begin
-                    Rₖ₊₁ = layer(aₖ)
-                    Rₖ = similar(aₖ)
-                    @inferred lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+                    Rₖ₊₁ = layer(aₖ_dense)
+                    Rₖ = similar(aₖ_dense)
+                    @inferred lrp!(rule, layer, Rₖ, aₖ_dense, Rₖ₊₁)
 
-                    @test typeof(Rₖ) == typeof(aₖ)
-                    @test size(Rₖ) == size(aₖ)
+                    @test typeof(Rₖ) == typeof(aₖ_dense)
+                    @test size(Rₖ) == size(aₖ_dense)
 
-                    # println(Rₖ)
                     if rulename == "Dense_identity"
                         # First `outs_dense` dimensions should propagate
                         # activations as relevances, rest should be ≈ 0.
-                        @test Rₖ[1:outs_dense] ≈ aₖ[1:outs_dense]
+                        @test Rₖ[1:outs_dense] ≈ aₖ_dense[1:outs_dense]
                         @test all(Rₖ[outs_dense:end] .< 1e-8)
                     end
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ[:, 1]
+                        "R" => Rₖ
                     ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
                 end
             end
@@ -99,7 +98,7 @@ layers = Dict(
 end
 
 ## Test PoolingLayers
-insize = (6, 6, 2, 1)
+insize = (6, 6, 2, batchsize)
 aₖ = pseudorandn(insize)
 
 equalpairs = Dict( # these pairs of layers are all equal
@@ -178,8 +177,7 @@ lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.laye
 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
-    "Dense_relu" =>
-        (Dense(ins_dense, outs_dense, relu; init=pseudorandn), pseudorandn(ins_dense)),
+    "Dense_relu" => (Dense(ins_dense, outs_dense, relu; init=pseudorandn), aₖ_dense),
     "flatten" => (flatten, aₖ),
 )
 @testset "Custom layers" begin
