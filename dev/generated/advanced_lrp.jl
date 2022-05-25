@@ -11,7 +11,7 @@ x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
 rules = [
-    ZBoxRule(),
+    ZBoxRule(0.0f0, 1.0f0),
     GammaRule(),
     GammaRule(),
     EpsilonRule(),
