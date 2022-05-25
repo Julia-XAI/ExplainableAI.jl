@@ -191,7 +191,7 @@ analyzer = LRPZero(model)
 # ## How it works internally
 # Internally, ExplainableAI dispatches to low level functions
 # ```julia
-# function lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+# lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
 # end
 # ```
@@ -241,7 +241,7 @@ analyzer = LRPZero(model)
 # The default LRP fallback for unknown layers uses AD via [Zygote](https://github.com/FluxML/Zygote.jl).
 # For `lrp!`, we end up with something that looks very similar to the previous four step computation:
 # ```julia
-# function lrp!(rule, layer, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
 #     layerᵨ = modify_layer(rule, layer)
 #     c = gradient(aₖ) do a
 #             z = layerᵨ(a)
@@ -263,7 +263,7 @@ analyzer = LRPZero(model)
 # Reshaping layers don't affect attributions. We can therefore avoid the computational
 # overhead of AD by writing a specialized implementation that simply reshapes back:
 # ```julia
-# function lrp!(::AbstractLRPRule, ::ReshapingLayer, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, ::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁)
 #     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
 # end
 # ```
@@ -272,7 +272,7 @@ analyzer = LRPZero(model)
 #
 # We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
-# function lrp!(rule::AbstractLRPRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule::AbstractLRPRule, layer::Dense, aₖ, Rₖ₊₁)
 #     ρW, ρb = modify_params(rule, get_params(layer)...)
 #     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
 #     @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k] # Tullio ≈ fast einsum
@@ -283,7 +283,7 @@ analyzer = LRPZero(model)
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
-# function lrp!(rule::MyRule, layer::MyLayer, Rₖ, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule::MyRule, layer::MyLayer, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
 # end
 # ```
