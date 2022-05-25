@@ -81,7 +81,6 @@ layers = Dict(
                     @test typeof(Rₖ) == typeof(aₖ)
                     @test size(Rₖ) == size(aₖ)
 
-                    # println(Rₖ)
                     if rulename == "Dense_identity"
                         # First `outs_dense` dimensions should propagate
                         # activations as relevances, rest should be ≈ 0.
