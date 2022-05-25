@@ -2,4 +2,5 @@
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ExplainableAI = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
