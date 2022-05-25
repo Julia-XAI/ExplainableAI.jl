@@ -121,7 +121,8 @@ end
 
 A wrapper around analyzers that augments the input with `n` steps of linear interpolation
 between the input and a reference input (typically `zero(input)`).
-This augmentated input is then averaged to return an `Explanation`.
+The gradients w.r.t. this augmented input are then averaged and multiplied with the
+difference between the input and the reference input.
 """
 struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
     analyzer::A
@@ -143,9 +144,11 @@ function (aug::InterpolationAugmentation)(
     augmented_indices = augment_indices(output_indices, aug.n)
     augmented_expl = aug.analyzer(augmented_input, AugmentationSelector(augmented_indices))
 
-    # Average explanation
+    # Average gradients and compute explanation
+    expl = (input - input_ref) .* reduce_augmentation(augmented_expl.attribution, aug.n)
+
     return Explanation(
-        reduce_augmentation(augmented_expl.attribution, aug.n),
+        expl,
         output,
         output_indices,
         augmented_expl.analyzer,
