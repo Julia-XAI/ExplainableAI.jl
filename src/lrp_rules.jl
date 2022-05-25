@@ -75,7 +75,7 @@ Constructor for LRP-0 rule. Commonly used on upper layers.
 struct ZeroRule <: AbstractLRPRule end
 
 """
-    GammaRule(; γ=0.25)
+    GammaRule([γ=0.25])
 
 Constructor for LRP-``γ`` rule. Commonly used on lower layers.
 
@@ -84,16 +84,17 @@ Arguments:
 """
 struct GammaRule{T} <: AbstractLRPRule
     γ::T
-    GammaRule(; γ=0.25) = new{Float32}(γ)
+    GammaRule(γ=0.25f0) = new{Float32}(γ)
 end
 function modify_params(r::GammaRule, W, b)
-    ρW = W + r.γ * relu.(W)
-    ρb = b + r.γ * relu.(b)
+    T = eltype(W)
+    ρW = W + convert(T, r.γ) * relu.(W)
+    ρb = b + convert(T, r.γ) * relu.(b)
     return ρW, ρb
 end
 
 """
-    EpsilonRule(; ϵ=1f-6)
+    EpsilonRule([ϵ=1.0f-6])
 
 Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
 
@@ -102,7 +103,7 @@ Arguments:
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(; ϵ=1.0f-6) = new{Float32}(ϵ)
+    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 
