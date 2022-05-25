@@ -53,7 +53,7 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 ## Test individual rules
 @testset "modify_params" begin
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
-    ρW, ρb = @inferred modify_params(GammaRule(; γ=0.42), W, b)
+    ρW, ρb = @inferred modify_params(GammaRule(0.42), W, b)
     @test ρW ≈ [1.42 -1.0; 2.84 0.0]
     @test ρb ≈ [-1.0, 1.42]
 end
@@ -67,7 +67,7 @@ aₖ_dense = pseudorandn(ins_dense, batchsize)
 
 layers = Dict(
     "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
-    "Dense_identity" => Dense(Matrix(I, outs_dense, ins_dense), false, identity),
+    "Dense_identity" => Dense(Matrix{Float32}(I, outs_dense, ins_dense), false, identity),
 )
 @testset "Dense" begin
     for (rulename, rule) in RULES
