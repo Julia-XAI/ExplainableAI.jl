@@ -9,11 +9,16 @@ on_CI = haskey(ENV, "GITHUB_ACTIONS")
 include("../test/vgg11.jl")
 vgg11 = VGG11(; pretrain=false)
 model = flatten_model(strip_softmax(vgg11.layers))
-img = rand(MersenneTwister(123), Float32, (224, 224, 3, 1))
+
+T = Float32
+img = rand(MersenneTwister(123), T, (224, 224, 3, 1))
 
 # Benchmark custom LRP composite
 function LRPCustom(model::Chain)
-    return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
+    return LRP(
+        model,
+        [ZBoxRule(zero(T), oneunit(T)), repeat([GammaRule()], length(model.layers) - 1)...],
+    )
 end
 
 # Use one representative algorithm of each type
@@ -53,20 +58,20 @@ lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.laye
 insize = (64, 64, 3, 1)
 in_dense = 500
 out_dense = 100
-aₖ = randn(Float32, insize)
+aₖ = randn(T, insize)
 
 layers = Dict(
     "MaxPool" => (MaxPool((3, 3); pad=0), aₖ),
     "Conv" => (Conv((3, 3), 3 => 2), aₖ),
-    "Dense" => (Dense(in_dense, out_dense, relu), randn(Float32, in_dense, 1)),
+    "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
     "WrappedDense" =>
-        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(Float32, in_dense, 1)),
+        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(T, in_dense, 1)),
 )
 rules = Dict(
     "ZeroRule" => ZeroRule(),
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
-    "ZBoxRule" => ZBoxRule(),
+    "ZBoxRule" => ZBoxRule(zero(T), oneunit(T)),
 )
 
 SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
