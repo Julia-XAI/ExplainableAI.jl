@@ -175,8 +175,6 @@ end
 modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
 lrp!(rule::ZBoxRule, w::TestWrapper, Rₖ, aₖ, Rₖ₊₁) = lrp!(rule, w.layer, Rₖ, aₖ, Rₖ₊₁)
 
-@show aₖ_dense
-
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
     "Dense_relu" => (Dense(ins_dense, outs_dense, relu; init=pseudorandn), aₖ_dense),

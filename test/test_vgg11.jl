@@ -33,7 +33,7 @@ function test_vgg11(name, method; kwargs...)
     @testset "$name" begin
         # Reference test attribution
         analyzer = method(model)
-        println("Timing $name cold...\t")
+        print("Timing $name cold...\t")
         @time expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
         @test size(attr) == size(img)
@@ -42,7 +42,7 @@ function test_vgg11(name, method; kwargs...)
 
         # Test direct call of analyzer
         analyzer = method(model)
-        println("Timing $name warm...\t")
+        print("Timing $name warm...\t")
         @time expl2 = analyzer(img; kwargs...)
         @test expl.attribution ≈ expl2.attribution
 
