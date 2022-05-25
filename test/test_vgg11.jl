@@ -26,7 +26,9 @@ vgg11 = VGG11(; pretrain=false)
 model = flatten_model(strip_softmax(vgg11.layers))
 
 function LRPCustom(model::Chain)
-    return LRP(model, [ZBoxRule(), repeat([GammaRule()], length(model.layers) - 1)...])
+    return LRP(
+        model, [ZBoxRule(0.0f0, 1.0f0), repeat([GammaRule()], length(model.layers) - 1)...]
+    )
 end
 
 function test_vgg11(name, method; kwargs...)

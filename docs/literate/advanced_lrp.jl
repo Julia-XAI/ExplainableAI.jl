@@ -23,7 +23,7 @@ input = reshape(x, 28, 28, 1, :);
 # we can also assign rules to each layer individually.
 # For this purpose, we create an array of rules that matches the length of the Flux chain:
 rules = [
-    ZBoxRule(),
+    ZBoxRule(0.0f0, 1.0f0),
     GammaRule(),
     GammaRule(),
     EpsilonRule(),

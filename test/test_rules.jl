@@ -11,7 +11,7 @@ const RULES = Dict(
     "ZeroRule" => ZeroRule(),
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
-    "ZBoxRule" => ZBoxRule(),
+    "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
 )
 
 ## Hand-written tests
