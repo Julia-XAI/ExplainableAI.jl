@@ -15,7 +15,7 @@ using BSON
 model = BSON.load("../model.bson", @__MODULE__)[:model]
 
 index = 10
-x, y = MNIST.testdata(Float32, index)
+x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
 # ## Custom LRP composites
@@ -200,7 +200,7 @@ analyzer = LRPZero(model)
 # They in-place modify a pre-allocated array of the input relevance `Rₖ`
 # based on the input activation `aₖ` and output relevance `Rₖ₊₁`.
 #
-# Calling `analyze` then applies a foward-pass of the model, keeping track of
+# Calling `analyze` then applies a forward-pass of the model, keeping track of
 # the activations `aₖ` for each layer `k`.
 # The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
 # in a backward-pass over the model layers and previous activations.

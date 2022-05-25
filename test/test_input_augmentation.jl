@@ -1,4 +1,5 @@
 using ExplainableAI: augment_batch_dim, augment_indices, reduce_augmentation
+using ExplainableAI: interpolate_batch
 
 # augment_batch_dim
 A = [1 2; 3 4]
@@ -40,3 +41,11 @@ R = @inferred reduce_augmentation(A, 5)
 A = Float64.(reshape(1:10, 1, 1, 1, 1, 10))
 R = @inferred reduce_augmentation(A, 2)
 @test R == reshape([3, 7, 11, 15, 19] / 2, 1, 1, 1, 1, :)
+
+x = Float16.(reshape(1:4, 2, 2))
+x0 = zero(x)
+A = @inferred interpolate_batch(x, x0, 5)
+@test A ≈ [
+    0.0 0.25 0.5 0.75 1.0 0.0 0.75 1.5 2.25 3.0
+    0.0 0.5 1.0 1.5 2.0 0.0 1.0 2.0 3.0 4.0
+]

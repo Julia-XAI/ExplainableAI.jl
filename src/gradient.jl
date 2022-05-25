@@ -61,4 +61,15 @@ in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
 # References
 [1] Smilkov et al., SmoothGrad: removing noise by adding noise
 """
-SmoothGrad(model, n=50, args...) = InputAugmentation(Gradient(model), n, args...)
+SmoothGrad(model, n=50, args...) = NoiseAugmentation(Gradient(model), n, args...)
+
+"""
+    IntegratedGradients(analyzer, [n=50])
+    IntegratedGradients(analyzer, [n=50])
+
+Analyze model by using the Integrated Gradients method.
+
+# References
+[1] Sundararajan et al., Axiomatic Attribution for Deep Networks
+"""
+IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)
