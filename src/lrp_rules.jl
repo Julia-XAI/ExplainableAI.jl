@@ -107,21 +107,41 @@ end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 
 """
-    ZBoxRule()
+    ZBoxRule(low, high)
 
 Constructor for LRP-``z^{\\mathcal{B}}``-rule.
 Commonly used on the first layer for pixel input.
+
+The parameters `low` and `high` should be set to the lower and upper bounds of the input features,
+e.g. `0.0` and `1.0` for raw image data.
+It is also possible to provide two arrays of that match the input size.
 """
-struct ZBoxRule <: AbstractLRPRule end
+struct ZBoxRule{T} <: AbstractLRPRule
+    low::T
+    high::T
+end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-lrp!(::ZBoxRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(layer, Rₖ, aₖ, Rₖ₊₁)
-lrp!(::ZBoxRule, layer::Conv, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(r::ZBoxRule, layer::Dense, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(r, layer, Rₖ, aₖ, Rₖ₊₁)
+lrp!(r::ZBoxRule, layer::Conv, Rₖ, aₖ, Rₖ₊₁) = lrp_zbox!(r, layer, Rₖ, aₖ, Rₖ₊₁)
 
-function lrp_zbox!(layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
+_zbox_bound(T, c::Real, in_size) = fill(convert(T, c), in_size)
+function _zbox_bound(T, A::AbstractArray, in_size)
+    size(A) != in_size && throw(
+        ArgumentError(
+            "Bounds `low`, `high` of ZBoxRule should either be scalar or match input size.",
+        ),
+    )
+    return convert.(T, A)
+end
+
+function lrp_zbox!(r::ZBoxRule, layer::L, Rₖ::T1, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
+    T = eltype(aₖ)
+    in_size = size(aₖ)
+    l = _zbox_bound(T, r.low, in_size)
+    h = _zbox_bound(T, r.high, in_size)
+
     W, b = get_params(layer)
-    l, h = fill.(extrema(aₖ), (size(aₖ),))
-
     layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
     layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
 
