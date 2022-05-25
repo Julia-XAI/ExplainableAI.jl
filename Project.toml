@@ -1,7 +1,7 @@
 name = "ExplainableAI"
 uuid = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 authors = ["Adrian Hill"]
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
