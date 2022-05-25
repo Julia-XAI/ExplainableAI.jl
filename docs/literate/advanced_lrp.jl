@@ -15,7 +15,7 @@ using BSON
 model = BSON.load("../model.bson", @__MODULE__)[:model]
 
 index = 10
-x, y = MNIST.testdata(Float32, index)
+x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
 # ## Custom LRP composites

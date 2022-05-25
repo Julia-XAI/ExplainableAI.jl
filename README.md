@@ -33,7 +33,7 @@ using BSON: @load
 model = strip_softmax(model)
 
 # Load input
-x, _ = MNIST.testdata(Float32, 10)
+x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :)   # reshape to WHCN format
 
 # Run XAI method
