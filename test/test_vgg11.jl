@@ -51,9 +51,7 @@ function test_vgg11(name, method; kwargs...)
         analyzer = method(model)
         h2 = heatmap(img, analyzer; kwargs...)
         @test h1 ≈ h2
-        if expl.analyzer != :Gradient # TODO: remove
-            @test_reference "references/heatmaps/vgg11_$(name).txt" h1
-        end
+        @test_reference "references/heatmaps/vgg11_$(name).txt" h1
     end
     @testset "$name neuron selection" begin
         analyzer = method(model)
