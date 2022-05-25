@@ -2,7 +2,7 @@ module ExplainableAI
 
 using Base.Iterators
 using LinearAlgebra
-using Distributions
+using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
 using Flux
 using Zygote

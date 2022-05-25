@@ -78,15 +78,15 @@ end
 A wrapper around analyzers that augments the input with `n` samples of additive noise sampled from `distribution`.
 This input augmentation is then averaged to return an `Explanation`.
 """
-struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Distribution,R<:AbstractRNG} <:
+struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
        AbstractXAIMethod
     analyzer::A
     n::Int
     distribution::D
     rng::R
 end
-function NoiseAugmentation(analyzer, n, distr, rng=GLOBAL_RNG)
-    return NoiseAugmentation(analyzer, n, distr, rng)
+function NoiseAugmentation(analyzer, n, distr::Sampleable, rng=GLOBAL_RNG)
+    return NoiseAugmentation(analyzer, n, distr::Sampleable, rng)
 end
 function NoiseAugmentation(analyzer, n, σ::Real=0.1f0, args...)
     return NoiseAugmentation(analyzer, n, Normal(0.0f0, Float32(σ)^2), args...)
