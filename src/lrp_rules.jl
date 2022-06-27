@@ -11,14 +11,8 @@ function lrp_autodiff!(
     Rₖ::T1, rule::R, layer::L, aₖ::T1, Rₖ₊₁::T2
 ) where {R<:AbstractLRPRule,L,T1,T2}
     layerᵨ = modify_layer(rule, layer)
-    c::T1 = only(
-        gradient(aₖ) do a
-            z::T2 = layerᵨ(a)
-            s = Zygote.@ignore Rₖ₊₁ ./ modify_denominator(rule, z)
-            z ⋅ s
-        end,
-    )
-    Rₖ .= aₖ .* c
+    ãₖ₊₁, back = Zygote.pullback(layerᵨ, aₖ)
+    Rₖ .=  aₖ .* only(back(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
     return nothing
 end
 
