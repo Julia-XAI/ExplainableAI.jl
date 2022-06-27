@@ -141,7 +141,7 @@ layers = Dict(
     "MeanPool" => MaxPool((3, 3)),
     "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
-    "flatten" => flatten,
+    "flatten" => Flux.flatten,
     "Dropout" => Dropout(0.2),
     "AlphaDropout" => AlphaDropout(0.2),
 )
@@ -178,7 +178,7 @@ lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, 
 layers = Dict(
     "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
     "Dense_relu" => (Dense(ins_dense, outs_dense, relu; init=pseudorandn), aₖ_dense),
-    "flatten" => (flatten, aₖ),
+    "flatten" => (Flux.flatten, aₖ),
 )
 @testset "Custom layers" begin
     for (rulename, rule) in RULES
