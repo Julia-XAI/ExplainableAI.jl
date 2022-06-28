@@ -1,7 +1,7 @@
 using LoopVectorization
 using ExplainableAI
-using ExplainableAI: modify_params
-import ExplainableAI: modify_layer, lrp!
+using ExplainableAI: modify_param!, modify_bias!
+import ExplainableAI: lrp!, modify_layer!, get_layer_resetter
 using Flux
 using LinearAlgebra: I
 using ReferenceTests
@@ -51,11 +51,12 @@ T = Float32
 pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 
 ## Test individual rules
-@testset "modify_params" begin
+@testset "modify_param" begin
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
-    ρW, ρb = @inferred modify_params(GammaRule(0.42), W, b)
-    @test ρW ≈ [1.42 -1.0; 2.84 0.0]
-    @test ρb ≈ [-1.0, 1.42]
+    @inferred modify_param!(GammaRule(0.42), W)
+    @inferred modify_bias!(GammaRule(0.42), b)
+    @test W ≈ [1.42 -1.0; 2.84 0.0]
+    @test b ≈ [-1.0, 1.42]
 end
 
 ## Test Dense layer
@@ -172,7 +173,9 @@ struct TestWrapper{T}
     layer::T
 end
 (w::TestWrapper)(x) = w.layer(x)
-modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
+modify_layer!(rule::R, w::TestWrapper) where {R} = modify_layer!(rule, w.layer)
+get_layer_resetter(rule::R, w::TestWrapper) where {R} = get_layer_resetter(rule, w.layer)
+get_layer_resetter(::ZeroRule, w::TestWrapper) = Returns(nothing)
 lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
 
 layers = Dict(

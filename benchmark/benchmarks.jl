@@ -2,7 +2,7 @@ using BenchmarkTools
 using LoopVectorization
 using Flux
 using ExplainableAI
-import ExplainableAI: modify_layer, lrp!
+import ExplainableAI: lrp!, modify_layer!, get_layer_resetter
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
@@ -51,7 +51,9 @@ struct TestWrapper{T}
     layer::T
 end
 (w::TestWrapper)(x) = w.layer(x)
-modify_layer(r::AbstractLRPRule, w::TestWrapper) = modify_layer(r, w.layer)
+modify_layer!(rule::R, w::TestWrapper) where {R} = modify_layer!(rule, w.layer)
+get_layer_resetter(rule::R, w::TestWrapper) where {R} = get_layer_resetter(rule, w.layer)
+get_layer_resetter(::ZeroRule, w::TestWrapper) = Returns(nothing)
 lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
 
 # generate input for conv layers
