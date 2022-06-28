@@ -26,12 +26,11 @@ heatmap(input, analyzer)
 
 struct MyGammaRule <: AbstractLRPRule end
 
-import ExplainableAI: modify_params
+import ExplainableAI: modify_param!
 
-function modify_params(::MyGammaRule, W, b)
-    ρW = W + 0.25 * relu.(W)
-    ρb = b + 0.25 * relu.(b)
-    return ρW, ρb
+function modify_param!(::MyGammaRule, param)
+    param .+= 0.25 * relu.(param)
+    return nothing
 end
 
 analyzer = LRP(model, MyGammaRule())
