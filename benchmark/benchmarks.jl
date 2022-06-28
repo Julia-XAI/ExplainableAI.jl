@@ -54,6 +54,7 @@ end
 modify_layer!(rule::R, w::TestWrapper) where {R} = modify_layer!(rule, w.layer)
 get_layer_resetter(rule::R, w::TestWrapper) where {R} = get_layer_resetter(rule, w.layer)
 get_layer_resetter(::ZeroRule, w::TestWrapper) = Returns(nothing)
+get_layer_resetter(::EpsilonRule, w::TestWrapper) = Returns(nothing)
 lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
 
 # generate input for conv layers

@@ -199,3 +199,4 @@ end
 
 # Rules that don't modify params can optionally be added here for extra performance
 get_layer_resetter(::ZeroRule, l) = Returns(nothing)
+get_layer_resetter(::EpsilonRule, l) = Returns(nothing)
