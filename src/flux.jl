@@ -59,6 +59,9 @@ function strip_softmax(model::Chain)
     end
     return model
 end
-strip_softmax(l::Union{Dense,Conv}) = set_params(l, l.weight, l.bias, identity)
+strip_softmax(l::Dense) = Dense(l.weight, l.bias, identity)
+function strip_softmax(l::Conv)
+    return Conv(identity, l.weight, l.bias, l.stride, l.pad, l.dilation, l.groups)
+end
 
 has_weight_and_bias(layer) = hasproperty(layer, :weight) && hasproperty(layer, :bias)
