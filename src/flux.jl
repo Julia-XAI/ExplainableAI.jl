@@ -61,20 +61,4 @@ function strip_softmax(model::Chain)
 end
 strip_softmax(l::Union{Dense,Conv}) = set_params(l, l.weight, l.bias, identity)
 
-# helper function to work around `bias=false` (Flux v0.13) and `bias=Flux.Zeros` (v0.12)
-function get_params(layer)
-    W = layer.weight
-    b = layer.bias
-    if b == false || typeof(b) <: Flux.Zeros
-        b = zeros(eltype(W), size(W, 1))
-    end
-    return W, b
-end
-
-"""
-    set_params(layer, W, b)
-
-Duplicate layer using weights W, b.
-"""
-set_params(l::Conv, W, b, σ=l.σ) = Conv(σ, W, b, l.stride, l.pad, l.dilation, l.groups)
-set_params(l::Dense, W, b, σ=l.σ) = Dense(W, b, σ)
+has_weight_and_bias(layer) = hasproperty(layer, :weight) && hasproperty(layer, :bias)

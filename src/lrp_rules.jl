@@ -1,64 +1,94 @@
 # https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
-# Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types without custom implementation.
+# TODO: support all linear layers that use properties `weight` and `bias`
+const WeightBiasLayers = (Dense, Conv)
+
+# Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
+# without custom implementations.
 function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
-    lrp_autodiff!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+    reset! = get_layer_resetter(rule, layer)
+    modify_layer!(rule, layer)
+    ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
+    Rₖ .= aₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
+    reset!()
     return nothing
 end
 
-function lrp_autodiff!(
-    Rₖ::T1, rule::R, layer::L, aₖ::T1, Rₖ₊₁::T2
-) where {R<:AbstractLRPRule,L,T1,T2}
-    layerᵨ = modify_layer(rule, layer)
-    ãₖ₊₁, back = Zygote.pullback(layerᵨ, aₖ)
-    Rₖ .=  aₖ .* only(back(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
-    return nothing
-end
-
-# For linear layer types such as Dense layers, using autodiff is overkill.
-function lrp!(Rₖ, rule::R, layer::Dense, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
-    lrp_dense!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-    return nothing
-end
-
-function lrp_dense!(Rₖ, rule::R, l, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule}
-    ρW, ρb = modify_params(rule, get_params(l)...)
-    ãₖ₊₁ = modify_denominator(rule, ρW * aₖ .+ ρb)
-    @tullio Rₖ[j, b] = aₖ[j, b] * ρW[k, j] / ãₖ₊₁[k, b] * Rₖ₊₁[k, b]
-    return nothing
-end
-
-# Other special cases that are dispatched on layer type:
-lrp!(Rₖ, ::AbstractLRPRule, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
-lrp!(Rₖ, ::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
-
-# To implement new rules, we can define two custom functions `modify_params` and `modify_denominator`.
-# If this isn't done, the following fallbacks are used by default:
+# To implement new rules, define the following custom functions:
+#   * `modify_input(rule, input)`
+#   * `modify_denominator(rule, d)`
+#   * `modify_param!(rule, param)` or `modify_layer!(rule, layer)`,
+#     the latter overriding the former
+#
+# The following fallbacks are used by default:
 """
-    modify_params(rule, W, b)
+    modify_input(rule, input)
 
-Function that modifies weights and biases before applying relevance propagation.
-Returns modified weights and biases as a tuple `(ρW, ρb)`.
+Modify input activation before computing relevance propagation.
 """
-modify_params(::AbstractLRPRule, W, b) = (W, b) # general fallback
+@inline modify_input(rule, input) = input # general fallback
 
 """
     modify_denominator(rule, d)
 
-Function that modifies zₖ on the forward pass, e.g. for numerical stability.
+Modify denominator ``z`` for numerical stability on the forward pass.
 """
-modify_denominator(::AbstractLRPRule, d) = stabilize_denom(d, 1.0f-9) # general fallback
+@inline modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
 
 """
-    modify_layer(rule, layer)
+    modify_layer!(rule, layer)
 
-Function that modifies a layer before applying relevance propagation.
-Returns a new, modified layer.
+In-place modify layer parameters by calling `modify_param!` before computing relevance
+propagation.
+
+## Note
+When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
-modify_layer(::AbstractLRPRule, layer) = layer # skip layers without modify_params
-function modify_layer(rule::R, layer::L) where {R<:AbstractLRPRule,L<:Union{Dense,Conv}}
-    return set_params(layer, modify_params(rule, get_params(layer)...)...)
+modify_layer!(rule, layer) = nothing
+for L in WeightBiasLayers
+    @eval function modify_layer!(rule::R, layer::$L) where {R}
+        if has_weight_and_bias(layer)
+            modify_param!(rule, layer.weight)
+            modify_bias!(rule, layer.bias)
+        end
+        return nothing
+    end
+end
+
+"""
+    modify_param!(rule, W)
+    modify_param!(rule, b)
+
+Inplace-modify parameters before computing the relevance.
+"""
+@inline modify_param!(rule, param) = nothing # general fallback
+
+# Useful presets:
+modify_param!(::Val{:mask_positive}, p) = (p .= max.(zero(eltype(p)), p), return nothing)
+modify_param!(::Val{:mask_negative}, p) = (p .= min.(zero(eltype(p)), p), return nothing)
+
+# Internal wrapper functions for bias-free layers.
+@inline modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
+@inline modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
+@inline function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
+    @assert b == false
+    return nothing
+end
+
+# Internal function that resets parameters by capturing them in a closure.
+# Returns a function `reset!` that resets the parameters to their original state when called.
+function get_layer_resetter(rule, layer)
+    !has_weight_and_bias(layer) && return Returns(nothing)
+    W = deepcopy(layer.weight)
+    b = deepcopy(layer.bias)
+
+    function reset!()
+        layer.weight .= W
+        isa(layer.bias, AbstractArray) && (layer.bias .= b)
+        return nothing
+    end
+    return reset!
 end
 
 """
@@ -80,11 +110,10 @@ struct GammaRule{T} <: AbstractLRPRule
     γ::T
     GammaRule(γ=0.25f0) = new{Float32}(γ)
 end
-function modify_params(r::GammaRule, W, b)
-    T = eltype(W)
-    ρW = W + convert(T, r.γ) * relu.(W)
-    ρb = b + convert(T, r.γ) * relu.(b)
-    return ρW, ρb
+function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
+    γ = convert(T, r.γ)
+    param .+= γ * relu.(param)
+    return nothing
 end
 
 """
@@ -117,38 +146,56 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-lrp!(Rₖ, r::ZBoxRule, layer::Dense, aₖ, Rₖ₊₁) = lrp_zbox!(Rₖ, r, layer, aₖ, Rₖ₊₁)
-lrp!(Rₖ, r::ZBoxRule, layer::Conv, aₖ, Rₖ₊₁) = lrp_zbox!(Rₖ, r, layer, aₖ, Rₖ₊₁)
+for L in WeightBiasLayers
+    function lrp!(Rₖ, rule::ZBoxRule, layer, aₖ, Rₖ₊₁)
+        T = eltype(aₖ)
+        l = zbox_input_augmentation(T, rule.low, size(aₖ))
+        h = zbox_input_augmentation(T, rule.high, size(aₖ))
+        reset! = get_layer_resetter(rule, layer)
 
-_zbox_bound(T, c::Real, in_size) = fill(convert(T, c), in_size)
-function _zbox_bound(T, A::AbstractArray, in_size)
-    size(A) != in_size && throw(
-        ArgumentError(
-            "Bounds `low`, `high` of ZBoxRule should either be scalar or match input size.",
-        ),
-    )
+        # Compute pullback for W, b
+        aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
+
+        # Compute pullback for W⁺, b⁺
+        modify_layer!(Val{:mask_positive}, layer)
+        aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
+        reset!()
+
+        # Compute pullback for W⁻, b⁻
+        modify_layer!(Val{:mask_negative}, layer)
+        aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
+        reset!()
+
+        y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
+        Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
+        return nothing
+    end
+end
+
+const ZBOX_BOUNDS_MISMATCH = "ZBoxRule bounds should either be scalar or match input size."
+function zbox_input_augmentation(T, A::AbstractArray, in_size)
+    size(A) != in_size && throw(ArgumentError(ZBOX_BOUNDS_MISMATCH))
     return convert.(T, A)
 end
+zbox_input_augmentation(T, c::Real, in_size) = fill(convert(T, c), in_size)
 
-function lrp_zbox!(Rₖ::T1, r::ZBoxRule, layer::L, aₖ::T1, Rₖ₊₁::T2) where {L,T1,T2}
-    T = eltype(aₖ)
-    in_size = size(aₖ)
-    l = _zbox_bound(T, r.low, in_size)
-    h = _zbox_bound(T, r.high, in_size)
-
-    W, b = get_params(layer)
-    layer⁺ = set_params(layer, max.(0, W), max.(0, b)) # W⁺, b⁺
-    layer⁻ = set_params(layer, min.(0, W), min.(0, b)) # W⁻, b⁻
-
-    c::T1, cₗ::T1, cₕ::T1 = gradient(aₖ, l, h) do a, l, h
-        f::T2 = layer(a)
-        f⁺::T2 = layer⁺(l)
-        f⁻::T2 = layer⁻(h)
-
-        z = f - f⁺ - f⁻
-        s = Zygote.@ignore safedivide(Rₖ₊₁, z, 1e-9)
-        z ⋅ s
-    end
-    Rₖ .= aₖ .* c + l .* cₗ + h .* cₕ
-    return nothing
+# Other special cases that are dispatched on layer type:
+const LRPRules = (ZeroRule, EpsilonRule, GammaRule, ZBoxRule)
+for R in LRPRules
+    @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
+    @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
 end
+# Fast implementation for Dense layer using Tullio.jl's einsum notation:
+for R in (ZeroRule, EpsilonRule, GammaRule)
+    @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
+        reset! = get_layer_resetter(rule, layer)
+        modify_layer!(rule, layer)
+        ãₖ₊₁ = modify_denominator(rule, layer(modify_input(rule, aₖ)))
+        @tullio Rₖ[j, b] = aₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b]
+        reset!()
+        return nothing
+    end
+end
+
+# Rules that don't modify params can optionally be added here for extra performance
+get_layer_resetter(::ZeroRule, l) = Returns(nothing)
