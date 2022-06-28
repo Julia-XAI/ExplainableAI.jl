@@ -32,6 +32,7 @@ ZBoxRule
 ## Custom rules 
 These utilities can be used to define custom rules without writing boilerplate code:
 ```@docs
+modify_input
 modify_denominator
 modify_param!
 modify_layer!

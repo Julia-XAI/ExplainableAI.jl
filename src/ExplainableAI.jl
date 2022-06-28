@@ -43,7 +43,8 @@ export LRP, LRPZero, LRPEpsilon, LRPGamma
 export AbstractLRPRule
 export LRP_CONFIG
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
-export modify_denominator, modify_param!, modify_layer!
+export modify_input, modify_denominator
+export modify_param!, modify_layer!
 export check_model
 
 # heatmapping
