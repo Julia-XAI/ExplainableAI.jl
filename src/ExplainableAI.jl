@@ -16,6 +16,7 @@ using ColorSchemes
 using Markdown
 using PrettyTables
 
+include("compat.jl")
 include("neuron_selection.jl")
 include("analyze_api.jl")
 include("types.jl")
@@ -42,7 +43,8 @@ export LRP, LRPZero, LRPEpsilon, LRPGamma
 export AbstractLRPRule
 export LRP_CONFIG
 export ZeroRule, EpsilonRule, GammaRule, ZBoxRule
-export modify_denominator, modify_params, modify_layer
+export modify_input, modify_denominator
+export modify_param!, modify_layer!
 export check_model
 
 # heatmapping

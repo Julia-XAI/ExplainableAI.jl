@@ -48,38 +48,39 @@ heatmap(input, analyzer)
 # The rule has to be of type `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# It is then possible to dispatch on the utility functions  [`modify_params`](@ref) and [`modify_denominator`](@ref)
-# with the rule type `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
+# It is then possible to dispatch on the utility functions [`modify_input`](@ref),
+# [`modify_param!`](@ref) and [`modify_denominator`](@ref) with the rule type
+# `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
 # To extend internal functions, import them explicitly:
-import ExplainableAI: modify_params
+import ExplainableAI: modify_param!
 
-function modify_params(::MyGammaRule, W, b)
-    ρW = W + 0.25 * relu.(W)
-    ρb = b + 0.25 * relu.(b)
-    return ρW, ρb
+function modify_param!(::MyGammaRule, param)
+    param .+= 0.25 * relu.(param)
+    return nothing
 end
 
 # We can directly use this rule to make an analyzer!
 analyzer = LRP(model, MyGammaRule())
 heatmap(input, analyzer)
 
-# We just implemented our own version of the ``γ``-rule in 7 lines of code!
+# We just implemented our own version of the ``γ``-rule in 4 lines of code!
 # The outputs match perfectly:
 analyzer = LRP(model, GammaRule())
 heatmap(input, analyzer)
 
-# If the layer doesn't use weights and biases `W` and `b`, ExplainableAI provides a
-# lower-level variant of [`modify_params`](@ref) called [`modify_layer`](@ref).
-# This function is expected to take a layer and return a new, modified layer.
+# If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
+# ExplainableAI provides a lower-level variant of [`modify_param!`](@ref)
+# called [`modify_layer!`](@ref). This function is expected to take a layer
+# and return a new, modified layer.
 
-#md # !!! warning "Using modify_layer"
+#md # !!! warning "Using modify_layer!"
 #md #
-#md #     Use of the function `modify_layer` will overwrite functionality of `modify_params`
+#md #     Use of the function `modify_layer!` will overwrite functionality of `modify_param!`
 #md #     for the implemented combination of rule and layer types.
-#md #     This is due to the fact that internally, `modify_params` is called by the default
-#md #     implementation of `modify_layer`.
+#md #     This is due to the fact that internally, `modify_param!` is called by the default
+#md #     implementation of `modify_layer!`.
 #md #
-#md #     Therefore it is recommended to only extend `modify_layer` for a specific rule
+#md #     Therefore it is recommended to only extend `modify_layer!` for a specific rule
 #md #     and a specific layer type.
 
 # ## Custom layers and activation functions
@@ -202,7 +203,7 @@ analyzer = LRPZero(model)
 # The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
 # on the types of the arguments `rule` and `layer`.
 # The relevance `Rₖ` is then computed based on the input activation `aₖ` and the output relevance `Rₖ₊₁`.
-# Multiple dispatch is also used to dispatch `modify_params` and `modify_denominator` on the rule and layer type.
+# Multiple dispatch is also used to dispatch `modify_param!` and `modify_denominator` on the rule and layer type.
 #
 # Calling `analyze` on a LRP-model applies a forward-pass of the model, keeping track of
 # the activations `aₖ` for each layer `k`.
@@ -215,7 +216,7 @@ analyzer = LRPZero(model)
 # R_{j}=\sum_{k} \frac{a_{j} \cdot \rho\left(w_{j k}\right)}{\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right)} R_{k}
 # ```
 #
-# where ``\rho`` is a function that modifies parameters – what we have so far called `modify_params`.
+# where ``\rho`` is a function that modifies parameters – what we call `modify_param!`.
 #
 # The computation of this propagation rule can be decomposed into four steps:
 # ```math
@@ -243,21 +244,20 @@ analyzer = LRPZero(model)
 
 # ### AD fallback
 # The default LRP fallback for unknown layers uses AD via [Zygote](https://github.com/FluxML/Zygote.jl).
-# For `lrp!`, we end up with something that looks very similar to the previous four step computation:
+# For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
+# compute ``c`` from the previous equation as a VJP, pulling back ``s_{k}=R_{k}/z_{k}``:
 # ```julia
 # function lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-#     layerᵨ = modify_layer(rule, layer)
-#     c = gradient(aₖ) do a
-#             z = layerᵨ(a)
-#             s = Zygote.@ignore Rₖ₊₁ ./ modify_denominator(rule, z)
-#             z ⋅ s
-# 	      end |> only
-#     Rₖ .= aₖ .* c
+#    reset! = get_layer_resetter(layer)
+#    modify_layer!(rule, layer)
+#    ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
+#    Rₖ .= aₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
+#    reset!()
 # end
 # ```
 #
-# You can see how `modify_layer` and `modify_denominator` dispatch on the rule and layer type.
-# This is how we implemented our own `MyGammaRule`.
+# You can see how `modify_layer!`, `modify_input` and `modify_denominator` dispatch on the
+# rule and layer type. This is how we implemented our own `MyGammaRule`.
 # Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
 # ### Specialized implementations
@@ -267,7 +267,7 @@ analyzer = LRPZero(model)
 # Reshaping layers don't affect attributions. We can therefore avoid the computational
 # overhead of AD by writing a specialized implementation that simply reshapes back:
 # ```julia
-# function lrp!(Rₖ, ::AbstractLRPRule, ::ReshapingLayer, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule, ::ReshapingLayer, aₖ, Rₖ₊₁)
 #     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
 # end
 # ```
@@ -276,14 +276,16 @@ analyzer = LRPZero(model)
 #
 # We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
-# function lrp!(Rₖ, rule::AbstractLRPRule, layer::Dense, aₖ, Rₖ₊₁)
-#     ρW, ρb = modify_params(rule, get_params(layer)...)
-#     ãₖ₊₁ = modify_denominator(rule, ρW * aₖ + ρb)
-#     @tullio Rₖ[j] = aₖ[j] * ρW[k, j] / ãₖ₊₁[k] * Rₖ₊₁[k] # Tullio ≈ fast einsum
+# function lrp!(Rₖ, rule, layer::Dense, aₖ, Rₖ₊₁)
+#     reset! = get_layer_resetter(rule, layer)
+#     modify_layer!(rule, layer)
+#     ãₖ₊₁ = modify_denominator(rule, layer(modify_input(rule, aₖ)))
+#     @tullio Rₖ[j, b] = aₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b] # Tullio ≈ fast einsum
+#     reset!()
 # end
 # ```
 #
-# For maximum low-level control beyond `modify_layer`, `modify_params` and `modify_denominator`,
+# For maximum low-level control beyond `modify_layer!`, `modify_param!` and `modify_denominator`,
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
