@@ -98,7 +98,7 @@ mylayer([1, 2, 3])
 # Let's append this layer to our model:
 model = Chain(model..., MyDoublingLayer())
 
-# Creating an LRP analyzer, e.g. `LRPZero(model)`, will throw an `ArgumentError`
+# Creating an LRP analyzer, e.g. `LRP(model)`, will throw an `ArgumentError`
 # and print a summary of the model check in the REPL:
 # ```julia-repl
 # ┌───┬───────────────────────┬─────────────────┬────────────┬────────────────┐
@@ -163,7 +163,7 @@ model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 # Once again, creating an LRP analyzer for this model will throw an `ArgumentError`
 # and display the following model check summary:
 # ```julia-repl
-# julia> analyzer = LRPZero(model3)
+# julia> analyzer = LRP(model3)
 # ┌───┬─────────────────────────┬─────────────────┬────────────┬────────────────┐
 # │   │ Layer                   │ Layer supported │ Activation │ Act. supported │
 # ├───┼─────────────────────────┼─────────────────┼────────────┼────────────────┤

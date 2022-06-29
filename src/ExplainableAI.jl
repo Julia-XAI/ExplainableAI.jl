@@ -37,7 +37,7 @@ export AbstractXAIMethod
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
-export LRP, LRPZero, LRPEpsilon, LRPGamma
+export LRP
 
 # LRP rules
 export AbstractLRPRule

@@ -25,7 +25,7 @@ end
 algs = Dict(
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
-    "LRPZero" => LRPZero,
+    "LRPZero" => LRP,
     "LRPCustom" => LRPCustom, #modifies weights
     "SmoothGrad" => model -> SmoothGrad(model, 10),
     "IntegratedGradients" => model -> IntegratedGradients(model, 10),

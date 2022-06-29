@@ -9,9 +9,7 @@ const GRADIENT_ANALYZERS = Dict(
     "SmoothGrad" => model -> SmoothGrad(model, 5, 0.1, MersenneTwister(123)),
     "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
-const LRP_ANALYZERS = Dict(
-    "LRPZero" => LRPZero, "LRPEpsilon" => LRPEpsilon, "LRPGamma" => LRPGamma
-)
+const LRP_ANALYZERS = Dict("LRPZero" => LRP)
 
 using Random
 pseudorand(T, dims...) = rand(MersenneTwister(123), T, dims...)
@@ -92,11 +90,5 @@ end
 end
 # Layerwise relevances in LRP methods
 @testset "Layerwise relevances" begin
-    test_vgg11("LRPZero", LRPZero; layerwise_relevances=true)
+    test_vgg11("LRPZero", LRP; layerwise_relevances=true)
 end
-
-# Test LRP constructor with no rules
-a1 = LRP(model)
-a2 = LRPZero(model)
-@test a1.model == a2.model
-@test a1.rules == a2.rules
