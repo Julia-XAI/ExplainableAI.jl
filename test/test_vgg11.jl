@@ -25,7 +25,28 @@ model = flatten_model(strip_softmax(vgg11.layers))
 
 function LRPCustom(model::Chain)
     return LRP(
-        model, [ZBoxRule(0.0f0, 1.0f0), repeat([GammaRule()], length(model.layers) - 1)...]
+        model,
+        [
+            ZBoxRule(0.0f0, 1.0f0),
+            EpsilonRule(),
+            GammaRule(),
+            EpsilonRule(),
+            GammaRule(),
+            GammaRule(),
+            EpsilonRule(),
+            GammaRule(),
+            GammaRule(),
+            EpsilonRule(),
+            GammaRule(),
+            GammaRule(),
+            EpsilonRule(),
+            ZeroRule(),
+            ZeroRule(),
+            ZeroRule(),
+            ZeroRule(),
+            ZeroRule(),
+            ZeroRule(),
+        ],
     )
 end
 
