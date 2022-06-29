@@ -52,15 +52,12 @@ propagation.
 ## Note
 When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
-modify_layer!(rule, layer) = nothing
-for L in WeightBiasLayers
-    @eval function modify_layer!(rule::R, layer::$L) where {R}
-        if has_weight_and_bias(layer)
-            modify_param!(rule, layer.weight)
-            modify_bias!(rule, layer.bias)
-        end
-        return nothing
+function modify_layer!(rule::R, layer::L) where {R,L}
+    if has_weight_and_bias(layer)
+        modify_param!(rule, layer.weight)
+        modify_bias!(rule, layer.bias)
     end
+    return nothing
 end
 
 """
