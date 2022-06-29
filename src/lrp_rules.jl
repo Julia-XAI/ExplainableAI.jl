@@ -1,9 +1,6 @@
 # https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
-# TODO: support all linear layers that use properties `weight` and `bias`
-const WeightBiasLayers = (Dense, Conv)
-
 # Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
 # without custom implementations.
 function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
@@ -157,38 +154,36 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-for L in WeightBiasLayers
-    function lrp!(Rₖ, rule::ZBoxRule, layer, aₖ, Rₖ₊₁)
-        T = eltype(aₖ)
-        l = zbox_input_augmentation(T, rule.low, size(aₖ))
-        h = zbox_input_augmentation(T, rule.high, size(aₖ))
-        reset! = get_layer_resetter(rule, layer)
+function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
+    require_weight_and_bias(rule, layer)
+    reset! = get_layer_resetter(rule, layer)
 
-        # Compute pullback for W, b
-        aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
+    l = zbox_input(aₖ, rule.low)
+    h = zbox_input(aₖ, rule.high)
 
-        # Compute pullback for W⁺, b⁺
-        modify_layer!(Val{:mask_positive}, layer)
-        aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
-        reset!()
+    # Compute pullback for W, b
+    aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
-        # Compute pullback for W⁻, b⁻
-        modify_layer!(Val{:mask_negative}, layer)
-        aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
-        reset!()
+    # Compute pullback for W⁺, b⁺
+    modify_layer!(Val{:mask_positive}, layer)
+    aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
+    reset!()
 
-        y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
-        Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
-        return nothing
-    end
+    # Compute pullback for W⁻, b⁻
+    modify_layer!(Val{:mask_negative}, layer)
+    aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
+    reset!()
+
+    y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
+    Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
+    return nothing
 end
 
-const ZBOX_BOUNDS_MISMATCH = "ZBoxRule bounds should either be scalar or match input size."
-function zbox_input_augmentation(T, A::AbstractArray, in_size)
-    size(A) != in_size && throw(ArgumentError(ZBOX_BOUNDS_MISMATCH))
+zbox_input(in::AbstractArray{T}, c::Real) where {T} = fill(convert(T, c), size(in))
+function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
+    @assert size(A) == size(in)
     return convert.(T, A)
 end
-zbox_input_augmentation(T, c::Real, in_size) = fill(convert(T, c), in_size)
 
 # Other special cases that are dispatched on layer type:
 const LRPRules = (ZeroRule, EpsilonRule, GammaRule, ZBoxRule)
