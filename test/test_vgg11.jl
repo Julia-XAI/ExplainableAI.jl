@@ -59,7 +59,7 @@ function test_vgg11(name, method; kwargs...)
         attr = expl.attribution
         @test size(attr) == size(img)
         @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
-            (r, a) -> isapprox(r["expl"], a["expl"]; atol=1e-8, rtol=0.05)
+            (r, a) -> isapprox(r["expl"], a["expl"]; atol=1e-6, rtol=0.05)
 
         # Test direct call of analyzer
         analyzer = method(model)
@@ -85,7 +85,7 @@ function test_vgg11(name, method; kwargs...)
         @test size(attr) == size(img)
         @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
             "expl" => attr
-        ) by = (r, a) -> isapprox(r["expl"], a["expl"]; atol=1e-8, rtol=0.05)
+        ) by = (r, a) -> isapprox(r["expl"], a["expl"]; atol=1e-6, rtol=0.05)
 
         analyzer = method(model)
         expl2 = analyzer(img, neuron_selection; kwargs...)
