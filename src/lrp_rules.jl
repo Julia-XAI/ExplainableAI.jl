@@ -38,8 +38,11 @@ Modify denominator ``z`` for numerical stability on the forward pass.
 """
     check_compat(rule, layer)
 
-Check compatibility of LRP-Rule with layer.
-Returns nothing if checks passed, otherwise throws `ArgumentError`.
+Check compatibility of a LRP-Rule with layer type.
+
+## Note
+When implementing a custom `check_compat` function, return `nothing` if checks passed,
+otherwise throw an `ArgumentError`.
 """
 @inline check_compat(rule, layer) = nothing # general fallback
 

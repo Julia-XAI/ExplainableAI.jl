@@ -36,6 +36,7 @@ modify_input
 modify_denominator
 modify_param!
 modify_layer!
+check_compat
 LRP_CONFIG.supports_layer
 LRP_CONFIG.supports_activation
 ```

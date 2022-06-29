@@ -24,11 +24,11 @@ input = reshape(x, 28, 28, 1, :);
 # For this purpose, we create an array of rules that matches the length of the Flux chain:
 rules = [
     ZBoxRule(0.0f0, 1.0f0),
+    EpsilonRule(),
     GammaRule(),
-    GammaRule(),
     EpsilonRule(),
-    EpsilonRule(),
-    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
     ZeroRule(),
     ZeroRule(),
 ]
@@ -60,18 +60,27 @@ function modify_param!(::MyGammaRule, param)
 end
 
 # We can directly use this rule to make an analyzer!
-analyzer = LRP(model, MyGammaRule())
+rules = [
+    ZBoxRule(0.0f0, 1.0f0),
+    EpsilonRule(),
+    MyGammaRule(),
+    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
+    ZeroRule(),
+    ZeroRule(),
+]
+analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
-# We just implemented our own version of the ``γ``-rule in 4 lines of code!
-# The outputs match perfectly:
-analyzer = LRP(model, GammaRule())
-heatmap(input, analyzer)
+# We just implemented our own version of the ``γ``-rule in 4 lines of code.
+# The heatmap perfectly matches the previous one!
 
 # If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
 # ExplainableAI provides a lower-level variant of [`modify_param!`](@ref)
 # called [`modify_layer!`](@ref). This function is expected to take a layer
 # and return a new, modified layer.
+# To add compatibility checks between rule and layer types, extend [`check_compat`](@ref).
 
 #md # !!! warning "Using modify_layer!"
 #md #
@@ -144,7 +153,7 @@ model = Chain(model..., MyDoublingLayer())
 LRP_CONFIG.supports_layer(::MyDoublingLayer) = true
 
 # Now we can create and run an analyzer without getting an error:
-analyzer = LRPZero(model)
+analyzer = LRP(model)
 heatmap(input, analyzer)
 
 #md # !!! note "Registering functions"
@@ -187,7 +196,7 @@ model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 
 # now the analyzer can be created without error:
-analyzer = LRPZero(model)
+analyzer = LRP(model)
 
 # ## How it works internally
 # Internally, ExplainableAI dispatches to low level functions
@@ -248,6 +257,7 @@ analyzer = LRPZero(model)
 # compute ``c`` from the previous equation as a VJP, pulling back ``s_{k}=R_{k}/z_{k}``:
 # ```julia
 # function lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+#    check_compat(rule, layer)
 #    reset! = get_layer_resetter(layer)
 #    modify_layer!(rule, layer)
 #    ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
@@ -256,8 +266,8 @@ analyzer = LRPZero(model)
 # end
 # ```
 #
-# You can see how `modify_layer!`, `modify_input` and `modify_denominator` dispatch on the
-# rule and layer type. This is how we implemented our own `MyGammaRule`.
+# You can see how `check_compat`, `modify_layer!`, `modify_input` and `modify_denominator`
+# dispatch on the rule and layer type. This is how we implemented our own `MyGammaRule`.
 # Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
 # ### Specialized implementations
