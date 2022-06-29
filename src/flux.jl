@@ -65,3 +65,11 @@ function strip_softmax(l::Conv)
 end
 
 has_weight_and_bias(layer) = hasproperty(layer, :weight) && hasproperty(layer, :bias)
+function require_weight_and_bias(rule, layer)
+    !has_weight_and_bias(layer) && throw(
+        ArgumentError(
+            "$rule requires linear layer with weight and bias parameters, got $layer."
+        ),
+    )
+    return nothing
+end

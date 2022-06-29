@@ -7,6 +7,7 @@ const WeightBiasLayers = (Dense, Conv)
 # Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
 # without custom implementations.
 function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
+    check_compat(rule, layer)
     reset! = get_layer_resetter(rule, layer)
     modify_layer!(rule, layer)
     ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
@@ -18,6 +19,7 @@ end
 # To implement new rules, define the following custom functions:
 #   * `modify_input(rule, input)`
 #   * `modify_denominator(rule, d)`
+#   * `check_compat(rule, layer)`
 #   * `modify_param!(rule, param)` or `modify_layer!(rule, layer)`,
 #     the latter overriding the former
 #
@@ -35,6 +37,14 @@ Modify input activation before computing relevance propagation.
 Modify denominator ``z`` for numerical stability on the forward pass.
 """
 @inline modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
+
+"""
+    check_compat(rule, layer)
+
+Check compatibility of LRP-Rule with layer.
+Returns nothing if checks passed, otherwise throws `ArgumentError`.
+"""
+@inline check_compat(rule, layer) = nothing # general fallback
 
 """
     modify_layer!(rule, layer)
@@ -115,6 +125,7 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
     param .+= γ * relu.(param)
     return nothing
 end
+check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
 
 """
     EpsilonRule([ϵ=1.0f-6])
