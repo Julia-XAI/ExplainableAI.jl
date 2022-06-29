@@ -37,7 +37,8 @@ function reduce_augmentation(input::AbstractArray{T,N}, n) where {T<:AbstractFlo
     axs = axes(input, N)
     colons = ntuple(Returns(:), N - 1)
     for (i, ax) in enumerate(first(axs):n:last(axs))
-        view(out, colons..., i) = sum(view(input, colons..., ax:(ax + n - 1)); dims=N) / n
+        view(out, colons..., i) .=
+            dropdims(sum(view(input, colons..., ax:(ax + n - 1)); dims=N); dims=N) / n
     end
     return out
 end
