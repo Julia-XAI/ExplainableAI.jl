@@ -182,12 +182,13 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
     return convert.(T, A)
 end
 
-# Other special cases that are dispatched on layer type:
-const LRPRules = (ZeroRule, EpsilonRule, GammaRule, ZBoxRule)
-for R in LRPRules
+# Special cases for rules that don't modify params for extra performance:
+for R in (ZeroRule, EpsilonRule)
+    @eval get_layer_resetter(::$R, l) = Returns(nothing)
     @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
     @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
 end
+
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
@@ -199,7 +200,3 @@ for R in (ZeroRule, EpsilonRule, GammaRule)
         return nothing
     end
 end
-
-# Rules that don't modify params can optionally be added here for extra performance
-get_layer_resetter(::ZeroRule, l) = Returns(nothing)
-get_layer_resetter(::EpsilonRule, l) = Returns(nothing)
