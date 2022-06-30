@@ -6,7 +6,7 @@ const ConvLayer = Union{Conv} # TODO: DepthwiseConv, ConvTranspose, CrossCor
 const DropoutLayer = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
 
 """Union type for reshaping layers such as `flatten`."""
-const ReshapingLayer = Union{typeof(Flux.flatten)}
+const ReshapingLayer = Union{typeof(Flux.flatten), typeof(Flux.MLUtils.flatten)}
 
 """Union type for max pooling layers."""
 const MaxPoolLayer = Union{MaxPool,AdaptiveMaxPool,GlobalMaxPool}
