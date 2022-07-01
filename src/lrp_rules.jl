@@ -152,10 +152,10 @@ struct GammaRule{T} <: AbstractLRPRule
 end
 function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
     γ = convert(T, r.γ)
-    param .+= γ * relu.(param)
+    param .+= γ .* relu.(param)
     return nothing
 end
-@inline check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
+
 
 """
     PassRule()
