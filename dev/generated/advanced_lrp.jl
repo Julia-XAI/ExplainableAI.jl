@@ -12,11 +12,11 @@ input = reshape(x, 28, 28, 1, :);
 
 rules = [
     ZBoxRule(0.0f0, 1.0f0),
+    EpsilonRule(),
     GammaRule(),
-    GammaRule(),
     EpsilonRule(),
-    EpsilonRule(),
-    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
     ZeroRule(),
     ZeroRule(),
 ]
@@ -33,10 +33,17 @@ function modify_param!(::MyGammaRule, param)
     return nothing
 end
 
-analyzer = LRP(model, MyGammaRule())
-heatmap(input, analyzer)
-
-analyzer = LRP(model, GammaRule())
+rules = [
+    ZBoxRule(0.0f0, 1.0f0),
+    EpsilonRule(),
+    MyGammaRule(),
+    EpsilonRule(),
+    ZeroRule(),
+    ZeroRule(),
+    ZeroRule(),
+    ZeroRule(),
+]
+analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
 struct MyDoublingLayer end
@@ -49,7 +56,7 @@ model = Chain(model..., MyDoublingLayer())
 
 LRP_CONFIG.supports_layer(::MyDoublingLayer) = true
 
-analyzer = LRPZero(model)
+analyzer = LRP(model)
 heatmap(input, analyzer)
 
 myrelu(x) = max.(0, x)
@@ -57,7 +64,7 @@ model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 
 LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 
-analyzer = LRPZero(model)
+analyzer = LRP(model)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
