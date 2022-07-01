@@ -57,9 +57,11 @@ Currently, the following analyzers are implemented:
 ├── SmoothGrad
 ├── IntegratedGradients
 └── LRP
-    ├── LRPZero
-    ├── LRPEpsilon
-    └── LRPGamma
+    ├── ZeroRule
+    ├── EpsilonRule
+    ├── GammaRule
+    ├── PassRule
+    └── ZBoxRule
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.
