@@ -24,8 +24,9 @@ InterpolationAugmentation
 ## Rules
 ```@docs
 ZeroRule
-GammaRule
 EpsilonRule
+GammaRule
+PassRule
 ZBoxRule
 ```
 

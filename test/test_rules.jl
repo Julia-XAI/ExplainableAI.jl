@@ -164,7 +164,7 @@ layers = Dict(
                         @test size(Rₖ) == size(aₖ)
                         @test_reference "references/rules/$rulename/$layername.jld2" Dict(
                             "R" => Rₖ
-                        ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                        ) by = (r, a) -> isapprox(r["R"], a["R"]; atol=1e-5, rtol=0.02)
                     else
                         @test_throws ArgumentError lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
                     end
