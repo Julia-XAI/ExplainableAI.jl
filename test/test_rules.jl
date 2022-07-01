@@ -12,6 +12,8 @@ const RULES = Dict(
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
+    "WSquareRule" => WSquareRule(),
+    "FlatRule" => FlatRule(),
 )
 
 isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
