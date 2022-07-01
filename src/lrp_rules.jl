@@ -157,6 +157,24 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
 end
 @inline check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
 
+
+"""
+    PassRule()
+
+Pass-through rule. Passes relevance through to the lower layer.
+Supports reshaping layers.
+"""
+struct PassRule <: AbstractLRPRule end
+function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
+    if size(aₖ) == size(Rₖ₊₁)
+        Rₖ .= Rₖ₊₁
+    end
+    Rₖ .= reshape(Rₖ₊₁, size(aₖ))
+    return nothing
+end
+# No extra checks as reshaping operation will throw an error if layer isn't compatible:
+@inline check_compat(::PassRule, layer) = nothing
+
 """
     ZBoxRule(low, high)
 
@@ -211,6 +229,13 @@ for R in (ZeroRule, EpsilonRule)
     @eval get_layer_resetter(::$R, l) = Returns(nothing)
     @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
     @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
+end
+
+# Special cases for rules that don't modify params for extra performance:
+for R in (ZeroRule, EpsilonRule)
+    for L in (DropoutLayer, ReshapingLayer)
+        @eval lrp!(Rₖ, ::$R, l::$L, aₖ, Rₖ₊₁) = lrp!(Rₖ, PassRule(), l, aₖ, Rₖ₊₁)
+    end
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
