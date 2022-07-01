@@ -60,8 +60,10 @@ Currently, the following analyzers are implemented:
     ├── ZeroRule
     ├── EpsilonRule
     ├── GammaRule
-    ├── PassRule
-    └── ZBoxRule
+    ├── WSquareRule
+    ├── FlatRule
+    ├── ZBoxRule
+    └── PassRule
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.

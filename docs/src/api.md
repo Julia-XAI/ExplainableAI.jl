@@ -26,8 +26,10 @@ InterpolationAugmentation
 ZeroRule
 EpsilonRule
 GammaRule
-PassRule
+WSquareRule
+FlatRule
 ZBoxRule
+PassRule
 ```
 
 ## Custom rules 
