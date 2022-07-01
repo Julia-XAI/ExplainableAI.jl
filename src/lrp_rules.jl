@@ -26,14 +26,14 @@ end
 
 Modify input activation before computing relevance propagation.
 """
-@inline modify_input(rule, input) = input # general fallback
+modify_input(rule, input) = input # general fallback
 
 """
     modify_denominator(rule, d)
 
 Modify denominator ``z`` for numerical stability on the forward pass.
 """
-@inline modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
+modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
 
 """
     check_compat(rule, layer)
@@ -44,7 +44,7 @@ Check compatibility of a LRP-Rule with layer type.
 When implementing a custom `check_compat` function, return `nothing` if checks passed,
 otherwise throw an `ArgumentError`.
 """
-@inline check_compat(rule, layer) = require_weight_and_bias(rule, layer)
+check_compat(rule, layer) = require_weight_and_bias(rule, layer)
 
 """
     modify_layer!(rule, layer)
@@ -69,16 +69,16 @@ end
 
 Inplace-modify parameters before computing the relevance.
 """
-@inline modify_param!(rule, param) = nothing # general fallback
+modify_param!(rule, param) = nothing # general fallback
 
 # Useful presets:
 modify_param!(::Val{:mask_positive}, p) = p .= max.(zero(eltype(p)), p)
 modify_param!(::Val{:mask_negative}, p) = p .= min.(zero(eltype(p)), p)
 
 # Internal wrapper functions for bias-free layers.
-@inline modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
-@inline modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
-@inline function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
+modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
+modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
+function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
     @assert b == false
     return nothing
 end
@@ -108,7 +108,7 @@ LRP-0 rule. Commonly used on upper layers.
     Layer-Wise Relevance Propagation
 """
 struct ZeroRule <: AbstractLRPRule end
-@inline check_compat(::ZeroRule, layer) = nothing
+check_compat(::ZeroRule, layer) = nothing
 
 # Optimization to save allocations since weights don't need to be reset:
 get_layer_resetter(::ZeroRule, layer) = Returns(nothing)
@@ -130,7 +130,7 @@ struct EpsilonRule{T} <: AbstractLRPRule
     EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
-@inline check_compat(::EpsilonRule, layer) = nothing
+check_compat(::EpsilonRule, layer) = nothing
 
 # Optimization to save allocations since weights don't need to be reset:
 get_layer_resetter(::EpsilonRule, layer) = Returns(nothing)
@@ -172,7 +172,7 @@ function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
     return nothing
 end
 # No extra checks as reshaping operation will throw an error if layer isn't compatible:
-@inline check_compat(::PassRule, layer) = nothing
+check_compat(::PassRule, layer) = nothing
 
 """
     ZBoxRule(low, high)
