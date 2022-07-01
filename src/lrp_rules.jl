@@ -156,6 +156,29 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
     return nothing
 end
 
+"""
+    WSquareRule()
+
+LRP-``W^2`` rule. Commonly used on the first layer when values are unbounded.
+
+# References
+[1]: G. Montavon et al., Explaining nonlinear classification decisions with deep Taylor decomposition
+"""
+struct WSquareRule <: AbstractLRPRule end
+modify_param!(::WSquareRule, p) = p .^= 2
+modify_input(::WSquareRule, input) = ones_like(input)
+
+"""
+    FlatRule()
+
+LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all parameters set to one.
+
+# References
+[1]: S. Lapuschkin et al., Unmasking Clever Hans predictors and assessing what machines really learn
+"""
+struct FlatRule <: AbstractLRPRule end
+modify_param!(::FlatRule, p) = fill!(p, 0)
+modify_input(::FlatRule, input) = ones_like(input)
 
 """
     PassRule()
@@ -238,7 +261,7 @@ for R in (ZeroRule, EpsilonRule)
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
-for R in (ZeroRule, EpsilonRule, GammaRule)
+for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
         reset! = get_layer_resetter(rule, layer)
         modify_layer!(rule, layer)

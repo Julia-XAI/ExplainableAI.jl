@@ -42,7 +42,7 @@ export LRP
 # LRP rules
 export AbstractLRPRule
 export LRP_CONFIG
-export ZeroRule, EpsilonRule, GammaRule, ZBoxRule, PassRule
+export ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule, ZBoxRule, PassRule
 export modify_input, modify_denominator
 export modify_param!, modify_layer!
 export check_model
