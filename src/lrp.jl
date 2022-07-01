@@ -41,11 +41,8 @@ function LRP(model::Chain, r::AbstractLRPRule; kwargs...)
     rules = repeat([r], length(model.layers))
     return LRP(model, rules; kwargs...)
 end
-# Additional constructors for convenience:
+# Additional constructors for convenience: use ZeroRule everywhere
 LRP(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
-LRPZero(model::Chain; kwargs...) = LRP(model, ZeroRule(); kwargs...)
-LRPEpsilon(model::Chain; kwargs...) = LRP(model, EpsilonRule(); kwargs...)
-LRPGamma(model::Chain; kwargs...) = LRP(model, GammaRule(); kwargs...)
 
 # The call to the LRP analyzer.
 function (analyzer::LRP)(

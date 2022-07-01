@@ -21,7 +21,7 @@ input2_bd = rand(MersenneTwister(2), Float32, ins, 1)
 input_batch = cat(input1_bd, input2_bd; dims=2)
 
 ANALYZERS = Dict(
-    "LRPZero" => LRPZero,
+    "LRPZero" => LRP,
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
     "SmoothGrad" => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),

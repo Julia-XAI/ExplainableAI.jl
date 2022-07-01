@@ -1,12 +1,10 @@
 # https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
-# TODO: support all linear layers that use properties `weight` and `bias`
-const WeightBiasLayers = (Dense, Conv)
-
 # Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
 # without custom implementations.
 function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
+    check_compat(rule, layer)
     reset! = get_layer_resetter(rule, layer)
     modify_layer!(rule, layer)
     ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
@@ -18,6 +16,7 @@ end
 # To implement new rules, define the following custom functions:
 #   * `modify_input(rule, input)`
 #   * `modify_denominator(rule, d)`
+#   * `check_compat(rule, layer)`
 #   * `modify_param!(rule, param)` or `modify_layer!(rule, layer)`,
 #     the latter overriding the former
 #
@@ -37,6 +36,17 @@ Modify denominator ``z`` for numerical stability on the forward pass.
 @inline modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
 
 """
+    check_compat(rule, layer)
+
+Check compatibility of a LRP-Rule with layer type.
+
+## Note
+When implementing a custom `check_compat` function, return `nothing` if checks passed,
+otherwise throw an `ArgumentError`.
+"""
+@inline check_compat(rule, layer) = require_weight_and_bias(rule, layer)
+
+"""
     modify_layer!(rule, layer)
 
 In-place modify layer parameters by calling `modify_param!` before computing relevance
@@ -45,15 +55,12 @@ propagation.
 ## Note
 When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
-modify_layer!(rule, layer) = nothing
-for L in WeightBiasLayers
-    @eval function modify_layer!(rule::R, layer::$L) where {R}
-        if has_weight_and_bias(layer)
-            modify_param!(rule, layer.weight)
-            modify_bias!(rule, layer.bias)
-        end
-        return nothing
+function modify_layer!(rule::R, layer::L) where {R,L}
+    if has_weight_and_bias(layer)
+        modify_param!(rule, layer.weight)
+        modify_bias!(rule, layer.bias)
     end
+    return nothing
 end
 
 """
@@ -97,6 +104,22 @@ end
 Constructor for LRP-0 rule. Commonly used on upper layers.
 """
 struct ZeroRule <: AbstractLRPRule end
+@inline check_compat(::ZeroRule, layer) = nothing
+
+"""
+    EpsilonRule([ϵ=1.0f-6])
+
+Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
+
+Arguments:
+- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
+"""
+struct EpsilonRule{T} <: AbstractLRPRule
+    ϵ::T
+    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
+end
+modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
+@inline check_compat(::EpsilonRule, layer) = nothing
 
 """
     GammaRule([γ=0.25])
@@ -115,20 +138,7 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
     param .+= γ * relu.(param)
     return nothing
 end
-
-"""
-    EpsilonRule([ϵ=1.0f-6])
-
-Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
-
-Arguments:
-- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
-"""
-struct EpsilonRule{T} <: AbstractLRPRule
-    ϵ::T
-    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
-end
-modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
+@inline check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
 
 """
     ZBoxRule(low, high)
@@ -146,45 +156,44 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-for L in WeightBiasLayers
-    function lrp!(Rₖ, rule::ZBoxRule, layer, aₖ, Rₖ₊₁)
-        T = eltype(aₖ)
-        l = zbox_input_augmentation(T, rule.low, size(aₖ))
-        h = zbox_input_augmentation(T, rule.high, size(aₖ))
-        reset! = get_layer_resetter(rule, layer)
+function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
+    require_weight_and_bias(rule, layer)
+    reset! = get_layer_resetter(rule, layer)
 
-        # Compute pullback for W, b
-        aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
+    l = zbox_input(aₖ, rule.low)
+    h = zbox_input(aₖ, rule.high)
 
-        # Compute pullback for W⁺, b⁺
-        modify_layer!(Val{:mask_positive}, layer)
-        aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
-        reset!()
+    # Compute pullback for W, b
+    aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
-        # Compute pullback for W⁻, b⁻
-        modify_layer!(Val{:mask_negative}, layer)
-        aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
-        reset!()
+    # Compute pullback for W⁺, b⁺
+    modify_layer!(Val{:mask_positive}, layer)
+    aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
+    reset!()
 
-        y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
-        Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
-        return nothing
-    end
+    # Compute pullback for W⁻, b⁻
+    modify_layer!(Val{:mask_negative}, layer)
+    aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
+    reset!()
+
+    y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
+    Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
+    return nothing
 end
 
-const ZBOX_BOUNDS_MISMATCH = "ZBoxRule bounds should either be scalar or match input size."
-function zbox_input_augmentation(T, A::AbstractArray, in_size)
-    size(A) != in_size && throw(ArgumentError(ZBOX_BOUNDS_MISMATCH))
+zbox_input(in::AbstractArray{T}, c::Real) where {T} = fill(convert(T, c), size(in))
+function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
+    @assert size(A) == size(in)
     return convert.(T, A)
 end
-zbox_input_augmentation(T, c::Real, in_size) = fill(convert(T, c), in_size)
 
-# Other special cases that are dispatched on layer type:
-const LRPRules = (ZeroRule, EpsilonRule, GammaRule, ZBoxRule)
-for R in LRPRules
+# Special cases for rules that don't modify params for extra performance:
+for R in (ZeroRule, EpsilonRule)
+    @eval get_layer_resetter(::$R, l) = Returns(nothing)
     @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
     @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
 end
+
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
@@ -196,7 +205,3 @@ for R in (ZeroRule, EpsilonRule, GammaRule)
         return nothing
     end
 end
-
-# Rules that don't modify params can optionally be added here for extra performance
-get_layer_resetter(::ZeroRule, l) = Returns(nothing)
-get_layer_resetter(::EpsilonRule, l) = Returns(nothing)

@@ -29,14 +29,14 @@ TestLayer = MyLayer(Dense(2, 2, relu))
 @test_throws ArgumentError("Unknown layers found in model") check_model(
     :LRP, Chain(TestLayer); verbose=false
 )
-@test_throws ArgumentError("Unknown layers found in model") LRPZero(
+@test_throws ArgumentError("Unknown layers found in model") LRP(
     Chain(TestLayer); verbose=false
 )
-@test_nowarn LRPZero(Chain(TestLayer); skip_checks=true)
+@test_nowarn LRP(Chain(TestLayer); skip_checks=true)
 ## Test should pass after registering the layer
 LRP_CONFIG.supports_layer(::MyLayer) = true
 @test check_model(:LRP, Chain(TestLayer); verbose=false) == true
-@test_nowarn LRPZero(Chain(TestLayer))
+@test_nowarn LRP(Chain(TestLayer))
 ## ...repeat for layers that are functions
 @test_throws ArgumentError("Unknown layers found in model") check_model(
     :LRP, Chain(unknown_function); verbose=false

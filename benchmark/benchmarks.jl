@@ -25,7 +25,7 @@ end
 algs = Dict(
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
-    "LRPZero" => LRPZero,
+    "LRPZero" => LRP,
     "LRPCustom" => LRPCustom, #modifies weights
     "SmoothGrad" => model -> SmoothGrad(model, 10),
     "IntegratedGradients" => model -> IntegratedGradients(model, 10),
@@ -46,17 +46,6 @@ for (name, alg) in algs
     SUITE["VGG"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
 end
 
-# Rules benchmarks – use wrapper to trigger AD fallback
-struct TestWrapper{T}
-    layer::T
-end
-(w::TestWrapper)(x) = w.layer(x)
-modify_layer!(rule::R, w::TestWrapper) where {R} = modify_layer!(rule, w.layer)
-get_layer_resetter(rule::R, w::TestWrapper) where {R} = get_layer_resetter(rule, w.layer)
-get_layer_resetter(::ZeroRule, w::TestWrapper) = Returns(nothing)
-get_layer_resetter(::EpsilonRule, w::TestWrapper) = Returns(nothing)
-lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
-
 # generate input for conv layers
 insize = (64, 64, 3, 1)
 in_dense = 500
@@ -67,8 +56,6 @@ layers = Dict(
     "MaxPool" => (MaxPool((3, 3); pad=0), aₖ),
     "Conv" => (Conv((3, 3), 3 => 2), aₖ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
-    "WrappedDense" =>
-        (TestWrapper(Dense(in_dense, out_dense, relu)), randn(T, in_dense, 1)),
 )
 rules = Dict(
     "ZeroRule" => ZeroRule(),

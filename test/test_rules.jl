@@ -1,6 +1,6 @@
 using LoopVectorization
 using ExplainableAI
-using ExplainableAI: modify_param!, modify_bias!
+using ExplainableAI: modify_param!, modify_bias!, has_weight_and_bias
 import ExplainableAI: lrp!, modify_layer!, get_layer_resetter
 using Flux
 using LinearAlgebra: I
@@ -13,6 +13,8 @@ const RULES = Dict(
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
 )
+
+isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
 
 ## Hand-written tests
 @testset "ZeroRule analytic" begin
@@ -119,16 +121,19 @@ equalpairs = Dict( # these pairs of layers are all equal
                     @test Rₖ₊₁ == l2(aₖ)
                     Rₖ1 = similar(aₖ)
                     Rₖ2 = similar(aₖ)
-                    @inferred lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
-                    @inferred lrp!(Rₖ2, rule, l2, aₖ, Rₖ₊₁)
-                    @test Rₖ1 == Rₖ2
 
-                    @test typeof(Rₖ1) == typeof(aₖ)
-                    @test size(Rₖ1) == size(aₖ)
-
-                    @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ1
-                    ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                    if isa_constant_param_rule(rule)
+                        @inferred lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
+                        @inferred lrp!(Rₖ2, rule, l2, aₖ, Rₖ₊₁)
+                        @test Rₖ1 == Rₖ2
+                        @test typeof(Rₖ1) == typeof(aₖ)
+                        @test size(Rₖ1) == size(aₖ)
+                        @test_reference "references/rules/$rulename/$layername.jld2" Dict(
+                            "R" => Rₖ1
+                        ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                    else
+                        @test_throws ArgumentError lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
+                    end
                 end
             end
         end
@@ -138,10 +143,10 @@ end
 ## Test ConvLayers and others
 layers = Dict(
     "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
-    "MaxPool" => MaxPool((3, 3)),
-    "MeanPool" => MaxPool((3, 3)),
     "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
+    "MaxPool" => MaxPool((3, 3)),
+    "MeanPool" => MaxPool((3, 3)),
     "flatten" => Flux.flatten,
     "Dropout" => Dropout(0.2),
     "AlphaDropout" => AlphaDropout(0.2),
@@ -153,53 +158,16 @@ layers = Dict(
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ)
                     Rₖ = similar(aₖ)
-                    @inferred lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-
-                    @test typeof(Rₖ) == typeof(aₖ)
-                    @test size(Rₖ) == size(aₖ)
-
-                    @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ
-                    ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
-                end
-            end
-        end
-    end
-end
-
-## Test custom layers & default AD fallback using the ZeroRule
-# Compare with references of non-wrapped layers
-struct TestWrapper{T}
-    layer::T
-end
-(w::TestWrapper)(x) = w.layer(x)
-modify_layer!(rule::R, w::TestWrapper) where {R} = modify_layer!(rule, w.layer)
-get_layer_resetter(rule::R, w::TestWrapper) where {R} = get_layer_resetter(rule, w.layer)
-get_layer_resetter(::ZeroRule, w::TestWrapper) = Returns(nothing)
-get_layer_resetter(::EpsilonRule, w::TestWrapper) = Returns(nothing)
-lrp!(Rₖ, rule::ZBoxRule, w::TestWrapper, aₖ, Rₖ₊₁) = lrp!(Rₖ, rule, w.layer, aₖ, Rₖ₊₁)
-
-layers = Dict(
-    "Conv" => (Conv((3, 3), 2 => 4; init=pseudorandn), aₖ),
-    "Dense_relu" => (Dense(ins_dense, outs_dense, relu; init=pseudorandn), aₖ_dense),
-    "flatten" => (Flux.flatten, aₖ),
-)
-@testset "Custom layers" begin
-    for (rulename, rule) in RULES
-        @testset "$rulename" begin
-            for (layername, (layer, aₖ)) in layers
-                @testset "$layername" begin
-                    wrapped_layer = TestWrapper(layer)
-                    Rₖ₊₁ = wrapped_layer(aₖ)
-                    Rₖ = similar(aₖ)
-                    @inferred lrp!(Rₖ, rule, wrapped_layer, aₖ, Rₖ₊₁)
-
-                    @test typeof(Rₖ) == typeof(aₖ)
-                    @test size(Rₖ) == size(aₖ)
-
-                    @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ
-                    ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                    if has_weight_and_bias(layer) || isa_constant_param_rule(rule)
+                        @inferred lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+                        @test typeof(Rₖ) == typeof(aₖ)
+                        @test size(Rₖ) == size(aₖ)
+                        @test_reference "references/rules/$rulename/$layername.jld2" Dict(
+                            "R" => Rₖ
+                        ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                    else
+                        @test_throws ArgumentError lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+                    end
                 end
             end
         end
