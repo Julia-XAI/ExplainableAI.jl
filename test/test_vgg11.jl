@@ -75,7 +75,7 @@ function test_vgg11(name, method; kwargs...)
         analyzer = method(model)
         h2 = heatmap(img, analyzer; kwargs...)
         @test h1 ≈ h2
-        if !in(name, ("Gradient",))
+        if !in(name, ("Gradient", "SmoothGrad"))
             @test_reference "references/heatmaps/vgg11_$(name).txt" h1
         end
     end
