@@ -72,8 +72,8 @@ Inplace-modify parameters before computing the relevance.
 @inline modify_param!(rule, param) = nothing # general fallback
 
 # Useful presets:
-modify_param!(::Val{:mask_positive}, p) = (p .= max.(zero(eltype(p)), p), return nothing)
-modify_param!(::Val{:mask_negative}, p) = (p .= min.(zero(eltype(p)), p), return nothing)
+modify_param!(::Val{:mask_positive}, p) = p .= max.(zero(eltype(p)), p)
+modify_param!(::Val{:mask_negative}, p) = p .= min.(zero(eltype(p)), p)
 
 # Internal wrapper functions for bias-free layers.
 @inline modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
@@ -101,18 +101,29 @@ end
 """
     ZeroRule()
 
-Constructor for LRP-0 rule. Commonly used on upper layers.
+LRP-0 rule. Commonly used on upper layers.
+
+# References
+[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
+    Layer-Wise Relevance Propagation
 """
 struct ZeroRule <: AbstractLRPRule end
 @inline check_compat(::ZeroRule, layer) = nothing
 
+# Optimization to save allocations since weights don't need to be reset:
+get_layer_resetter(::ZeroRule, layer) = Returns(nothing)
+
 """
     EpsilonRule([ϵ=1.0f-6])
 
-Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
+LRP-``ϵ`` rule. Commonly used on middle layers.
 
 Arguments:
 - `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
+
+# References
+[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
+    Layer-Wise Relevance Propagation
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
@@ -121,13 +132,19 @@ end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 @inline check_compat(::EpsilonRule, layer) = nothing
 
+# Optimization to save allocations since weights don't need to be reset:
+get_layer_resetter(::EpsilonRule, layer) = Returns(nothing)
+
 """
     GammaRule([γ=0.25])
 
-Constructor for LRP-``γ`` rule. Commonly used on lower layers.
+LRP-``γ`` rule. Commonly used on lower layers.
 
 Arguments:
-- `γ`: Optional multiplier for added positive weights, defaults to 0.25.
+- `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
+
+# References
+[1]: G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 """
 struct GammaRule{T} <: AbstractLRPRule
     γ::T
@@ -143,12 +160,14 @@ end
 """
     ZBoxRule(low, high)
 
-Constructor for LRP-``z^{\\mathcal{B}}``-rule.
-Commonly used on the first layer for pixel input.
+LRP-``z^{\\mathcal{B}}``-rule. Commonly used on the first layer for pixel input.
 
 The parameters `low` and `high` should be set to the lower and upper bounds of the input features,
 e.g. `0.0` and `1.0` for raw image data.
 It is also possible to provide two arrays of that match the input size.
+
+## References
+[1]: G. Montavon et al., Explaining nonlinear classification decisions with deep Taylor decomposition
 """
 struct ZBoxRule{T} <: AbstractLRPRule
     low::T
