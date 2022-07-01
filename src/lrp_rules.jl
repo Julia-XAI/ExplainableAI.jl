@@ -44,7 +44,7 @@ Check compatibility of a LRP-Rule with layer type.
 When implementing a custom `check_compat` function, return `nothing` if checks passed,
 otherwise throw an `ArgumentError`.
 """
-@inline check_compat(rule, layer) = nothing # general fallback
+@inline check_compat(rule, layer) = require_weight_and_bias(rule, layer)
 
 """
     modify_layer!(rule, layer)
@@ -104,6 +104,22 @@ end
 Constructor for LRP-0 rule. Commonly used on upper layers.
 """
 struct ZeroRule <: AbstractLRPRule end
+@inline check_compat(::ZeroRule, layer) = nothing
+
+"""
+    EpsilonRule([ϵ=1.0f-6])
+
+Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
+
+Arguments:
+- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
+"""
+struct EpsilonRule{T} <: AbstractLRPRule
+    ϵ::T
+    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
+end
+modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
+@inline check_compat(::EpsilonRule, layer) = nothing
 
 """
     GammaRule([γ=0.25])
@@ -122,21 +138,7 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
     param .+= γ * relu.(param)
     return nothing
 end
-check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
-
-"""
-    EpsilonRule([ϵ=1.0f-6])
-
-Constructor for LRP-``ϵ`` rule. Commonly used on middle layers.
-
-Arguments:
-- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
-"""
-struct EpsilonRule{T} <: AbstractLRPRule
-    ϵ::T
-    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
-end
-modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
+@inline check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
 
 """
     ZBoxRule(low, high)
