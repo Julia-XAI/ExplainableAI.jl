@@ -157,7 +157,6 @@ function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
 end
 @inline check_compat(rule::GammaRule, layer) = require_weight_and_bias(rule, layer)
 
-
 """
     PassRule()
 
