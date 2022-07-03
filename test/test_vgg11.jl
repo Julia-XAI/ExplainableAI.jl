@@ -58,11 +58,8 @@ function test_vgg11(name, method; kwargs...)
         @time expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
         @test size(attr) == size(img)
-        # TODO: address rounding errors in CI reference tests for LRPCustom
-        if !in(name, ("LRPCustom",))
-            @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
-                (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
-        end
+        @test_reference "references/vgg11/$(name).jld2" Dict("expl" => attr) by =
+            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
         # Test direct call of analyzer
         analyzer = method(model)
@@ -86,12 +83,9 @@ function test_vgg11(name, method; kwargs...)
         attr = expl.attribution
 
         @test size(attr) == size(img)
-        # TODO: address rounding errors in CI reference tests for LRPCustom
-        if !in(name, ("LRPCustom",))
-            @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
-                "expl" => attr
-            ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
-        end
+        @test_reference "references/vgg11/$(name)_neuron_$neuron_selection.jld2" Dict(
+            "expl" => attr
+        ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
         analyzer = method(model)
         expl2 = analyzer(img, neuron_selection; kwargs...)
         @test expl.attribution ≈ expl2.attribution

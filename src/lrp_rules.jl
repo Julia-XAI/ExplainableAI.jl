@@ -231,12 +231,12 @@ function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
     aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
     # Compute pullback for W⁺, b⁺
-    modify_layer!(Val{:keep_positive}, layer)
+    modify_layer!(Val(:keep_positive), layer)
     aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
     reset!()
 
     # Compute pullback for W⁻, b⁻
-    modify_layer!(Val{:keep_negative}, layer)
+    modify_layer!(Val(:keep_negative), layer)
     aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
     reset!()
 
@@ -251,12 +251,7 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
     return convert.(T, A)
 end
 
-# Special cases for rules that don't modify params for extra performance:
-for R in (ZeroRule, EpsilonRule)
-    @eval get_layer_resetter(::$R, l) = Returns(nothing)
-    @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
-    @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
-end
+
 
 # Special cases for rules that don't modify params for extra performance:
 for R in (ZeroRule, EpsilonRule)
