@@ -56,9 +56,47 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 
 ## Test individual rules
 @testset "modify_param" begin
+    rule = GammaRule(0.42)
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
-    @inferred modify_param!(GammaRule(0.42), W)
-    @inferred modify_bias!(GammaRule(0.42), b)
+    layer = Dense(W, b, relu)
+    reset! = get_layer_resetter(rule, layer)
+
+    modify_layer!(rule, layer; ignore_bias=true)
+    @test layer.weight ≈ [1.42 -1.0; 2.84 0.0]
+    @test layer.bias ≈ b
+    reset!()
+    @test layer.weight ≈ W
+    @test layer.bias ≈ b
+
+    modify_layer!(rule, layer)
+    @test layer.weight ≈ [1.42 -1.0; 2.84 0.0]
+    @test layer.bias ≈ [-1.0, 1.42]
+    reset!()
+    @test layer.weight ≈ W
+    @test layer.bias ≈ b
+
+    modify_layer!(Val(:keep_positive), layer)
+    @test layer.weight ≈ [1.0 0.0; 2.0 0.0]
+    @test layer.bias ≈ [0.0, 1.0]
+    reset!()
+
+    modify_layer!(Val(:keep_positive_zero_bias), layer)
+    @test layer.weight ≈ [1.0 0.0; 2.0 0.0]
+    @test layer.bias ≈ [0.0, 0.0]
+    reset!()
+
+    modify_layer!(Val(:keep_negative), layer)
+    @test layer.weight ≈ [0.0 -1.0; 0.0 0.0]
+    @test layer.bias ≈ [-1.0, 0.0]
+    reset!()
+
+    modify_layer!(Val(:keep_negative_zero_bias), layer)
+    @test layer.weight ≈ [0.0 -1.0; 0.0 0.0]
+    @test layer.bias ≈ [0.0, 0.0]
+    reset!()
+
+    @inferred modify_param!(rule, W)
+    @inferred modify_bias!(rule, b)
     @test W ≈ [1.42 -1.0; 2.84 0.0]
     @test b ≈ [-1.0, 1.42]
 end

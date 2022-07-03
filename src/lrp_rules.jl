@@ -47,7 +47,7 @@ otherwise throw an `ArgumentError`.
 check_compat(rule, layer) = require_weight_and_bias(rule, layer)
 
 """
-    modify_layer!(rule, layer)
+    modify_layer!(rule, layer; ignore_bias=false)
 
 In-place modify layer parameters by calling `modify_param!` before computing relevance
 propagation.
@@ -55,13 +55,20 @@ propagation.
 ## Note
 When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
-function modify_layer!(rule::R, layer::L) where {R,L}
-    if has_weight_and_bias(layer)
-        modify_param!(rule, layer.weight)
-        modify_bias!(rule, layer.bias)
-    end
+function modify_layer!(rule::R, layer::L; ignore_bias=false) where {R,L}
+    !has_weight_and_bias(layer) && return nothing # skip all
+    modify_weight!(rule, layer.weight)
+
+    # Checks that skip bias modification:
+    ignore_bias && return nothing
+    isa(layer.bias, Flux.Zeros) && return nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
+    isa(layer.bias, Bool) && !layer.bias && return nothing  # skip if bias=false (Flux >= v0.13)
+
+    modify_bias!(rule, layer.bias)
     return nothing
 end
+modify_weight!(rule::R, W) where {R} = modify_param!(rule, W)
+modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
 
 """
     modify_param!(rule, W)
@@ -71,17 +78,15 @@ Inplace-modify parameters before computing the relevance.
 """
 modify_param!(rule, param) = nothing # general fallback
 
-# Useful presets:
-modify_param!(::Val{:mask_positive}, p) = p .= max.(zero(eltype(p)), p)
-modify_param!(::Val{:mask_negative}, p) = p .= min.(zero(eltype(p)), p)
+# Useful presets that allow us to work around bias-free layers:
+modify_param!(::Val{:keep_positive}, p) = keep_positive!(p)
+modify_param!(::Val{:keep_negative}, p) = keep_negative!(p)
 
-# Internal wrapper functions for bias-free layers.
-modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
-modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
-function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
-    @assert b == false
-    return nothing
-end
+modify_weight!(::Val{:keep_positive_zero_bias}, W) = keep_positive!(W)
+modify_bias!(::Val{:keep_positive_zero_bias}, b) = fill!(b, zero(eltype(b)))
+
+modify_weight!(::Val{:keep_negative_zero_bias}, W) = keep_negative!(W)
+modify_bias!(::Val{:keep_negative_zero_bias}, b) = fill!(b, zero(eltype(b)))
 
 # Internal function that resets parameters by capturing them in a closure.
 # Returns a function `reset!` that resets the parameters to their original state when called.
@@ -226,12 +231,12 @@ function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
     aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
     # Compute pullback for W⁺, b⁺
-    modify_layer!(Val{:mask_positive}, layer)
+    modify_layer!(Val(:keep_positive), layer)
     aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
     reset!()
 
     # Compute pullback for W⁻, b⁻
-    modify_layer!(Val{:mask_negative}, layer)
+    modify_layer!(Val(:keep_negative), layer)
     aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
     reset!()
 
@@ -246,12 +251,7 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
     return convert.(T, A)
 end
 
-# Special cases for rules that don't modify params for extra performance:
-for R in (ZeroRule, EpsilonRule)
-    @eval get_layer_resetter(::$R, l) = Returns(nothing)
-    @eval lrp!(Rₖ, ::$R, ::DropoutLayer, aₖ, Rₖ₊₁) = (Rₖ .= Rₖ₊₁)
-    @eval lrp!(Rₖ, ::$R, ::ReshapingLayer, aₖ, Rₖ₊₁) = (Rₖ .= reshape(Rₖ₊₁, size(aₖ)))
-end
+
 
 # Special cases for rules that don't modify params for extra performance:
 for R in (ZeroRule, EpsilonRule)

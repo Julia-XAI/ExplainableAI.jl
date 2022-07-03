@@ -75,6 +75,17 @@ julia> ones_like(x)
 ones_like(x::AbstractArray) = ones(eltype(x), size(x))
 ones_like(x::Number) = oneunit(x)
 
+function keep_positive!(x::AbstractArray{T}) where {T}
+    x[x .< 0] .= zero(T)
+    return x
+end
+function keep_negative!(x::AbstractArray{T}) where {T}
+    x[x .> 0] .= zero(T)
+    return x
+end
+keep_positive(x) = keep_positive!(deepcopy(x))
+keep_negative(x) = keep_negative!(deepcopy(x))
+
 # Utils for printing model check summary using PrettyTable.jl
 _print_name(layer) = "$layer"
 _print_name(layer::Parallel) = "Parallel(...)"
