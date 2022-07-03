@@ -13,20 +13,11 @@ model = flatten_model(strip_softmax(vgg11.layers))
 T = Float32
 img = rand(MersenneTwister(123), T, (224, 224, 3, 1))
 
-# Benchmark custom LRP composite
-function LRPCustom(model::Chain)
-    return LRP(
-        model,
-        [ZBoxRule(zero(T), oneunit(T)), repeat([GammaRule()], length(model.layers) - 1)...],
-    )
-end
-
 # Use one representative algorithm of each type
 algs = Dict(
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
-    "LRPZero" => LRP,
-    "LRPCustom" => LRPCustom, #modifies weights
+    "LRP" => LRP,
     "SmoothGrad" => model -> SmoothGrad(model, 10),
     "IntegratedGradients" => model -> IntegratedGradients(model, 10),
 )
@@ -53,7 +44,6 @@ out_dense = 100
 aₖ = randn(T, insize)
 
 layers = Dict(
-    "MaxPool" => (MaxPool((3, 3); pad=0), aₖ),
     "Conv" => (Conv((3, 3), 3 => 2), aₖ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
 )
@@ -62,6 +52,9 @@ rules = Dict(
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(zero(T), oneunit(T)),
+    "FlatRule" => FlatRule(),
+    "WSquareRule" => WSquareRule(),
+    "AlphaBetaRule" => AlphaBetaRule(),
 )
 
 SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
