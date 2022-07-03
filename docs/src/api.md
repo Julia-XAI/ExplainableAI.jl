@@ -27,6 +27,7 @@ ZeroRule
 EpsilonRule
 GammaRule
 WSquareRule
+AlphaBetaRule
 FlatRule
 ZBoxRule
 PassRule

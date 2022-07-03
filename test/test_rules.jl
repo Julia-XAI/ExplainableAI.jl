@@ -12,6 +12,7 @@ const RULES = Dict(
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
+    "AlphaBetaRule" => AlphaBetaRule(),
     "WSquareRule" => WSquareRule(),
     "FlatRule" => FlatRule(),
 )

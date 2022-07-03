@@ -63,11 +63,12 @@ Currently, the following analyzers are implemented:
     ├── WSquareRule
     ├── FlatRule
     ├── ZBoxRule
+    ├── AlphaBetaRule
     └── PassRule
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.
-Individual LRP rules like `ZeroRule`, `EpsilonRule`, `GammaRule` and `ZBoxRule` [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
+Individual LRP rules [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
 
 ## Roadmap
 In the future, we would like to include:

@@ -251,7 +251,62 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
     return convert.(T, A)
 end
 
+"""
+    AlphaBetaRule(alpha, beta)
+    AlphaBetaRule([alpha=2.0], [beta=1.0])
 
+LRP-``\alpha\beta`` rule. Weights positive and negative contributions according to the
+parameters `alpha` and `beta` respectively. The difference `alpha - beta` must be equal one.
+Commonly used on lower layers.
+
+Arguments:
+- `alpha`: Multiplier for the positive output term, defaults to `2.0`.
+- `beta`: Multiplier for the negative output term, defaults to `1.0`.
+
+# References
+[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
+    Layer-Wise Relevance Propagation
+[2]: G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+"""
+struct AlphaBetaRule{T} <: AbstractLRPRule
+    α::T
+    β::T
+    function AlphaBetaRule(alpha=2.0f0, beta=1.0f0)
+        alpha < 0 && throw(ArgumentError("Parameter `alpha` must be ≥0."))
+        beta < 0 && throw(ArgumentError("Parameter `beta` must be ≥0."))
+        !isone(alpha - beta) && throw(ArgumentError("`alpha - beta` must be equal one."))
+        return new{Float32}(alpha, beta)
+    end
+end
+
+# The AlphaBetaRule requires its own implementation of relevance propagation.
+function lrp!(Rₖ, rule::AlphaBetaRule, layer::L, aₖ, Rₖ₊₁) where {L}
+    require_weight_and_bias(rule, layer)
+    reset! = get_layer_resetter(rule, layer)
+
+    aₖ⁺ = keep_positive(aₖ)
+    aₖ⁻ = keep_negative(aₖ)
+
+    modify_layer!(Val(:keep_positive), layer)
+    out_1, pullback_1 = Zygote.pullback(layer, aₖ⁺)
+    reset!()
+    modify_layer!(Val(:keep_negative_zero_bias), layer)
+    out_2, pullback_2 = Zygote.pullback(layer, aₖ⁻)
+    reset!()
+    modify_layer!(Val(:keep_negative), layer)
+    out_3, pullback_3 = Zygote.pullback(layer, aₖ⁺)
+    reset!()
+    modify_layer!(Val(:keep_positive_zero_bias), layer)
+    out_4, pullback_4 = Zygote.pullback(layer, aₖ⁻)
+    reset!()
+
+    y_α = Rₖ₊₁ ./ modify_denominator(rule, out_1 + out_2)
+    y_β = Rₖ₊₁ ./ modify_denominator(rule, out_3 + out_4)
+    Rₖ .=
+        rule.α .* (aₖ⁺ .* only(pullback_1(y_α)) + aₖ⁻ .* only(pullback_2(y_α))) .-
+        rule.β .* (aₖ⁺ .* only(pullback_3(y_β)) + aₖ⁻ .* only(pullback_4(y_β)))
+    return nothing
+end
 
 # Special cases for rules that don't modify params for extra performance:
 for R in (ZeroRule, EpsilonRule)
