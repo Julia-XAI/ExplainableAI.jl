@@ -47,7 +47,7 @@ otherwise throw an `ArgumentError`.
 check_compat(rule, layer) = require_weight_and_bias(rule, layer)
 
 """
-    modify_layer!(rule, layer)
+    modify_layer!(rule, layer; ignore_bias=false)
 
 In-place modify layer parameters by calling `modify_param!` before computing relevance
 propagation.
@@ -55,10 +55,12 @@ propagation.
 ## Note
 When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
-function modify_layer!(rule::R, layer::L) where {R,L}
+function modify_layer!(rule::R, layer::L; ignore_bias=false) where {R,L}
     if has_weight_and_bias(layer)
         modify_param!(rule, layer.weight)
-        modify_bias!(rule, layer.bias)
+        if !ignore_bias
+            modify_bias!(rule, layer.bias)
+        end
     end
     return nothing
 end
@@ -75,7 +77,7 @@ modify_param!(rule, param) = nothing # general fallback
 modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
 modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
 function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
-    @assert b == false
+    b && error("Found layer bias set to `true` during $rule.")
     return nothing
 end
 
