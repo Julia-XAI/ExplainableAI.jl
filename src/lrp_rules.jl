@@ -71,10 +71,6 @@ Inplace-modify parameters before computing the relevance.
 """
 modify_param!(rule, param) = nothing # general fallback
 
-# Useful presets:
-modify_param!(::Val{:mask_positive}, p) = p .= max.(zero(eltype(p)), p)
-modify_param!(::Val{:mask_negative}, p) = p .= min.(zero(eltype(p)), p)
-
 # Internal wrapper functions for bias-free layers.
 modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
 modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
@@ -82,6 +78,10 @@ function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
     @assert b == false
     return nothing
 end
+
+# Useful presets that allow us to work around bias-free layers:
+modify_param!(::Val{:keep_positive}, p) = keep_positive!(p)
+modify_param!(::Val{:keep_negative}, p) = keep_negative!(p)
 
 # Internal function that resets parameters by capturing them in a closure.
 # Returns a function `reset!` that resets the parameters to their original state when called.
@@ -226,12 +226,12 @@ function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
     aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
     # Compute pullback for W⁺, b⁺
-    modify_layer!(Val{:mask_positive}, layer)
+    modify_layer!(Val{:keep_positive}, layer)
     aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
     reset!()
 
     # Compute pullback for W⁻, b⁻
-    modify_layer!(Val{:mask_negative}, layer)
+    modify_layer!(Val{:keep_negative}, layer)
     aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
     reset!()
 
