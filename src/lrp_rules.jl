@@ -56,14 +56,19 @@ propagation.
 When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
 """
 function modify_layer!(rule::R, layer::L; ignore_bias=false) where {R,L}
-    if has_weight_and_bias(layer)
-        modify_param!(rule, layer.weight)
-        if !ignore_bias
-            modify_bias!(rule, layer.bias)
-        end
-    end
+    !has_weight_and_bias(layer) && return nothing # skip all
+    modify_weight!(rule, layer.weight)
+
+    # Checks that skip bias modification:
+    ignore_bias && return nothing
+    isa(layer.bias, Flux.Zeros) && return nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
+    isa(layer.bias, Bool) && !layer.bias && return nothing  # skip if bias=false (Flux >= v0.13)
+
+    modify_bias!(rule, layer.bias)
     return nothing
 end
+modify_weight!(rule::R, W) where {R} = modify_param!(rule, W)
+modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
 
 """
     modify_param!(rule, W)
@@ -73,17 +78,15 @@ Inplace-modify parameters before computing the relevance.
 """
 modify_param!(rule, param) = nothing # general fallback
 
-# Internal wrapper functions for bias-free layers.
-modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
-modify_bias!(rule, b::Flux.Zeros) = nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
-function modify_bias!(rule, b::Bool) # skip if bias=false (Flux >= v0.13)
-    b && error("Found layer bias set to `true` during $rule.")
-    return nothing
-end
-
 # Useful presets that allow us to work around bias-free layers:
 modify_param!(::Val{:keep_positive}, p) = keep_positive!(p)
 modify_param!(::Val{:keep_negative}, p) = keep_negative!(p)
+
+modify_weight!(::Val{:keep_positive_zero_bias}, W) = keep_positive!(W)
+modify_bias!(::Val{:keep_positive_zero_bias}, b) = fill!(b, zero(eltype(b)))
+
+modify_weight!(::Val{:keep_negative_zero_bias}, W) = keep_negative!(W)
+modify_bias!(::Val{:keep_negative_zero_bias}, b) = fill!(b, zero(eltype(b)))
 
 # Internal function that resets parameters by capturing them in a closure.
 # Returns a function `reset!` that resets the parameters to their original state when called.
