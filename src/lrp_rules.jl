@@ -182,7 +182,7 @@ LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all parameters set
 [1]: S. Lapuschkin et al., Unmasking Clever Hans predictors and assessing what machines really learn
 """
 struct FlatRule <: AbstractLRPRule end
-modify_param!(::FlatRule, p) = fill!(p, 0)
+modify_param!(::FlatRule, p) = fill!(p, 1)
 modify_input(::FlatRule, input) = ones_like(input)
 
 """
