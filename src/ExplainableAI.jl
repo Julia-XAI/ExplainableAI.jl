@@ -10,6 +10,7 @@ using Tullio
 
 # Heatmapping:
 using ImageCore
+using ImageTransformations: imresize
 using ColorSchemes
 
 # Model checks:
@@ -29,7 +30,7 @@ include("lrp_checks.jl")
 include("lrp_rules.jl")
 include("lrp.jl")
 include("heatmap.jl")
-
+include("imagenet.jl")
 export analyze
 
 # Analyzers
@@ -53,5 +54,5 @@ export heatmap
 
 # utils
 export strip_softmax, flatten_model, flatten_chain, canonize
-
+export preprocess_imagenet
 end # module
