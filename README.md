@@ -17,28 +17,27 @@ This package supports Julia ≥1.6. To install it, open the Julia REPL and run
 julia> ]add ExplainableAI
 ```
 
-⚠️ This package is still in early development, expect breaking changes. ⚠️
-
 ## Example
-Let's use LRP to explain why an MNIST digit gets classified as a 9 using a small pre-trained LeNet5 model.
-If you want to follow along, the model can be found [here][model-bson-url].
+Let's use LRP to explain why an image of a castle gets classified as such using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl):
+![][castle]
 ```julia
 using ExplainableAI
 using Flux
-using MLDatasets
-using BSON: @load
+using Metalhead
+using FileIO
 
 # Load model
-@load "model.bson" model
-model = strip_softmax(model)
+model = VGG(16, pretrain=true).layers
+model = strip_softmax(flatten_chain(model))
 
 # Load input
-x, _ = MNIST(Float32, :test)[10]
-input = reshape(x, 28, 28, 1, :)   # reshape to WHCN format
+img = load("castle.jpg")
+input = preprocess_imagenet(img)
+input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
 
 # Run XAI method
 analyzer = LRP(model)
-expl = analyze(input, analyzer)    # or: expl = analyzer(input)
+expl = analyze(input, analyzer)         # or: expl = analyzer(input)
 
 # Show heatmap
 heatmap(expl)
@@ -46,7 +45,24 @@ heatmap(expl)
 # Or analyze & show heatmap directly
 heatmap(input, analyzer)
 ```
-![][heatmap]
+
+We can also get an explanation for the activation of the output neuron corresponding to the "street sign" class by specifying the corresponding output neuron position `920`:
+```julia
+analyze(input, analyzer, 920)  # for explanation 
+heatmap(input, analyzer, 920)  # for heatmap
+```
+Heatmaps for all implemented analyzers are shown in the following table. Red color indicate regions of positive relevance towards the selected class, whereas regions in blue are of negative relevance.
+
+| **Analyzer**          | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
+|:--------------------- |:------------------------------ |:---------------------------------- |
+| `LRP` composite       | ![][castle-lrp-comp]           | ![][streetsign-lrp-comp]           |
+| `LRP`                 | ![][castle-lrp]                | ![][streetsign-lrp]                |
+| `InputTimesGradient`  | ![][castle-ixg]                | ![][streetsign-ixg]                |
+| `Gradient`            | ![][castle-grad]               | ![][streetsign-grad]               |
+| `SmoothGrad`          | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
+| `IntegratedGradients` | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
+
+The code used to generate these heatmaps can be found [here][asset-code].
 
 ## Methods
 Currently, the following analyzers are implemented:
@@ -70,6 +86,10 @@ Currently, the following analyzers are implemented:
 One of the design goals of ExplainableAI.jl is extensibility.
 Individual LRP rules [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
 
+## Video demonstration
+Check out our [JuliaCon 2022 talk][juliacon-url] for a demonstration of the package.
+[![][juliacon-img]][juliacon-url]
+
 ## Roadmap
 In the future, we would like to include:
 - [PatternNet](https://arxiv.org/abs/1705.05598)
@@ -83,7 +103,21 @@ Contributions are welcome!
 > Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/banner.png
-[heatmap]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/mnist9.png
+
+[asset-code]: https://github.com/adrhill/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/readme_assets.jl
+[castle]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
+[castle-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP.png
+[castle-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP_composite.png
+[castle-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_InputTimesGradient.png
+[castle-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_Gradient.png
+[castle-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_SmoothGrad.png
+[castle-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_IntegratedGradients.png
+[streetsign-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP.png
+[streetsign-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP_composite.png
+[streetsign-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_InputTimesGradient.png
+[streetsign-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_Gradient.png
+[streetsign-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_SmoothGrad.png
+[streetsign-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_IntegratedGradients.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://adrhill.github.io/ExplainableAI.jl/stable
@@ -103,7 +137,8 @@ Contributions are welcome!
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
 
-[model-bson-url]: https://github.com/adrhill/ExplainableAI.jl/blob/master/docs/src/model.bson
+[juliacon-img]: http://img.youtube.com/vi/p5dg3vdmlvI/0.jpg
+[juliacon-url]: https://www.youtube.com/watch?v=p5dg3vdmlvI
 
 [captum-repo]: https://github.com/pytorch/captum
 [zennit-repo]: https://github.com/chr5tphr/zennit
