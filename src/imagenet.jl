@@ -10,7 +10,7 @@ const IMGSIZE = (224, 224)
 # Take rectangle of pixels of shape `outsize` at the center of image `im`
 adjust(i::Integer) = ifelse(iszero(i % 2), 1, 0)
 function center_crop_view(im::AbstractMatrix, outsize=IMGSIZE)
-    im = imresize(im, ratio=maximum(outsize.// size(im)))
+    im = imresize(im; ratio=maximum(outsize .// size(im)))
     h2, w2 = div.(outsize, 2) # half height, half width of view
     h_adjust, w_adjust = adjust.(outsize)
     return @view im[
