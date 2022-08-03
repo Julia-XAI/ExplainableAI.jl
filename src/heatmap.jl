@@ -2,8 +2,8 @@
 
 const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
     # Analyzer => (colorscheme, reduce, rangescale)
-    :LRP => (ColorSchemes.bwr, :sum, :centered), # attribution
-    :InputTimesGradient => (ColorSchemes.bwr, :sum, :centered), # attribution
+    :LRP => (ColorSchemes.seismic, :sum, :centered), # attribution
+    :InputTimesGradient => (ColorSchemes.seismic, :sum, :centered), # attribution
     :Gradient => (ColorSchemes.grays, :norm, :extrema), # gradient
 )
 
@@ -20,7 +20,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
 ## Keyword arguments
 - `cs::ColorScheme`: ColorScheme that is applied.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
-    When calling `heatmap` with an array, the default is `ColorSchemes.bwr`.
+    When calling `heatmap` with an array, the default is `ColorSchemes.seismic`.
 - `reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
     The following methods can be selected, which are then applied over the color channels
     for each "pixel" in the attribution:
@@ -32,7 +32,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
 - `rangescale::Symbol`: How the color channel reduced heatmap is normalized before the colorscheme is applied.
     Can be either `:extrema` or `:centered`.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
-    When calling `heatmap` with an array, the default for use with the `bwr` colorscheme is `:centered`.
+    When calling `heatmap` with an array, the default for use with the `seismic` colorscheme is `:centered`.
 - `permute::Bool`: Whether to flip W&H input channels. Default is `true`.
 - `unpack_singleton::Bool`: When heatmapping a batch with a single sample, setting `unpack_singleton=true`
     will return an image instead of an Vector containing a single image.
@@ -41,7 +41,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
 """
 function heatmap(
     attr::AbstractArray{T,N};
-    cs::ColorScheme=ColorSchemes.bwr,
+    cs::ColorScheme=ColorSchemes.seismic,
     reduce::Symbol=:sum,
     rangescale::Symbol=:centered,
     permute::Bool=true,
