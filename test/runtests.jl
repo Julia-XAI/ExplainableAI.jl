@@ -20,6 +20,10 @@ using ReferenceTests
         @info "Running tests on heatmaps..."
         include("test_heatmaps.jl")
     end
+    @testset "ImageNet preprocessing" begin
+        @info "Running tests on ImageNet preprocessing..."
+        include("test_imagenet.jl")
+    end
     @testset "Canonize" begin
         @info "Running tests on model canonization..."
         include("test_canonize.jl")
