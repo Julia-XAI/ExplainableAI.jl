@@ -1,8 +1,6 @@
 ![ExplainableAI.jl][banner-img]
 ___
 
-*Formerly known as ExplainabilityMethods.jl*
-
 | **Documentation**                                                     | **Build Status**                                      | **DOI**                 |
 |:--------------------------------------------------------------------- |:----------------------------------------------------- |:----------------------- |
 | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![][doi-img]][doi-url] |
@@ -19,7 +17,9 @@ julia> ]add ExplainableAI
 
 ## Example
 Let's use LRP to explain why an image of a castle gets classified as such using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl):
+
 ![][castle]
+
 ```julia
 using ExplainableAI
 using Flux
@@ -54,7 +54,7 @@ heatmap(input, analyzer, 920)  # for heatmap
 Heatmaps for all implemented analyzers are shown in the following table. Red color indicate regions of positive relevance towards the selected class, whereas regions in blue are of negative relevance.
 
 | **Analyzer**          | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
-|:--------------------- |:------------------------------ |:---------------------------------- |
+|:--------------------- |:------------------------------:|:----------------------------------:|
 | `LRP` composite       | ![][castle-lrp-comp]           | ![][streetsign-lrp-comp]           |
 | `LRP`                 | ![][castle-lrp]                | ![][streetsign-lrp]                |
 | `InputTimesGradient`  | ![][castle-ixg]                | ![][streetsign-ixg]                |
@@ -63,6 +63,11 @@ Heatmaps for all implemented analyzers are shown in the following table. Red col
 | `IntegratedGradients` | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
 
 The code used to generate these heatmaps can be found [here][asset-code].
+
+## Video demonstration
+Check out our talk at JuliaCon 2022 for a demonstration of the package.
+
+[![][juliacon-img]][juliacon-url]
 
 ## Methods
 Currently, the following analyzers are implemented:
@@ -85,10 +90,6 @@ Currently, the following analyzers are implemented:
 
 One of the design goals of ExplainableAI.jl is extensibility.
 Individual LRP rules [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
-
-## Video demonstration
-Check out our [JuliaCon 2022 talk][juliacon-url] for a demonstration of the package.
-[![][juliacon-img]][juliacon-url]
 
 ## Roadmap
 In the future, we would like to include:
