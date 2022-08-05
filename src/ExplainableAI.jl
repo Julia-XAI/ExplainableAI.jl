@@ -20,7 +20,7 @@ using PrettyTables
 include("compat.jl")
 include("neuron_selection.jl")
 include("analyze_api.jl")
-include("types.jl")
+include("flux_types.jl")
 include("flux_utils.jl")
 include("utils.jl")
 include("input_augmentation.jl")
@@ -28,6 +28,7 @@ include("gradient.jl")
 include("lrp/canonize.jl")
 include("lrp/checks.jl")
 include("lrp/rules.jl")
+include("lrp/composite.jl")
 include("lrp/lrp.jl")
 include("heatmap.jl")
 include("preprocessing.jl")
@@ -48,6 +49,12 @@ export ZBoxRule, AlphaBetaRule
 export modify_input, modify_denominator
 export modify_param!, modify_layer!
 export check_model
+
+# LRP composites
+export Composite, AbstractCompositePrimitive
+export LayerRule, FirstRule, LastRule, GlobalRule
+export RuleMap, RangeRuleMap, FirstNRuleMap, LastNRuleMap
+export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 
 # heatmapping
 export heatmap
