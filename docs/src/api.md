@@ -45,6 +45,27 @@ LRP_CONFIG.supports_layer
 LRP_CONFIG.supports_activation
 ```
 
+## Composites
+```@docs
+Composite
+```
+
+Composite primitives that apply a single rule:
+```@docs
+LayerRule
+FirstRule
+LastRule
+GlobalRule
+```
+
+Composite primitives that apply a set of rules to multiple layers:
+```@docs
+RuleMap
+RangeRuleMap
+FirstNRuleMap
+LastNRuleMap
+```
+
 # Utilities
 ```@docs
 strip_softmax
