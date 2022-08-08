@@ -6,30 +6,29 @@ Automatically contructs a list of LRP-rules by sequentially applying composite p
 # Primitives
 To apply a single rule, use:
     - [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
+    - [`GlobalRule`](@ref) to apply a rule to all layers of a model
+    - [`RangeRule`](@ref) to apply a rule to a positional `range` of layers of a model
     - [`FirstRule`](@ref) to apply a rule to the first layer of a model
     - [`LastRule`](@ref) to apply a rule to the last layer of a model
-    - [`GlobalRule`](@ref) to apply a rule to all layers of a model
 
 To apply a set of rules to multiple layers, use:
-    - [`RuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
+    - [`GlobalRuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
+    - [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
     - [`FirstNRuleMap`](@ref) for a `RuleMap` on the first `n` layers of a model
     - [`LastNRuleMap`](@ref) for a `RuleMap` on the last `n` layers
-    - [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
 
 # Example
 Using a flattened VGG11 model:
 ```julia-repl
 julia> composite = Composite(
-           RuleMap(
-               Dict(
-                   ConvLayer => AlphaBetaRule(),
-                   Dense => EpsilonRule(),
-                   PoolingLayer => EpsilonRule(),
-                   DropoutLayer => PassRule(),
-                   ReshapingLayer => PassRule(),
-               ),
+           GlobalRuleMap(
+               ConvLayer => AlphaBetaRule(),
+               Dense => EpsilonRule(),
+               PoolingLayer => EpsilonRule(),
+               DropoutLayer => PassRule(),
+               ReshapingLayer => PassRule(),
            ),
-           FirstNRuleMap(7, Dict(Conv => FlatRule())),
+           FirstNRuleMap(7, Conv => FlatRule()),
        );
 
 julia> analyzer = LRP(model, composite);
@@ -64,6 +63,7 @@ Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims.
 Composite(prims...) = Composite(prims)
 
 const COMPOSITE_DEFAULT_RULE = ZeroRule()
+
 function (c::Composite)(model)
     rules = Vector{AbstractLRPRule}(repeat([COMPOSITE_DEFAULT_RULE], length(model.layers)))
     for p in c.primitives
@@ -72,9 +72,15 @@ function (c::Composite)(model)
     return rules
 end
 
-# All primitives are in-place modifyingfunctions that act on two AbstractArrays
-# of layers and rules of equal length.
+# All primitives need to implement the following interfaces:
+# * can be called with `layers` and `rules` of equal length and in-place modifies `rules`
+# * implements `_range_string` that prints the positional range it is modifying rules on
 abstract type AbstractCompositePrimitive end
+
+###################
+# Rule primitives #
+###################
+abstract type AbstractRulePrimitive <: AbstractCompositePrimitive end
 
 """
     LayerRule(n, rule)
@@ -83,23 +89,40 @@ Composite primitive that applies LRP-rule `rule` to the `n`-th layer in the mode
 
 See also [`Composite`](@ref).
 """
-struct LayerRule{R<:AbstractLRPRule} <: AbstractCompositePrimitive
+struct LayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     n::Int
     rule::R
 end
 (r::LayerRule)(rules, _layers) = (rules[r.n] = r.rule)
+_range_string(r::LayerRule) = "layer $(r.n)"
 
 """
-    GlobalRule(n, rule)
+    GlobalRule(rule)
 
 Composite primitive that applies LRP-rule `rule` to all layers in the model.
 
 See also [`Composite`](@ref).
 """
-struct GlobalRule{R<:AbstractLRPRule} <: AbstractCompositePrimitive
+struct GlobalRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
 (r::GlobalRule)(rules, _layers) = fill!(rules, r.rule)
+_range_string(::GlobalRule) = "all layers"
+
+"""
+    RangeRule(range, rule)
+
+Composite primitive that applies LRP-rule `rule` to the specified positional `range`
+of layers in the model.
+
+See also [`Composite`](@ref).
+"""
+struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
+    range::T
+    rule::R
+end
+(r::RangeRule)(rules, _layers) = fill!(rules[r.range], r.rule)
+_range_string(r::RangeRule) = "layers $(r.range)"
 
 """
     FirstRule(rule)
@@ -108,10 +131,11 @@ Composite primitive that applies LRP-rule `rule` to the first layer in the model
 
 See also [`Composite`](@ref).
 """
-struct FirstRule{R<:AbstractLRPRule} <: AbstractCompositePrimitive
+struct FirstRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
 (r::FirstRule)(rules, _layers) = (rules[1] = r.rule)
+_range_string(::FirstRule) = "first layer"
 
 """
     LastRule(rule)
@@ -120,60 +144,72 @@ Composite primitive that applies LRP-rule `rule` to the last layer in the model.
 
 See also [`Composite`](@ref).
 """
-struct LastRule{R<:AbstractLRPRule} <: AbstractCompositePrimitive
+struct LastRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
 (r::LastRule)(rules, _layers) = (rules[end] = r.rule)
+_range_string(::LastRule) = "last layer"
+
+######################
+# RuleMap primitives #
+######################
+abstract type AbstractRuleMapPrimitive <: AbstractCompositePrimitive end
+const TypeRulePair = Pair{<:Type,<:AbstractLRPRule}
 
 """
-    RuleMap(map)
+    GlobalRuleMap(map)
 
-Composite primitive that maps layer types to LRP rules based on a dictionary `map`.
+Composite primitive that maps layer types to LRP rules based on a list of
+type-rule-pairs `map`.
 
 See also [`Composite`](@ref).
 """
-struct RuleMap{T<:Dict} <: AbstractCompositePrimitive
+struct GlobalRuleMap{T<:AbstractVector{<:TypeRulePair}} <: AbstractRuleMapPrimitive
     map::T
 end
-(r::RuleMap)(rules, layers) = _map_rules!(rules, layers, r.map, 1:length(layers))
+(r::GlobalRuleMap)(rules, layers) = _map_rules!(rules, layers, r.map, 1:length(layers))
+_range_string(r::GlobalRuleMap) = "all layers"
 
 """
     RangeRuleMap(range, map)
 
-Composite primitive that maps layer types to LRP rules based on a dictionary `map`
-within the specified `range` of layers in the model.
+Composite primitive that maps layer types to LRP rules based on a list of
+type-rule-pairs `map` within the specified `range` of layers in the model.
 
 See also [`Composite`](@ref).
 """
-struct RangeRuleMap{R<:AbstractRange,T<:Dict} <: AbstractCompositePrimitive
+struct RangeRuleMap{R<:AbstractRange,T<:AbstractVector{<:TypeRulePair}} <:
+       AbstractRuleMapPrimitive
     range::R
     map::T
 end
 (r::RangeRuleMap)(rules, layers) = _map_rules!(rules, layers, r.map, r.range)
+_range_string(r::RangeRuleMap) = "layers $(r.range)"
 
 """
     FirstNRuleMap(n, map)
 
-Composite primitive that maps layer types to LRP rules based on a dictionary `map`
-within the first `n` layers in the model.
+Composite primitive that maps layer types to LRP rules based on a list of
+type-rule-pairs `map` within the first `n` layers in the model.
 
 See also [`Composite`](@ref).
 """
-struct FirstNRuleMap{T<:Dict} <: AbstractCompositePrimitive
+struct FirstNRuleMap{T<:AbstractVector{<:TypeRulePair}} <: AbstractRuleMapPrimitive
     n::Int
     map::T
 end
 (r::FirstNRuleMap)(rules, layers) = _map_rules!(rules, layers, r.map, 1:(r.n))
+_range_string(r::FirstNRuleMap) = "layers $(1:r.n)"
 
 """
     LastNRuleMap(n, map)
 
-Composite primitive that maps layer types to LRP rules based on a dictionary `map`
-within the last `n` layers in the model.
+Composite primitive that maps layer types to LRP rules based on a list of
+type-rule-pairs `map` within the last `n` layers in the model.
 
 See also [`Composite`](@ref).
 """
-struct LastNRuleMap{T<:Dict} <: AbstractCompositePrimitive
+struct LastNRuleMap{T<:AbstractVector{<:TypeRulePair}} <: AbstractRuleMapPrimitive
     n::Int
     map::T
 end
@@ -181,15 +217,33 @@ function (r::LastNRuleMap)(rules, layers)
     l = length(layers)
     return _map_rules!(rules, layers, r.map, (l - r.n):l)
 end
+_range_string(r::LastNRuleMap) = "last $(r.n) layers"
+
+# Convenience constructors
+GlobalRuleMap(ps::Vararg{<:TypeRulePair}) = GlobalRuleMap([ps...])
+RangeRuleMap(r, ps::Vararg{<:TypeRulePair}) = RangeRuleMap(r, [ps...])
+FirstNRuleMap(n, ps::Vararg{<:TypeRulePair}) = FirstNRuleMap(n, [ps...])
+LastNRuleMap(n, ps::Vararg{<:TypeRulePair}) = LastNRuleMap(n, [ps...])
 
 function _map_rules!(rules, layers, map, range)
-    for (i, l) in enumerate(layers)
+    for (i, layer) in enumerate(layers)
         i in range || continue
-        for k in keys(map)
-            if isa(l, k)
-                rules[i] = map[k]
+        for (T, rule) in map
+            if isa(layer, T)
+                rules[i] = rule
             end
         end
     end
     return rules
 end
+
+composite = Composite(
+    GlobalRuleMap(
+        ConvLayer => AlphaBetaRule(),
+        Dense => EpsilonRule(),
+        PoolingLayer => EpsilonRule(),
+        DropoutLayer => PassRule(),
+        ReshapingLayer => PassRule(),
+    ),
+    FirstNRuleMap(7, Conv => FlatRule()),
+)

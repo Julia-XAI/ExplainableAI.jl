@@ -12,16 +12,14 @@ model = flatten_model(strip_softmax(model.layers))
 composite = Composite(
     ZeroRule(), # default rule
     GlobalRule(PassRule()), # override default rule
-    RuleMap(
-        Dict(
-            ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
-            Dense => EpsilonRule(1.0f-6),
-            PoolingLayer => EpsilonRule(1.0f-6),
-        ),
+    GlobalRuleMap(
+        ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
+        Dense => EpsilonRule(1.0f-6),
+        PoolingLayer => EpsilonRule(1.0f-6),
     ),
-    FirstNRuleMap(7, Dict(Conv => FlatRule())),
-    LastNRuleMap(3, Dict(Dense => EpsilonRule(1.0f-7))),
-    RangeRuleMap(4:10, Dict(PoolingLayer => EpsilonRule(1.0f-5))),
+    FirstNRuleMap(7, Conv => FlatRule()),
+    LastNRuleMap(3, Dense => EpsilonRule(1.0f-7)),
+    RangeRuleMap(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
     LayerRule(9, AlphaBetaRule(1.0f0, 0.0f0)),
     FirstRule(ZBoxRule(-3.0f0, 3.0f0)),
     LastRule(ZeroRule()),

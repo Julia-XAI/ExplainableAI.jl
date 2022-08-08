@@ -52,8 +52,8 @@ export check_model
 
 # LRP composites
 export Composite, AbstractCompositePrimitive
-export LayerRule, FirstRule, LastRule, GlobalRule
-export RuleMap, RangeRuleMap, FirstNRuleMap, LastNRuleMap
+export LayerRule, GlobalRule, RangeRule, FirstRule, LastRule
+export GlobalRuleMap, RangeRuleMap, FirstNRuleMap, LastNRuleMap
 export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 
 # heatmapping
