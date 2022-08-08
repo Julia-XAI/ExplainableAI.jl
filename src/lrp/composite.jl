@@ -236,14 +236,3 @@ function _map_rules!(rules, layers, map, range)
     end
     return rules
 end
-
-composite = Composite(
-    GlobalRuleMap(
-        ConvLayer => AlphaBetaRule(),
-        Dense => EpsilonRule(),
-        PoolingLayer => EpsilonRule(),
-        DropoutLayer => PassRule(),
-        ReshapingLayer => PassRule(),
-    ),
-    FirstNRuleMap(7, Conv => FlatRule()),
-)
