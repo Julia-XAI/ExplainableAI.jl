@@ -24,6 +24,20 @@ rules = [
 analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
+composite = Composite(
+    ZeroRule(),                         # default rule
+    GlobalRuleMap(
+        Conv => GammaRule(),       # apply GammaRule on all convolutional layers
+        MaxPool => EpsilonRule(),  # apply EpsilonRule on all pooling-layers
+    ),
+    FirstRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
+)
+
+analyzer = LRP(model, composite)        # construct LRP analyzer from composite
+heatmap(input, analyzer)
+
+analyzer.rules # show rules
+
 struct MyGammaRule <: AbstractLRPRule end
 
 import ExplainableAI: modify_param!
