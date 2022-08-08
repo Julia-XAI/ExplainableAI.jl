@@ -7,7 +7,7 @@ Automatically contructs a list of LRP-rules by sequentially applying composite p
 To apply a single rule, use:
     - [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
     - [`GlobalRule`](@ref) to apply a rule to all layers of a model
-    - [`RangeRule`](@ref) to apply a rule to a positional `range` of layers of a model
+    - [`RangeRule`](@ref) to apply a rule to a positional range of layers of a model
     - [`FirstRule`](@ref) to apply a rule to the first layer of a model
     - [`LastRule`](@ref) to apply a rule to the last layer of a model
 
@@ -121,7 +121,7 @@ struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
     range::T
     rule::R
 end
-(r::RangeRule)(rules, _layers) = fill!(rules[r.range], r.rule)
+(r::RangeRule)(rules, _layers) = (rules[r.range] .= r.rule)
 _range_string(r::RangeRule) = "layers $(r.range)"
 
 """
