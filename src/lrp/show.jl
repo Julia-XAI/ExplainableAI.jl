@@ -1,4 +1,14 @@
 # Composites
+_range_string(r::LayerRule) = "layer $(r.n)"
+_range_string(::GlobalRule) = "all layers"
+_range_string(r::RangeRule) = "layers $(r.range)"
+_range_string(::FirstRule) = "first layer"
+_range_string(::LastRule) = "last layer"
+_range_string(r::GlobalRuleMap) = "all layers"
+_range_string(r::RangeRuleMap) = "layers $(r.range)"
+_range_string(r::FirstNRuleMap) = "layers $(1:r.n)"
+_range_string(r::LastNRuleMap) = "last $(r.n) layers"
+
 function Base.show(io::IO, m::MIME"text/plain", c::Composite)
     println(io, "Composite(")
     for p in c.primitives
