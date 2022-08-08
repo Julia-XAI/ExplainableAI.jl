@@ -123,7 +123,7 @@ get_layer_resetter(::ZeroRule, layer) = Returns(nothing)
 
 LRP-``ϵ`` rule. Commonly used on middle layers.
 
-Arguments:
+# Arguments:
 - `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
 
 # References
@@ -145,7 +145,7 @@ get_layer_resetter(::EpsilonRule, layer) = Returns(nothing)
 
 LRP-``γ`` rule. Commonly used on lower layers.
 
-Arguments:
+# Arguments:
 - `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
 
 # References
@@ -211,7 +211,7 @@ The parameters `low` and `high` should be set to the lower and upper bounds of t
 e.g. `0.0` and `1.0` for raw image data.
 It is also possible to provide two arrays of that match the input size.
 
-## References
+# References
 [1]: G. Montavon et al., Explaining nonlinear classification decisions with deep Taylor decomposition
 """
 struct ZBoxRule{T} <: AbstractLRPRule
@@ -255,17 +255,18 @@ end
     AlphaBetaRule(alpha, beta)
     AlphaBetaRule([alpha=2.0], [beta=1.0])
 
-LRP-``\alpha\beta`` rule. Weights positive and negative contributions according to the
+LRP-``\\alpha\\beta`` rule. Weights positive and negative contributions according to the
 parameters `alpha` and `beta` respectively. The difference `alpha - beta` must be equal one.
 Commonly used on lower layers.
 
-Arguments:
+# Arguments:
 - `alpha`: Multiplier for the positive output term, defaults to `2.0`.
 - `beta`: Multiplier for the negative output term, defaults to `1.0`.
 
 # References
 [1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
     Layer-Wise Relevance Propagation
+
 [2]: G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 """
 struct AlphaBetaRule{T} <: AbstractLRPRule
