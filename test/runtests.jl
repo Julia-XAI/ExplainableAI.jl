@@ -28,6 +28,10 @@ using ReferenceTests
         @info "Running tests on model canonization..."
         include("test_canonize.jl")
     end
+    @testset "LRP composites" begin
+        @info "Running tests on LRP composites..."
+        include("test_composite.jl")
+    end
     @testset "LRP model checks" begin
         @info "Running tests on LRP model checks..."
         include("test_checks.jl")

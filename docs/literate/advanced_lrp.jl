@@ -5,7 +5,7 @@
 #
 # This example will show you how to implement custom LRP rules and register custom layers
 # and activation functions.
-# For this purpose, we will quickly load our model from the previous section:
+# For this purpose, we will quickly load our model from the previous section
 using ExplainableAI
 using Flux
 using MLDatasets
@@ -14,14 +14,14 @@ using BSON
 
 model = BSON.load("../model.bson", @__MODULE__)[:model]
 
+# and data from the MNIST dataset
 index = 10
 x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
 # ## Custom LRP composites
-# Instead of creating an LRP-analyzer from a single rule (e.g. `LRP(model, GammaRule())`),
-# we can also assign rules to each layer individually.
-# For this purpose, we create an array of rules that matches the length of the Flux chain:
+# When creating an LRP-analyzer, we can assign individual rules to each layer.
+# The array of rules has to match the length of the Flux chain:
 rules = [
     ZBoxRule(0.0f0, 1.0f0),
     EpsilonRule(),
@@ -42,6 +42,44 @@ heatmap(input, analyzer)
 #md # !!! warning "Flattening models"
 #md #     Not all models can be flattened, e.g. those using
 #md #     `Parallel` and `SkipConnection` layers.
+
+# Instead of manually defining a list of rules, we can also use a [`Composite`](@ref).
+# A composite contructs a list of LRP-rules by sequentially applying composite primitives.
+#
+# To obtain the same set of rules as in the previous example, we can define
+composite = Composite(
+    ZeroRule(),                         # default rule
+    GlobalRuleMap(
+        Conv => GammaRule(),       # apply GammaRule on all convolutional layers
+        MaxPool => EpsilonRule(),  # apply EpsilonRule on all pooling-layers
+    ),
+    FirstRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
+)
+
+analyzer = LRP(model, composite)        # construct LRP analyzer from composite
+heatmap(input, analyzer)
+
+# This analyzer contains the same rules as our previous one:
+analyzer.rules # show rules
+
+# ### Composite primitives
+# The following sets of primitives can used to construct a [`Composite`](@ref).
+#
+# To apply a single rule, use:
+# * [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
+# * [`GlobalRule`](@ref) to apply a rule to all layers of a model
+# * [`RangeRule`](@ref) to apply a rule to a positional range of layers of a model
+# * [`FirstRule`](@ref) to apply a rule to the first layer of a model
+# * [`LastRule`](@ref) to apply a rule to the last layer of a model
+#
+# To apply a set of rules to multiple layers, use:
+# * [`GlobalRuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
+# * [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
+# * [`FirstNRuleMap`](@ref) for a `RuleMap` on the first `n` layers of a model
+# * [`LastNRuleMap`](@ref) for a `RuleMap` on the last `n` layers
+#
+# Primitives are called sequentially in the order the `Composite` was created with
+# and overwrite rules specified by previous primitives.
 
 # ## Custom LRP rules
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.

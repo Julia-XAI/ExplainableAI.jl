@@ -1,8 +1,10 @@
 """
-    LRP(c::Chain, r::AbstractLRPRule)
-    LRP(c::Chain, rs::AbstractVector{<:AbstractLRPRule})
+    LRP(model, rules)
+    LRP(model, composite)
 
 Analyze model by applying Layer-Wise Relevance Propagation.
+The analyzer can either be created by passing an array of LRP-rules
+or by passing a composite, see also [`Composite`](@ref).
 
 # Keyword arguments
 - `skip_checks::Bool`: Skip checks whether model is compatible with LRP and contains output softmax. Default is `false`.
@@ -35,6 +37,12 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
     end
 end
 
+# Construct LRP composite
+function LRP(model::Chain, comp::Composite; kwargs...)
+    model = flatten_model(model)
+    rules = comp(model)
+    return LRP(model, rules; kwargs...)
+end
 # Construct LRP analyzer by assigning a single rule to all layers
 function LRP(model::Chain, r::AbstractLRPRule; kwargs...)
     model = flatten_model(model)

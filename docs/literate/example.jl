@@ -20,6 +20,7 @@ model = BSON.load("../model.bson", @__MODULE__)[:model]
 #md # !!! warning "Strip softmax"
 #md #
 #md #     For models with softmax activations on the output, it is necessary to call
+#md #     [`strip_softmax`](@ref)
 #md #     ```julia
 #md #     model = strip_softmax(model)
 #md #     ```
@@ -59,14 +60,14 @@ expl = analyze(input, analyzer);
 # * `expl.neuron_selection`: the neuron index of used for the attribution
 # * `expl.analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
 
-# Finally, we can visualize the `Explanation` through heatmapping:
+# Finally, we can visualize the `Explanation` through [`heatmap`](@ref):
 heatmap(expl)
 
 # Or get the same result by combining both analysis and heatmapping into one step:
 heatmap(input, analyzer)
 
 # ## Neuron selection
-# By passing an additional index to our call to `analyze`, we can compute the attribution
+# By passing an additional index to our call to [`analyze`](@ref), we can compute the attribution
 # with respect to a specific output neuron.
 # Let's see why the output wasn't interpreted as a 4 (output neuron at index 5)
 heatmap(input, analyzer, 5)
@@ -76,7 +77,7 @@ heatmap(input, analyzer, 5)
 
 #md # !!! note
 #md #
-#md #     The ouput neuron can also be specified when calling `analyze`:
+#md #     The ouput neuron can also be specified when calling [`analyze`](@ref):
 #md #     ```julia
 #md #     expl = analyze(img, analyzer, 5)
 #md #     ```
@@ -110,26 +111,31 @@ mosaic(heatmap(batch, analyzer, 1); nrow=10)
 # ├── SmoothGrad
 # ├── IntegratedGradients
 # └── LRP
-#     ├── LRPZero
-#     ├── LRPEpsilon
-#     └── LRPGamma
+#     ├── ZeroRule
+#     ├── EpsilonRule
+#     ├── GammaRule
+#     ├── WSquareRule
+#     ├── FlatRule
+#     ├── ZBoxRule
+#     ├── AlphaBetaRule
+#     └── PassRule
 # ```
 #
-# Let's try `InputTimesGradient`
+# Let's try [`InputTimesGradient`](@ref)
 analyzer = InputTimesGradient(model)
 heatmap(input, analyzer)
 
-# and `Gradient`
+# and [`Gradient`](@ref)
 analyzer = Gradient(model)
 heatmap(input, analyzer)
 
-# As you can see, the function `heatmap` automatically applies common presets for each method.
+# As you can see, the function [`heatmap`](@ref) automatically applies common presets for each method.
 #
-# Since `InputTimesGradient` and LRP both compute attributions, their presets are similar.
+# Since [`InputTimesGradient`](@ref) and [`LRP`](@ref) both compute attributions, their presets are similar.
 # Gradient methods however are typically shown in grayscale.
 
 # ## Custom heatmap settings
-# We can partially or fully override presets by passing keyword arguments to `heatmap`:
+# We can partially or fully override presets by passing keyword arguments to [`heatmap`](@ref):
 using ColorSchemes
 heatmap(expl; cs=ColorSchemes.jet)
 #
