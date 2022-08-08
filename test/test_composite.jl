@@ -22,8 +22,12 @@ composite = Composite(
     RangeRuleMap(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
     LayerRule(9, AlphaBetaRule(1.0f0, 0.0f0)),
     FirstRule(ZBoxRule(-3.0f0, 3.0f0)),
-    LastRule(ZeroRule()),
+    RangeRule(18:19, ZeroRule()),
+    LastRule(PassRule()),
 )
+# Test printing
+@test_reference "references/show/composite.txt" repr("text/plain", composite)
+
 analyzer = LRP(model, composite)
 @test analyzer.rules == [
     ZBoxRule(-3.0f0, 3.0f0)
@@ -43,6 +47,6 @@ analyzer = LRP(model, composite)
     EpsilonRule(1.0f-6)
     PassRule()
     EpsilonRule(1.0f-7)
-    PassRule()
     ZeroRule()
+    PassRule()
 ]

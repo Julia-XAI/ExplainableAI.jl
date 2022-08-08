@@ -121,7 +121,11 @@ struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
     range::T
     rule::R
 end
-(r::RangeRule)(rules, _layers) = (rules[r.range] .= r.rule)
+function (r::RangeRule)(rules, _layers)
+    for i in r.range
+        rules[i] = r.rule
+    end
+end
 _range_string(r::RangeRule) = "layers $(r.range)"
 
 """
