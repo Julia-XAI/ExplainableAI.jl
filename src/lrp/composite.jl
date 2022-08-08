@@ -5,17 +5,17 @@ Automatically contructs a list of LRP-rules by sequentially applying composite p
 
 # Primitives
 To apply a single rule, use:
-    - [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
-    - [`GlobalRule`](@ref) to apply a rule to all layers of a model
-    - [`RangeRule`](@ref) to apply a rule to a positional range of layers of a model
-    - [`FirstRule`](@ref) to apply a rule to the first layer of a model
-    - [`LastRule`](@ref) to apply a rule to the last layer of a model
+* [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
+* [`GlobalRule`](@ref) to apply a rule to all layers of a model
+* [`RangeRule`](@ref) to apply a rule to a positional range of layers of a model
+* [`FirstRule`](@ref) to apply a rule to the first layer of a model
+* [`LastRule`](@ref) to apply a rule to the last layer of a model
 
 To apply a set of rules to multiple layers, use:
-    - [`GlobalRuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
-    - [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
-    - [`FirstNRuleMap`](@ref) for a `RuleMap` on the first `n` layers of a model
-    - [`LastNRuleMap`](@ref) for a `RuleMap` on the last `n` layers
+* [`GlobalRuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
+* [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
+* [`FirstNRuleMap`](@ref) for a `RuleMap` on the first `n` layers of a model
+* [`LastNRuleMap`](@ref) for a `RuleMap` on the last `n` layers
 
 # Example
 Using a flattened VGG11 model:
