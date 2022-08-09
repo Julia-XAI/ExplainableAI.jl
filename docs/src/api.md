@@ -55,16 +55,16 @@ Composite primitives that apply a single rule:
 LayerRule
 GlobalRule
 RangeRule
-FirstRule
-LastRule
+FirstLayerRule
+LastLayerRule
 ```
 
 Composite primitives that apply a set of rules to multiple layers:
 ```@docs
-GlobalRuleMap
-RangeRuleMap
-FirstNRuleMap
-LastNRuleMap
+GlobalTypeRule
+RangeTypeRule
+FirstNTypeRule
+LastNTypeRule
 ```
 
 # Utilities

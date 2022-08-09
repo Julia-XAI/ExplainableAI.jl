@@ -49,11 +49,11 @@ heatmap(input, analyzer)
 # To obtain the same set of rules as in the previous example, we can define
 composite = Composite(
     ZeroRule(),                         # default rule
-    GlobalRuleMap(
+    GlobalTypeRule(
         Conv => GammaRule(),       # apply GammaRule on all convolutional layers
         MaxPool => EpsilonRule(),  # apply EpsilonRule on all pooling-layers
     ),
-    FirstRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
+    FirstLayerRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
 )
 
 analyzer = LRP(model, composite)        # construct LRP analyzer from composite
@@ -67,16 +67,18 @@ analyzer.rules # show rules
 #
 # To apply a single rule, use:
 # * [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
-# * [`GlobalRule`](@ref) to apply a rule to all layers of a model
-# * [`RangeRule`](@ref) to apply a rule to a positional range of layers of a model
-# * [`FirstRule`](@ref) to apply a rule to the first layer of a model
-# * [`LastRule`](@ref) to apply a rule to the last layer of a model
+# * [`GlobalRule`](@ref) to apply a rule to all layers
+# * [`RangeRule`](@ref) to apply a rule to a positional range of layers
+# * [`FirstLayerRule`](@ref) to apply a rule to the first layer
+# * [`LastLayerRule`](@ref) to apply a rule to the last layer
 #
 # To apply a set of rules to multiple layers, use:
-# * [`GlobalRuleMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
-# * [`RangeRuleMap`](@ref) for a `RuleMap` on generalized ranges
-# * [`FirstNRuleMap`](@ref) for a `RuleMap` on the first `n` layers of a model
-# * [`LastNRuleMap`](@ref) for a `RuleMap` on the last `n` layers
+# * [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
+# * [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
+# * [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
+# * [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
+# * [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
+# * [`LastNTypeRule`](@ref) for a `TypeRule` on the last `n` layers
 #
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.

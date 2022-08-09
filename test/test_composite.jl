@@ -12,18 +12,18 @@ model = flatten_model(strip_softmax(model.layers))
 composite = Composite(
     ZeroRule(), # default rule
     GlobalRule(PassRule()), # override default rule
-    GlobalRuleMap(
+    GlobalTypeRule(
         ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
         Dense => EpsilonRule(1.0f-6),
         PoolingLayer => EpsilonRule(1.0f-6),
     ),
-    FirstNRuleMap(7, Conv => FlatRule()),
-    LastNRuleMap(3, Dense => EpsilonRule(1.0f-7)),
-    RangeRuleMap(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
+    FirstNTypeRule(7, Conv => FlatRule()),
+    LastNTypeRule(3, Dense => EpsilonRule(1.0f-7)),
+    RangeTypeRule(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
     LayerRule(9, AlphaBetaRule(1.0f0, 0.0f0)),
-    FirstRule(ZBoxRule(-3.0f0, 3.0f0)),
+    FirstLayerRule(ZBoxRule(-3.0f0, 3.0f0)),
     RangeRule(18:19, ZeroRule()),
-    LastRule(PassRule()),
+    LastLayerRule(PassRule()),
 )
 # Test printing
 @test_reference "references/show/composite.txt" repr("text/plain", composite)
