@@ -11,7 +11,7 @@ To apply a single rule, use:
 * [`FirstLayerRule`](@ref) to apply a rule to the first layer
 * [`LastLayerRule`](@ref) to apply a rule to the last layer
 
-To apply a set of rules to multiple layers, use:
+To apply a set of rules to layers based on their type, use:
 * [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
 * [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
 * [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model

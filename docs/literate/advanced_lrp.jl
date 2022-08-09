@@ -19,7 +19,8 @@ index = 10
 x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
-# ## Custom LRP composites
+# ## LRP composites
+# ### Custom composites
 # When creating an LRP-analyzer, we can assign individual rules to each layer.
 # The array of rules has to match the length of the Flux chain:
 rules = [
@@ -63,7 +64,7 @@ heatmap(input, analyzer)
 analyzer.rules # show rules
 
 # ### Composite primitives
-# The following sets of primitives can used to construct a [`Composite`](@ref).
+# The following [Composite primitives](@ref composite_primitive_api) can used to construct a [`Composite`](@ref).
 #
 # To apply a single rule, use:
 # * [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
@@ -72,7 +73,7 @@ analyzer.rules # show rules
 # * [`FirstLayerRule`](@ref) to apply a rule to the first layer
 # * [`LastLayerRule`](@ref) to apply a rule to the last layer
 #
-# To apply a set of rules to multiple layers, use:
+# To apply a set of rules to layers based on their type, use:
 # * [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
 # * [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
 # * [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
@@ -82,6 +83,11 @@ analyzer.rules # show rules
 #
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.
+
+# ### Default composites
+# A list of implemented default composites can be found under
+# [Default composites](@ref default_composite_api) in the API reference, e.g. [`EpsilonPlusFlat`](@ref):
+EpsilonPlusFlat()
 
 # ## Custom LRP rules
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.

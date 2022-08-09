@@ -50,6 +50,7 @@ LRP_CONFIG.supports_activation
 Composite
 ```
 
+### [Composite primitives](@id composite_primitive_api)
 Composite primitives that apply a single rule:
 ```@docs
 LayerRule
@@ -63,8 +64,19 @@ Composite primitives that apply a set of rules to multiple layers:
 ```@docs
 GlobalTypeRule
 RangeTypeRule
+FirstLayerTypeRule
+LastLayerTypeRule
 FirstNTypeRule
 LastNTypeRule
+```
+
+### [Default composites](@id default_composite_api)
+```@docs
+EpsilonGammaBox
+EpsilonPlus
+EpsilonAlpha2Beta1
+EpsilonPlusFlat
+EpsilonAlpha2Beta1Flat
 ```
 
 # Utilities
