@@ -25,8 +25,6 @@ composite = Composite(
     RangeRule(18:19, ZeroRule()),
     LastLayerRule(PassRule()),
 )
-# Test printing
-@test_reference "references/show/composite.txt" repr("text/plain", composite)
 
 analyzer = LRP(model, composite)
 @test analyzer.rules == [
@@ -50,3 +48,17 @@ analyzer = LRP(model, composite)
     ZeroRule()
     PassRule()
 ]
+
+# Test printing
+@test_reference "references/show/composite.txt" repr("text/plain", composite)
+# Test default composites
+const DEFAULT_COMPOSITES = Dict(
+    "EpsilonGammaBox" => EpsilonGammaBox(-3.0f0, 3.0f0),
+    "EpsilonPlus" => EpsilonPlus(),
+    "EpsilonAlpha2Beta1" => EpsilonAlpha2Beta1(),
+    "EpsilonPlusFlat" => EpsilonPlusFlat(),
+    "EpsilonAlpha2Beta1Flat" => EpsilonAlpha2Beta1Flat(),
+)
+for (name, c) in DEFAULT_COMPOSITES
+    @test_reference "references/show/$name.txt" repr("text/plain", c)
+end

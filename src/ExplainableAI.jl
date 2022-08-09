@@ -56,6 +56,10 @@ export Composite, AbstractCompositePrimitive
 export LayerRule, GlobalRule, RangeRule, FirstLayerRule, LastLayerRule
 export GlobalTypeRule, RangeTypeRule, FirstLayerTypeRule, LastLayerTypeRule
 export FirstNTypeRule, LastNTypeRule
+# Default composites
+export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
+export EpsilonAlpha2Beta1Flat
+# Useful type unions
 export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 
 # heatmapping
