@@ -8,8 +8,22 @@ include("./vgg11.jl")
 model = VGG11(; pretrain=false)
 model = flatten_model(strip_softmax(model.layers))
 
+# Test default composites
+const DEFAULT_COMPOSITES = Dict(
+    "EpsilonGammaBox" => EpsilonGammaBox(-3.0f0, 3.0f0),
+    "EpsilonPlus" => EpsilonPlus(),
+    "EpsilonAlpha2Beta1" => EpsilonAlpha2Beta1(),
+    "EpsilonPlusFlat" => EpsilonPlusFlat(),
+    "EpsilonAlpha2Beta1Flat" => EpsilonAlpha2Beta1Flat(),
+)
+for (name, c) in DEFAULT_COMPOSITES
+    @test_reference "references/show/$name.txt" repr("text/plain", c)
+end
+
+# Test printing
+
 # This composite is non-sensical, but covers as many composite primitives as possible
-composite = Composite(
+composite1 = Composite(
     ZeroRule(), # default rule
     GlobalRule(PassRule()), # override default rule
     GlobalTypeRule(
@@ -26,8 +40,8 @@ composite = Composite(
     LastLayerRule(PassRule()),
 )
 
-analyzer = LRP(model, composite)
-@test analyzer.rules == [
+analyzer1 = LRP(model, composite1)
+@test analyzer1.rules == [
     ZBoxRule(-3.0f0, 3.0f0)
     EpsilonRule(1.0f-6)
     FlatRule()
@@ -48,17 +62,33 @@ analyzer = LRP(model, composite)
     ZeroRule()
     PassRule()
 ]
+@test_reference "references/show/composite1.txt" repr("text/plain", composite1)
 
-# Test printing
-@test_reference "references/show/composite.txt" repr("text/plain", composite)
-# Test default composites
-const DEFAULT_COMPOSITES = Dict(
-    "EpsilonGammaBox" => EpsilonGammaBox(-3.0f0, 3.0f0),
-    "EpsilonPlus" => EpsilonPlus(),
-    "EpsilonAlpha2Beta1" => EpsilonAlpha2Beta1(),
-    "EpsilonPlusFlat" => EpsilonPlusFlat(),
-    "EpsilonAlpha2Beta1Flat" => EpsilonAlpha2Beta1Flat(),
+model = Chain(
+    Conv((5, 5), 1 => 6, relu),
+    MaxPool((2, 2)),
+    Conv((5, 5), 6 => 16, relu),
+    MaxPool((2, 2)),
+    Flux.flatten,
+    Dense(256 => 120, relu),
+    Dense(120 => 84, relu),
+    Dense(84 => 10),
 )
-for (name, c) in DEFAULT_COMPOSITES
-    @test_reference "references/show/$name.txt" repr("text/plain", c)
-end
+composite2 = Composite(
+    LastLayerTypeRule(Dense => EpsilonRule(2.0f-5), Conv => EpsilonRule(2.0f-4)),
+    FirstLayerTypeRule(
+        Dense => AlphaBetaRule(1.0f0, 0.0f0), Conv => AlphaBetaRule(2.0f0, 1.0f0)
+    ),
+)
+analyzer2 = LRP(model, composite2)
+@test analyzer2.rules == [
+    AlphaBetaRule(2.0f0, 1.0f0)
+    ZeroRule()
+    ZeroRule()
+    ZeroRule()
+    ZeroRule()
+    ZeroRule()
+    ZeroRule()
+    EpsilonRule(2.0f-5)
+]
+@test_reference "references/show/composite2.txt" repr("text/plain", composite2)
