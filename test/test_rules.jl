@@ -15,6 +15,7 @@ const RULES = Dict(
     "AlphaBetaRule" => AlphaBetaRule(),
     "WSquareRule" => WSquareRule(),
     "FlatRule" => FlatRule(),
+    "ZPlusRule" => ZPlusRule(),
 )
 
 isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
@@ -214,3 +215,12 @@ layers = Dict(
         end
     end
 end
+
+# Test equivalence of ZPlusRule() and AlphaBetaRule(1.0f0, 0.0f0)
+l = layers["Conv"]
+Rₖ₊₁ = l(aₖ)
+Rₖ_z⁺ = similar(aₖ)
+Rₖ_αβ = similar(aₖ)
+lrp!(Rₖ_z⁺, ZPlusRule(), l, aₖ, Rₖ₊₁)
+lrp!(Rₖ_αβ, AlphaBetaRule(1.0f0, 0.0f0), l, aₖ, Rₖ₊₁)
+@test Rₖ_z⁺ ≈ Rₖ_αβ

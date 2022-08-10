@@ -117,6 +117,7 @@ mosaic(heatmap(batch, analyzer, 1); nrow=10)
 #     ├── WSquareRule
 #     ├── FlatRule
 #     ├── ZBoxRule
+#     ├── ZPlusRule
 #     ├── AlphaBetaRule
 #     └── PassRule
 # ```
