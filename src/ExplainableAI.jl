@@ -31,6 +31,7 @@ include("lrp/rules.jl")
 include("lrp/composite.jl")
 include("lrp/lrp.jl")
 include("lrp/show.jl")
+include("lrp/composite_presets.jl") # uses lrp/show.jl
 include("heatmap.jl")
 include("preprocessing.jl")
 export analyze

@@ -1,70 +1,10 @@
-"""
-    Composite([default_rule=LRPZero()], primitives...)
-
-Automatically contructs a list of LRP-rules by sequentially applying composite primitives.
-
-# Primitives
-To apply a single rule, use:
-* [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
-* [`GlobalRule`](@ref) to apply a rule to all layers
-* [`RangeRule`](@ref) to apply a rule to a positional range of layers
-* [`FirstLayerRule`](@ref) to apply a rule to the first layer
-* [`LastLayerRule`](@ref) to apply a rule to the last layer
-
-To apply a set of rules to layers based on their type, use:
-* [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
-* [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
-* [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
-* [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
-* [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
-* [`LastNTypeRule`](@ref) for a `TypeRule` on the last `n` layers
-
-# Example
-Using a flattened VGG11 model:
-```julia-repl
-julia> composite = Composite(
-           GlobalTypeRule(
-               ConvLayer => AlphaBetaRule(),
-               Dense => EpsilonRule(),
-               PoolingLayer => EpsilonRule(),
-               DropoutLayer => PassRule(),
-               ReshapingLayer => PassRule(),
-           ),
-           FirstNTypeRule(7, Conv => FlatRule()),
-       );
-
-julia> analyzer = LRP(model, composite);
-
-julia> analyzer.rules
-19-element Vector{AbstractLRPRule}:
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- FlatRule()
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- EpsilonRule{Float32}(1.0f-6)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
-```
-"""
+# A Composite is a container of primitives, which are sequentially applied
 struct Composite{T<:Union{Tuple,AbstractVector}}
     primitives::T
 end
 Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims...))
 Composite(prims...) = Composite(prims)
 
-# A Composite is a container of primitives, which are sequentially applied
 const COMPOSITE_DEFAULT_RULE = ZeroRule()
 function (c::Composite)(model)
     rules = Vector{AbstractLRPRule}(repeat([COMPOSITE_DEFAULT_RULE], length(model.layers)))
@@ -270,104 +210,63 @@ function _range_rule_map!(rules, layers, map, range)
 end
 
 """
-    EpsilonGammaBox(low, high; [epsilon=1.0f-6, gamma=0.25f0])
+    Composite([default_rule=LRPZero()], primitives...)
 
-Composite using the following primitives:
+Automatically contructs a list of LRP-rules by sequentially applying composite primitives.
+
+# Primitives
+To apply a single rule, use:
+* [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
+* [`GlobalRule`](@ref) to apply a rule to all layers
+* [`RangeRule`](@ref) to apply a rule to a positional range of layers
+* [`FirstLayerRule`](@ref) to apply a rule to the first layer
+* [`LastLayerRule`](@ref) to apply a rule to the last layer
+
+To apply a set of rules to layers based on their type, use:
+* [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
+* [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
+* [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
+* [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
+* [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
+* [`LastNTypeRule`](@ref) for a `TypeRule` on the last `n` layers
+
+# Example
+Using a flattened VGG11 model:
 ```julia-repl
-julia> EpsilonGammaBox(-3.0f0, 3.0f0)
-$(repr("text/plain", EpsilonGammaBox(-3.0f0, 3.0f0)))
+julia> composite = Composite(
+           GlobalTypeRule(
+               ConvLayer => AlphaBetaRule(),
+               Dense => EpsilonRule(),
+               PoolingLayer => EpsilonRule(),
+               DropoutLayer => PassRule(),
+               ReshapingLayer => PassRule(),
+           ),
+           FirstNTypeRule(7, Conv => FlatRule()),
+       );
+
+julia> analyzer = LRP(model, composite);
+
+julia> analyzer.rules
+19-element Vector{AbstractLRPRule}:
+ FlatRule()
+ EpsilonRule{Float32}(1.0f-6)
+ FlatRule()
+ EpsilonRule{Float32}(1.0f-6)
+ FlatRule()
+ FlatRule()
+ EpsilonRule{Float32}(1.0f-6)
+ AlphaBetaRule{Float32}(2.0f0, 1.0f0)
+ AlphaBetaRule{Float32}(2.0f0, 1.0f0)
+ EpsilonRule{Float32}(1.0f-6)
+ AlphaBetaRule{Float32}(2.0f0, 1.0f0)
+ AlphaBetaRule{Float32}(2.0f0, 1.0f0)
+ EpsilonRule{Float32}(1.0f-6)
+ PassRule()
+ EpsilonRule{Float32}(1.0f-6)
+ PassRule()
+ EpsilonRule{Float32}(1.0f-6)
+ PassRule()
+ EpsilonRule{Float32}(1.0f-6)
 ```
 """
-function EpsilonGammaBox(low, high; epsilon=1.0f-6, gamma=0.25f0)
-    return Composite(
-        GlobalTypeRule(
-            ConvLayer => GammaRule(gamma),
-            Dense => EpsilonRule(epsilon),
-            DropoutLayer => PassRule(),
-            ReshapingLayer => PassRule(),
-        ),
-        FirstLayerTypeRule(ConvLayer => ZBoxRule(low, high)),
-    )
-end
-
-"""
-    EpsilonPlus(; [epsilon=1.0f-6])
-
-Composite using the following primitives:
-```julia-repl
-julia> EpsilonPlus()
-$(repr("text/plain", EpsilonPlus()))
-```
-"""
-function EpsilonPlus(; epsilon=1.0f-6)
-    return Composite(
-        GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(1.0f0, 0.0f0), # TODO: replace with ZPlusRule
-            Dense => EpsilonRule(epsilon),
-            DropoutLayer => PassRule(),
-            ReshapingLayer => PassRule(),
-        ),
-    )
-end
-
-"""
-    EpsilonAlpha2Beta1(; [epsilon=1.0f-6])
-
-Composite using the following primitives:
-```julia-repl
-julia> EpsilonAlpha2Beta1()
-$(repr("text/plain", EpsilonAlpha2Beta1()))
-```
-"""
-function EpsilonAlpha2Beta1(; epsilon=1.0f-6)
-    return Composite(
-        GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
-            Dense => EpsilonRule(epsilon),
-            DropoutLayer => PassRule(),
-            ReshapingLayer => PassRule(),
-        ),
-    )
-end
-
-"""
-    EpsilonPlusFlat(; [epsilon=1.0f-6])
-
-Composite using the following primitives:
-```julia-repl
-julia> EpsilonPlusFlat()
-$(repr("text/plain", EpsilonPlusFlat()))
-```
-"""
-function EpsilonPlusFlat(; epsilon=1.0f-6)
-    return Composite(
-        GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(1.0f0, 0.0f0), # TODO: replace with ZPlusRule
-            Dense => EpsilonRule(epsilon),
-            DropoutLayer => PassRule(),
-            ReshapingLayer => PassRule(),
-        ),
-        FirstLayerTypeRule(ConvLayer => FlatRule(), Dense => FlatRule()),
-    )
-end
-
-"""
-    EpsilonAlpha2Beta1Flat(; [epsilon=1.0f-6])
-
-Composite using the following primitives:
-```julia-repl
-julia> EpsilonAlpha2Beta1Flat()
-$(repr("text/plain", EpsilonAlpha2Beta1Flat()))
-```
-"""
-function EpsilonAlpha2Beta1Flat(; epsilon=1.0f-6)
-    return Composite(
-        GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
-            Dense => EpsilonRule(epsilon),
-            DropoutLayer => PassRule(),
-            ReshapingLayer => PassRule(),
-        ),
-        FirstLayerTypeRule(ConvLayer => FlatRule(), Dense => FlatRule()),
-    )
-end
+Composite
