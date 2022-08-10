@@ -53,14 +53,14 @@ heatmap(input, analyzer, 920)  # for heatmap
 ```
 Heatmaps for all implemented analyzers are shown in the following table. Red color indicate regions of positive relevance towards the selected class, whereas regions in blue are of negative relevance.
 
-| **Analyzer**          | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
-|:--------------------- |:------------------------------:|:----------------------------------:|
-| `LRP` composite       | ![][castle-lrp-comp]           | ![][streetsign-lrp-comp]           |
-| `LRP`                 | ![][castle-lrp]                | ![][streetsign-lrp]                |
-| `InputTimesGradient`  | ![][castle-ixg]                | ![][streetsign-ixg]                |
-| `Gradient`            | ![][castle-grad]               | ![][streetsign-grad]               |
-| `SmoothGrad`          | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
-| `IntegratedGradients` | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
+| **Analyzer**                             | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
+|:---------------------------------------- |:------------------------------:|:----------------------------------:|
+| `LRP` composite using `EpsilonGammaBox`  | ![][castle-lrp-comp]           | ![][streetsign-lrp-comp]           |
+| `LRP`                                    | ![][castle-lrp]                | ![][streetsign-lrp]                |
+| `InputTimesGradient`                     | ![][castle-ixg]                | ![][streetsign-ixg]                |
+| `Gradient`                               | ![][castle-grad]               | ![][streetsign-grad]               |
+| `SmoothGrad`                             | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
+| `IntegratedGradients`                    | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
 
 The code used to generate these heatmaps can be found [here][asset-code].
 
@@ -78,19 +78,27 @@ Currently, the following analyzers are implemented:
 ├── SmoothGrad
 ├── IntegratedGradients
 └── LRP
-    ├── ZeroRule
-    ├── EpsilonRule
-    ├── GammaRule
-    ├── WSquareRule
-    ├── FlatRule
-    ├── ZBoxRule
-    ├── ZPlusRule
-    ├── AlphaBetaRule
-    └── PassRule
+    ├── Rules
+    │   ├── ZeroRule
+    │   ├── EpsilonRule
+    │   ├── GammaRule
+    │   ├── WSquareRule
+    │   ├── FlatRule
+    │   ├── ZBoxRule
+    │   ├── ZPlusRule
+    │   ├── AlphaBetaRule
+    │   └── PassRule
+    └── Composite
+        ├── EpsilonGammaBox
+        ├── EpsilonPlus
+        ├── EpsilonAlpha2Beta1
+        ├── EpsilonPlusFlat
+        └── EpsilonAlpha2Beta1Flat
+
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.
-Individual LRP rules [can be composed][docs-composites] and are easily extended by [custom rules][docs-custom-rules].
+Custom [composites][docs-composites] are easily defined and the package is easily extended by [custom rules][docs-custom-rules].
 
 ## Roadmap
 In the future, we would like to include:
@@ -106,16 +114,16 @@ Contributions are welcome!
 
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/banner.png
 
-[asset-code]: https://github.com/adrhill/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/readme_assets.jl
+[asset-code]: https://github.com/adrhill/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/generate_assets.jl
 [castle]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
 [castle-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP.png
-[castle-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP_composite.png
+[castle-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonGammaBox.png
 [castle-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_InputTimesGradient.png
 [castle-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_Gradient.png
 [castle-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_SmoothGrad.png
 [castle-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_IntegratedGradients.png
 [streetsign-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP.png
-[streetsign-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP_composite.png
+[streetsign-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonGammaBox.png
 [streetsign-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_InputTimesGradient.png
 [streetsign-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_Gradient.png
 [streetsign-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_SmoothGrad.png
@@ -133,7 +141,7 @@ Contributions are welcome!
 [codecov-img]: https://codecov.io/gh/adrhill/ExplainableAI.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrhill/ExplainableAI.jl
 
-[docs-composites]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-LRP-composites
+[docs-composites]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-composites
 [docs-custom-rules]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-LRP-rules
 
 [doi-img]: https://zenodo.org/badge/337430397.svg

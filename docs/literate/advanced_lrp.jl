@@ -49,15 +49,15 @@ heatmap(input, analyzer)
 #
 # To obtain the same set of rules as in the previous example, we can define
 composite = Composite(
-    ZeroRule(),                         # default rule
+    ZeroRule(),                              # default rule
     GlobalTypeRule(
-        Conv => GammaRule(),       # apply GammaRule on all convolutional layers
-        MaxPool => EpsilonRule(),  # apply EpsilonRule on all pooling-layers
+        Conv => GammaRule(),                 # apply GammaRule on all convolutional layers
+        MaxPool => EpsilonRule(),            # apply EpsilonRule on all pooling-layers
     ),
     FirstLayerRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
 )
 
-analyzer = LRP(model, composite)        # construct LRP analyzer from composite
+analyzer = LRP(model, composite)             # construct LRP analyzer from composite
 heatmap(input, analyzer)
 
 # This analyzer contains the same rules as our previous one:
