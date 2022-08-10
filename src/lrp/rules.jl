@@ -311,6 +311,38 @@ function lrp!(Rₖ, rule::AlphaBetaRule, layer::L, aₖ, Rₖ₊₁) where {L}
     return nothing
 end
 
+"""
+    ZPlusRule()
+
+LRP-``z^{+}`` rule. Commonly used on lower layers.
+
+Equivalent to `AlphaBetaRule(1.0f0, 0.0f0)`, but slightly faster.
+See also [`AlphaBetaRule`](@ref).
+
+# References
+- [1] $REF_BACH_LRP
+- [2] $REF_MONTAVON_DTD
+"""
+struct ZPlusRule <: AbstractLRPRule end
+function lrp!(Rₖ, rule::ZPlusRule, layer::L, aₖ, Rₖ₊₁) where {L}
+    require_weight_and_bias(rule, layer)
+    reset! = get_layer_resetter(rule, layer)
+
+    aₖ⁺ = keep_positive(aₖ)
+    aₖ⁻ = keep_negative(aₖ)
+
+    modify_layer!(Val(:keep_positive), layer)
+    out_1, pullback_1 = Zygote.pullback(layer, aₖ⁺)
+    reset!()
+    modify_layer!(Val(:keep_negative_zero_bias), layer)
+    out_2, pullback_2 = Zygote.pullback(layer, aₖ⁻)
+    reset!()
+
+    y_α = Rₖ₊₁ ./ modify_denominator(rule, out_1 + out_2)
+    Rₖ .= aₖ⁺ .* only(pullback_1(y_α)) + aₖ⁻ .* only(pullback_2(y_α))
+    return nothing
+end
+
 # Special cases for rules that don't modify params for extra performance:
 for R in (ZeroRule, EpsilonRule)
     for L in (DropoutLayer, ReshapingLayer)

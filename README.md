@@ -84,6 +84,7 @@ Currently, the following analyzers are implemented:
     ├── WSquareRule
     ├── FlatRule
     ├── ZBoxRule
+    ├── ZPlusRule
     ├── AlphaBetaRule
     └── PassRule
 ```

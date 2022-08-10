@@ -31,7 +31,7 @@ $(repr("text/plain", EpsilonPlus()))
 function EpsilonPlus(; epsilon=1.0f-6)
     return Composite(
         GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(1.0f0, 0.0f0), # TODO: replace with ZPlusRule
+            ConvLayer => ZPlusRule(),
             Dense => EpsilonRule(epsilon),
             DropoutLayer => PassRule(),
             ReshapingLayer => PassRule(),
@@ -71,7 +71,7 @@ $(repr("text/plain", EpsilonPlusFlat()))
 function EpsilonPlusFlat(; epsilon=1.0f-6)
     return Composite(
         GlobalTypeRule(
-            ConvLayer => AlphaBetaRule(1.0f0, 0.0f0), # TODO: replace with ZPlusRule
+            ConvLayer => ZPlusRule(),
             Dense => EpsilonRule(epsilon),
             DropoutLayer => PassRule(),
             ReshapingLayer => PassRule(),
