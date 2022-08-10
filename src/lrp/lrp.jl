@@ -4,7 +4,7 @@
 
 Analyze model by applying Layer-Wise Relevance Propagation.
 The analyzer can either be created by passing an array of LRP-rules
-or by passing a composite, see also [`Composite`](@ref).
+or by passing a composite, see [`Composite`](@ref) for an example.
 
 # Keyword arguments
 - `skip_checks::Bool`: Skip checks whether model is compatible with LRP and contains output softmax. Default is `false`.
