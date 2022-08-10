@@ -11,7 +11,7 @@ const BATCHDIM_MISSING = ArgumentError(
     analyze(input, method)
     analyze(input, method, neuron_selection)
 
-Return raw classifier output and explanation.
+Return an [`Explanation`](@ref) containing the attribution and the raw classifier output.
 If `neuron_selection` is specified, the explanation will be calculated for that neuron.
 Otherwise, the output neuron with the highest activation is automatically chosen.
 
@@ -57,10 +57,15 @@ function _analyze(
     return method(input, sel; kwargs...)
 end
 
-# for convenience, the anaylyzer can be called directly
+"""
+Return type of analyzers when calling `analyze`.
 
-# Explanations and outputs are returned in a wrapper.
-# Metadata such as the analyzer allows dispatching on functions like `heatmap`.
+Contains:
+* `attribution`: the analyzer's attribution
+* `output`: the model output
+* `neuron_selection`: the neuron index used for the attribution
+* `analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
+"""
 struct Explanation{A,O,I,L}
     attribution::A
     output::O

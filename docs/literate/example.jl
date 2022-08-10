@@ -50,14 +50,14 @@ input = reshape(x, 28, 28, 1, :);
 
 # ## Calling the analyzer
 # We can now select an analyzer of our choice
-# and call [`analyze`](@ref) to get an `Explanation`:
+# and call [`analyze`](@ref) to get an [`Explanation`](@ref):
 analyzer = LRP(model)
 expl = analyze(input, analyzer);
 
-# This `Explanation` bundles the following data:
+# This [`Explanation`](@ref) bundles the following data:
 # * `expl.attribution`: the analyzer's attribution
 # * `expl.output`: the model output
-# * `expl.neuron_selection`: the neuron index of used for the attribution
+# * `expl.neuron_selection`: the neuron index used for the attribution
 # * `expl.analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
 
 # Finally, we can visualize the `Explanation` through [`heatmap`](@ref):

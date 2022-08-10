@@ -2,6 +2,7 @@
 All methods in ExplainableAI.jl work by calling `analyze` on an input and an analyzer:
 ```@docs
 analyze
+Explanation
 heatmap
 ```
 

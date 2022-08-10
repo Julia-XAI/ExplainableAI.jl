@@ -36,7 +36,7 @@ include("preprocessing.jl")
 export analyze
 
 # Analyzers
-export AbstractXAIMethod
+export AbstractXAIMethod, Explanation
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients

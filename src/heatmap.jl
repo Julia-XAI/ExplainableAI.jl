@@ -8,11 +8,9 @@ const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
 )
 
 """
-    heatmap(expl::Explanation; kwargs...)
-    heatmap(attr::AbstractArray; kwargs...)
-
-    heatmap(input, analyzer::AbstractXAIMethod)
-    heatmap(input, analyzer::AbstractXAIMethod, neuron_selection::Int)
+    heatmap(explanation)
+    heatmap(input, analyzer)
+    heatmap(input, analyzer, neuron_selection)
 
 Visualize explanation.
 Assumes Flux's WHCN convention (width, height, color channels, batch size).
@@ -37,7 +35,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
 - `unpack_singleton::Bool`: When heatmapping a batch with a single sample, setting `unpack_singleton=true`
     will return an image instead of an Vector containing a single image.
 
-**Note:** these keyword arguments can't be used when calling `heatmap` with an analyzer.
+**Note:** keyword arguments can't be used when calling `heatmap` with an analyzer.
 """
 function heatmap(
     attr::AbstractArray{T,N};
