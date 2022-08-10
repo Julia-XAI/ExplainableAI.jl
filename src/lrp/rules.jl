@@ -1,6 +1,12 @@
 # https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
+# Bibliography
+const REF_BACH_LRP = "S. Bach et al., *On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation*"
+const REF_LAPUSCHKIN_CLEVER_HANS = "S. Lapuschkin et al., *Unmasking Clever Hans predictors and assessing what machines really learn*"
+const REF_MONTAVON_DTD = "G. Montavon et al., *Explaining Nonlinear Classification Decisions with Deep Taylor Decomposition*"
+const REF_MONTAVON_OVERVIEW = "G. Montavon et al., *Layer-Wise Relevance Propagation: An Overview*"
+
 # Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
 # without custom implementations.
 function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
@@ -106,11 +112,10 @@ end
 """
     ZeroRule()
 
-LRP-0 rule. Commonly used on upper layers.
+LRP-``0`` rule. Commonly used on upper layers.
 
 # References
-[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
-    Layer-Wise Relevance Propagation
+- $REF_BACH_LRP
 """
 struct ZeroRule <: AbstractLRPRule end
 check_compat(::ZeroRule, layer) = nothing
@@ -127,8 +132,7 @@ LRP-``ϵ`` rule. Commonly used on middle layers.
 - `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
 
 # References
-[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
-    Layer-Wise Relevance Propagation
+- $REF_BACH_LRP
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
@@ -149,7 +153,7 @@ LRP-``γ`` rule. Commonly used on lower layers.
 - `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
 
 # References
-[1]: G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+- $REF_MONTAVON_OVERVIEW
 """
 struct GammaRule{T} <: AbstractLRPRule
     γ::T
@@ -167,7 +171,7 @@ end
 LRP-``W^2`` rule. Commonly used on the first layer when values are unbounded.
 
 # References
-[1]: G. Montavon et al., Explaining nonlinear classification decisions with deep Taylor decomposition
+- $REF_MONTAVON_DTD
 """
 struct WSquareRule <: AbstractLRPRule end
 modify_param!(::WSquareRule, p) = p .^= 2
@@ -179,7 +183,7 @@ modify_input(::WSquareRule, input) = ones_like(input)
 LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all parameters set to one.
 
 # References
-[1]: S. Lapuschkin et al., Unmasking Clever Hans predictors and assessing what machines really learn
+- $REF_LAPUSCHKIN_CLEVER_HANS
 """
 struct FlatRule <: AbstractLRPRule end
 modify_param!(::FlatRule, p) = fill!(p, 1)
@@ -207,12 +211,12 @@ check_compat(::PassRule, layer) = nothing
 
 LRP-``z^{\\mathcal{B}}``-rule. Commonly used on the first layer for pixel input.
 
-The parameters `low` and `high` should be set to the lower and upper bounds of the input features,
-e.g. `0.0` and `1.0` for raw image data.
+The parameters `low` and `high` should be set to the lower and upper bounds
+of the input features, e.g. `0.0` and `1.0` for raw image data.
 It is also possible to provide two arrays of that match the input size.
 
 # References
-[1]: G. Montavon et al., Explaining nonlinear classification decisions with deep Taylor decomposition
+- $REF_MONTAVON_OVERVIEW
 """
 struct ZBoxRule{T} <: AbstractLRPRule
     low::T
@@ -264,10 +268,8 @@ Commonly used on lower layers.
 - `beta`: Multiplier for the negative output term, defaults to `1.0`.
 
 # References
-[1]: S. Bach et al., On Pixel-Wise Explanations for Non-Linear Classifier Decisions by
-    Layer-Wise Relevance Propagation
-
-[2]: G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
+- $REF_BACH_LRP
+- $REF_MONTAVON_OVERVIEW
 """
 struct AlphaBetaRule{T} <: AbstractLRPRule
     α::T
