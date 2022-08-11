@@ -11,7 +11,7 @@ typename(x) = string(nameof(typeof(x)))
 
 _print_layer(io::IO, l) = string(sprint(show, l; context=io))
 function Base.show(io::IO, m::MIME"text/plain", analyzer::LRP)
-    layer_names = _print_layer.(io, analyzer.model)
+    layer_names = [_print_layer(io, l) for l in analyzer.model]
     npad = maximum(length.(layer_names)) + 1 # padding to align rules with rpad
 
     println(io, "LRP", "(")
