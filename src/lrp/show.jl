@@ -11,38 +11,52 @@ _range_string(::LastLayerTypeRule) = "last layer"
 _range_string(r::FirstNTypeRule) = "layers $(1:r.n)"
 _range_string(r::LastNTypeRule) = "last $(r.n) layers"
 
+const COLOR_COMMENT = :light_black
+const COLOR_RULE = :yellow
+const COLOR_TYPE = :blue
+const COLOR_RANGE = :green
+
+typename(x) = string(nameof(typeof(x)))
+
 function Base.show(io::IO, m::MIME"text/plain", c::Composite)
-    println(io, "Composite(")
+    println(io, "Composite", "(")
     for p in c.primitives
         _show_primitive(io, p, 2)
     end
-    return println(io, ")")
+    println(io, ")")
+    return nothing
 end
 
 function _show_primitive(io::IO, r::AbstractRulePrimitive, indent::Int=0)
-    print(io, " "^indent, nameof(typeof(r)), ": ")
-    printstyled(io, _range_string(r); color=:blue)
+    print(io, " "^indent, typename(r), ": ")
+    printstyled(io, _range_string(r); color=COLOR_RANGE)
     print(io, " => ")
-    printstyled(io, r.rule; color=:yellow)
+    printstyled(io, r.rule; color=COLOR_RULE)
     println(io, ",")
     return nothing
 end
 
-function _show_primitive(io::IO, r::AbstractCompositePrimitive, indent::Int=0)
-    print(io, " "^indent, nameof(typeof(r)), "(")
-    printstyled(io, "  # on ", _range_string(r); color=:light_black)
+function _show_primitive(io::IO, r::AbstractTypeRulePrimitive, indent::Int=0)
+    print(io, " "^indent, rpad(typename(r) * "(", 20))
+    printstyled(io, "# on ", _range_string(r); color=COLOR_COMMENT)
     println(io)
     _print_rules(io, r.map, indent)
+    println(io, " "^(indent), "),")
     return nothing
 end
 
 function _print_rules(io::IO, rs, indent::Int=0)
     for r in rs
-        printstyled(io, " "^(indent + 2), r.first; color=:blue)
-        print(io, " => ")
-        printstyled(io, r.second; color=:yellow)
+        print(io, " "^(indent + 2))
+        _print_type_rule(io, r)
         println(io, ",")
     end
-    println(io, " "^(indent), "),")
+    return nothing
+end
+
+function _print_type_rule(io::IO, r::TypeRulePair)
+    printstyled(io, r.first; color=COLOR_TYPE)
+    print(io, " => ")
+    printstyled(io, r.second; color=COLOR_RULE)
     return nothing
 end
