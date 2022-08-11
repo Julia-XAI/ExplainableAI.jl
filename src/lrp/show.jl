@@ -9,14 +9,14 @@ typename(x) = string(nameof(typeof(x)))
 # LRP analyzer #
 ################
 
-_print_layer(io::IO, l) = sprint(show, l; context=io)
+_print_layer(io::IO, l) = string(sprint(show, l; context=io))
 function Base.show(io::IO, m::MIME"text/plain", analyzer::LRP)
-    layer_strings = _print_layer.(io, analyzer.model)
-    npad = maximum(length.(layer_strings)) + 1 # padding to align rules with rpad
+    layer_names = _print_layer.(io, analyzer.model)
+    npad = maximum(length.(layer_names)) + 1 # padding to align rules with rpad
 
     println(io, "LRP", "(")
-    for (layer_name, r) in zip(layer_strings, analyzer.rules)
-        print(io, "  ", rpad(layer_name, npad), " => ")
+    for (l, r) in zip(layer_names, analyzer.rules)
+        print(io, "  ", rpad(l, npad), " => ")
         printstyled(io, r; color=COLOR_RULE)
         println(io, ",")
     end
