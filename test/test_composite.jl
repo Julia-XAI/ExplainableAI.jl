@@ -20,9 +20,7 @@ for (name, c) in DEFAULT_COMPOSITES
     @test_reference "references/show/$name.txt" repr("text/plain", c)
 end
 
-# Test printing
-
-# This composite is non-sensical, but covers as many composite primitives as possible
+# This composite is non-sensical, but covers many composite primitives
 composite1 = Composite(
     ZeroRule(), # default rule
     GlobalRule(PassRule()), # override default rule
@@ -62,6 +60,7 @@ analyzer1 = LRP(model, composite1)
     ZeroRule()
     PassRule()
 ]
+@test_reference "references/show/lrp1.txt" repr("text/plain", analyzer1)
 @test_reference "references/show/composite1.txt" repr("text/plain", composite1)
 
 model = Chain(
@@ -91,4 +90,5 @@ analyzer2 = LRP(model, composite2)
     ZeroRule()
     EpsilonRule(2.0f-5)
 ]
+@test_reference "references/show/lrp2.txt" repr("text/plain", analyzer2)
 @test_reference "references/show/composite2.txt" repr("text/plain", composite2)
