@@ -1,4 +1,48 @@
 # ExplainableAI.jl
+## Version `v0.5.3`
+Big feature release that adds LRP composites and presets:
+- ![Feature][badge-feature] Add LRP `Composite` and composite primitives([#84][pr-84]) 
+- ![Feature][badge-feature] Add LRP composite presets ([#87][pr-87])
+- ![Feature][badge-feature] Add LRP `ZPlusRule` ([#88][pr-88])
+- ![Enhancement][badge-enhancement] Export union-types of Flux layers for easy definition of LRP composites
+- ![Enhancement][badge-enhancement] Improvements to docstrings and documentation
+
+## Version `v0.5.2`
+This release temporarily adds ImageNet pre-processing utilities. This enables users users to apply XAI methods on pretrained vision models from Metalhead.jl. *Note that this functionality will be deprecated once matching functionality is in either Metalhead.jl or MLDatasets.jl.*
+- ![Feature][badge-feature] Add ImageNet preprocessing utility `preprocess_imagenet` ([#80][pr-80])
+- ![Enhancement][badge-enhancement] Change default `heatmap` color scheme to `seismic`
+- ![Enhancement][badge-enhancement] Updated README with the JuliaCon 2022 talk and examples on VGG16
+
+## Version `v0.5.1`
+Small bugfix release adressing a bug in `v0.5.0`. 
+Version of ExplainableAI.jl shown in the JuliaCon 2022 talk.
+- ![Bugfix][badge-bugfix] Fix bug in `FlatRule` ([#77][pr-77])
+
+## Version `v0.5.0`
+Breaking release that refactors the internals of `LRP` analyzers and adds several rules.
+
+List of breaking changes:
+- ![BREAKING][badge-breaking]![Enhancement][badge-enhancement] Introduce compatibility checks for LRP rule & layer combinations using `check_compat(rule, layer)` ([#75][pr-75])
+- ![BREAKING][badge-breaking] Applying `GammaRule` and `ZBoxRule` on a layer without weights and biases will now throw an error ([#75][pr-75])
+- ![BREAKING][badge-breaking] In-place updating `modify_layer!(rule, layer)` replaces `modify_layer(rule, layer)` ([#73][pr-73])
+- ![BREAKING][badge-breaking] In-place updating `modify_param!(rule, param)` replaces `modify_params(rule, W, b)` ([#73][pr-73])
+- ![BREAKING][badge-breaking] Removed named LRP constructors `LRPZero`, `LRPEpsilon`, `LRPGamma` ([#75][pr-75])
+
+Added new LRP rules:
+- ![Feature][badge-feature] Add `PassRule` ([#76][pr-76])
+- ![Feature][badge-feature] Add `AlphaBetaRule` ([#78][pr-78])
+- ![Feature][badge-feature] Add `FlatRule` ([a6e2c59][flat-wsquare-commit])
+- ![Feature][badge-feature] Add `WSquareRule` ([a6e2c59][flat-wsquare-commit])
+
+Bug fixes:
+- ![Bugfix][badge-bugfix] Fix bug in `ZBoxRule` ([#77][pr-77])
+- ![Bugfix][badge-bugfix] Fix broadcasting for Julia 1.6 ([#74][pr-74])
+- ![Bugfix][badge-bugfix] Support `MLUtils.flatten`
+
+Performance improvements:
+- ![Enhancement][badge-enhancement] Replace LRP gradient computation with VJP using `Zygote.pullback` ([#72][pr-72])
+- ![Enhancement][badge-enhancement] Faster `GammaRule`
+
 ## Version `v0.4.0`
 Changes:
 - ![BREAKING][badge-breaking] Update heatmapping normalizer, using ColorScheme's `get`. Breaking due to renaming `normalize` to ColorScheme's `rangescale`. ([#57][pr-57])
@@ -21,7 +65,6 @@ Performance improvements:
 ![Feature][badge-feature]
 ![Enhancement][badge-enhancement]
 ![Bugfix][badge-bugfix]
-![Security][badge-security]
 ![Experimental][badge-experimental]
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
@@ -34,6 +77,25 @@ Performance improvements:
 [pr-65]: https://github.com/adrhill/ExplainableAI.jl/pull/65
 [pr-58]: https://github.com/adrhill/ExplainableAI.jl/pull/58
 [pr-57]: https://github.com/adrhill/ExplainableAI.jl/pull/57
+[pr-58]: https://github.com/adrhill/ExplainableAI.jl/pull/57
+[pr-65]: https://github.com/adrhill/ExplainableAI.jl/pull/65
+[pr-66]: https://github.com/adrhill/ExplainableAI.jl/pull/66
+[pr-67]: https://github.com/adrhill/ExplainableAI.jl/pull/67
+[pr-69]: https://github.com/adrhill/ExplainableAI.jl/pull/69
+[pr-70]: https://github.com/adrhill/ExplainableAI.jl/pull/70
+[pr-72]: https://github.com/adrhill/ExplainableAI.jl/pull/72
+[pr-73]: https://github.com/adrhill/ExplainableAI.jl/pull/73
+[pr-74]: https://github.com/adrhill/ExplainableAI.jl/pull/74
+[pr-75]: https://github.com/adrhill/ExplainableAI.jl/pull/75
+[pr-76]: https://github.com/adrhill/ExplainableAI.jl/pull/76
+[pr-77]: https://github.com/adrhill/ExplainableAI.jl/pull/77
+[pr-78]: https://github.com/adrhill/ExplainableAI.jl/pull/78
+[pr-80]: https://github.com/adrhill/ExplainableAI.jl/pull/80
+[pr-84]: https://github.com/adrhill/ExplainableAI.jl/pull/84
+[pr-87]: https://github.com/adrhill/ExplainableAI.jl/pull/87
+[pr-88]: https://github.com/adrhill/ExplainableAI.jl/pull/88
+[flat-wsquare-commit]: https://github.com/adrhill/ExplainableAI.jl/commit/a6e2c59094fe4f1d4b744123de79407ccbd4b972
+
 
 [badge-breaking]: https://img.shields.io/badge/BREAKING-red.svg
 [badge-deprecation]: https://img.shields.io/badge/deprecation-orange.svg
