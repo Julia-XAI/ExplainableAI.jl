@@ -20,9 +20,10 @@ x, _ = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :);
 
 # ## LRP composites
-# ### Custom composites
+# ### Assigning individual rules
 # When creating an LRP-analyzer, we can assign individual rules to each layer.
-# The array of rules has to match the length of the Flux chain:
+# The array of rules has to match the length of the Flux chain.
+# The `LRP` analyzer will show a summary of how layers and rules got matched:
 rules = [
     ZBoxRule(0.0f0, 1.0f0),
     EpsilonRule(),
@@ -35,6 +36,8 @@ rules = [
 ]
 
 analyzer = LRP(model, rules)
+
+#
 heatmap(input, analyzer)
 
 # Since some Flux Chains contain other Flux Chains, ExplainableAI provides
@@ -44,8 +47,10 @@ heatmap(input, analyzer)
 #md #     Not all models can be flattened, e.g. those using
 #md #     `Parallel` and `SkipConnection` layers.
 
+# ### Custom composites
 # Instead of manually defining a list of rules, we can also use a [`Composite`](@ref).
-# A composite contructs a list of LRP-rules by sequentially applying composite primitives.
+# A composite contructs a list of LRP-rules by sequentially applying
+# [Composite primitives](@ref composite_primitive_api) it contains.
 #
 # To obtain the same set of rules as in the previous example, we can define
 composite = Composite(
@@ -57,11 +62,12 @@ composite = Composite(
     FirstLayerRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
 )
 
-analyzer = LRP(model, composite)             # construct LRP analyzer from composite
-heatmap(input, analyzer)
+# We now construct an LRP analyzer from `composite`
+analyzer = LRP(model, composite)
 
-# This analyzer contains the same rules as our previous one:
-analyzer.rules # show rules
+# As you can see, this analyzer contains the same rules as our previous one
+# and therefore also produces the same heatmaps:
+heatmap(input, analyzer)
 
 # ### Composite primitives
 # The following [Composite primitives](@ref composite_primitive_api) can used to construct a [`Composite`](@ref).
@@ -87,7 +93,9 @@ analyzer.rules # show rules
 # ### Default composites
 # A list of implemented default composites can be found under
 # [Default composites](@ref default_composite_api) in the API reference, e.g. [`EpsilonPlusFlat`](@ref):
-EpsilonPlusFlat()
+composite = EpsilonPlusFlat()
+#
+analyzer = LRP(model, composite)
 
 # ## Custom LRP rules
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.
@@ -101,7 +109,7 @@ struct MyGammaRule <: AbstractLRPRule end
 import ExplainableAI: modify_param!
 
 function modify_param!(::MyGammaRule, param)
-    param .+= 0.25 * relu.(param)
+    param .+= 0.25f0 * relu.(param)
     return nothing
 end
 
