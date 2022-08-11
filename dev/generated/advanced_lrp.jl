@@ -22,6 +22,7 @@ rules = [
 ]
 
 analyzer = LRP(model, rules)
+
 heatmap(input, analyzer)
 
 composite = Composite(
@@ -33,19 +34,20 @@ composite = Composite(
     FirstLayerRule(ZBoxRule(0.0f0, 1.0f0)),  # apply ZBoxRule on the first layer
 )
 
-analyzer = LRP(model, composite)             # construct LRP analyzer from composite
+analyzer = LRP(model, composite)
+
 heatmap(input, analyzer)
 
-analyzer.rules # show rules
+composite = EpsilonPlusFlat()
 
-EpsilonPlusFlat()
+analyzer = LRP(model, composite)
 
 struct MyGammaRule <: AbstractLRPRule end
 
 import ExplainableAI: modify_param!
 
 function modify_param!(::MyGammaRule, param)
-    param .+= 0.25 * relu.(param)
+    param .+= 0.25f0 * relu.(param)
     return nothing
 end
 
