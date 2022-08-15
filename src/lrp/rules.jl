@@ -292,26 +292,37 @@ function lrp!(Rₖ, rule::AlphaBetaRule, layer::L, aₖ, Rₖ₊₁) where {L}
     require_weight_and_bias(rule, layer)
     reset! = get_layer_resetter(rule, layer)
 
-    # Linearization around positive input aₖ⁺
     aₖ⁺ = keep_positive(aₖ)
+    aₖ⁻ = keep_negative(aₖ)
+
+    # Positive contributions (α)
     modify_layer!(Val(:keep_positive), layer)
-    aₖ₊₁ᵅ⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺)
-    Rₖ .= rule.α .* aₖ⁺ .* only(pullback⁺(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵅ⁺)))
+    aₖ₊₁ᵅ⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺) # linearization around aₖ⁺
     reset!()
-    modify_layer!(Val(:keep_negative), layer)
-    aₖ₊₁ᵝ⁺ = layer(aₖ⁺)
-    Rₖ .-= rule.β .* aₖ⁺ .* only(pullback⁺(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵝ⁺)))
+    modify_layer!(Val(:keep_negative_zero_bias), layer)
+    aₖ₊₁ᵅ⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻) # linearization around aₖ⁻
+
+    # Evaluate pullbacks (α)
+    yᵅ = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵅ⁺ + aₖ₊₁ᵅ⁻)
+    Rₖ .= rule.α .* aₖ⁻ .* only(pullback⁻(yᵅ))
+    reset!()
+    modify_layer!(Val(:keep_positive), layer) # re-modify mutated pullback
+    Rₖ .+= rule.α .* aₖ⁺ .* only(pullback⁺(yᵅ))
     reset!()
 
-    # Linearization around negative input aₖ⁻
-    aₖ⁻ = keep_negative(aₖ)
-    modify_layer!(Val(:keep_negative_zero_bias), layer)
-    aₖ₊₁ᵅ⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻)
-    Rₖ .+= rule.α .* aₖ⁻ .* only(pullback⁻(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵅ⁻)))
+    # Negative contributions (β)
+    modify_layer!(Val(:keep_negative), layer)
+    aₖ₊₁ᵝ⁺ = layer(aₖ⁺)
     reset!()
     modify_layer!(Val(:keep_positive_zero_bias), layer)
     aₖ₊₁ᵝ⁻ = layer(aₖ⁻)
-    Rₖ .-= rule.β .* aₖ⁻ .* only(pullback⁺(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵝ⁻)))
+
+    # Evaluate pullbacks (β)
+    yᵝ = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵝ⁺ + aₖ₊₁ᵝ⁻)
+    Rₖ .-= rule.β .* aₖ⁻ .* only(pullback⁺(yᵝ))
+    reset!()
+    modify_layer!(Val(:keep_negative), layer)  # re-modify mutated pullback
+    Rₖ .-= rule.β .* aₖ⁺ .* only(pullback⁺(yᵝ))
     reset!()
     return nothing
 end
@@ -334,15 +345,21 @@ function lrp!(Rₖ, rule::ZPlusRule, layer::L, aₖ, Rₖ₊₁) where {L}
     reset! = get_layer_resetter(rule, layer)
 
     aₖ⁺ = keep_positive(aₖ)
+    aₖ⁻ = keep_negative(aₖ)
+
+    # Linearize around positive & negative activations (aₖ⁺, aₖ⁻)
     modify_layer!(Val(:keep_positive), layer)
     aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺)
-    Rₖ .= aₖ⁺ .* only(pullback⁺(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁⁺)))
     reset!()
-
-    aₖ⁻ = keep_negative(aₖ)
     modify_layer!(Val(:keep_negative_zero_bias), layer)
     aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻)
-    Rₖ .+= aₖ⁻ .* only(pullback⁻(Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁⁻)))
+
+    # Evaluate pullbacks
+    y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁⁺ + aₖ₊₁⁻)
+    Rₖ .= aₖ⁻ .* only(pullback⁻(y))
+    reset!()
+    modify_layer!(Val(:keep_positive), layer) # re-modify mutated pullback
+    Rₖ .+= aₖ⁺ .* only(pullback⁺(y))
     reset!()
     return nothing
 end
