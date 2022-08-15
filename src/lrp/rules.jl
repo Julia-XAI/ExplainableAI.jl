@@ -228,24 +228,29 @@ function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
     require_weight_and_bias(rule, layer)
     reset! = get_layer_resetter(rule, layer)
 
-    l = zbox_input(aₖ, rule.low)
-    h = zbox_input(aₖ, rule.high)
-
     # Compute pullback for W, b
     aₖ₊₁, pullback = Zygote.pullback(layer, aₖ)
 
     # Compute pullback for W⁺, b⁺
+    l = zbox_input(aₖ, rule.low)
     modify_layer!(Val(:keep_positive), layer)
     aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, l)
     reset!()
 
     # Compute pullback for W⁻, b⁻
+    h = zbox_input(aₖ, rule.high)
     modify_layer!(Val(:keep_negative), layer)
     aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, h)
     reset!()
 
     y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
-    Rₖ .= aₖ .* only(pullback(y)) - l .* only(pullback⁺(y)) - h .* only(pullback⁻(y))
+    Rₖ .= aₖ .* only(pullback(y))
+    modify_layer!(Val(:keep_positive), layer)
+    Rₖ .-= l .* only(pullback⁺(y))
+    reset!()
+    modify_layer!(Val(:keep_negative), layer)
+    Rₖ .-= h .* only(pullback⁻(y))
+    reset!()
     return nothing
 end
 
