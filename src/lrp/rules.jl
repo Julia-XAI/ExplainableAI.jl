@@ -180,13 +180,15 @@ modify_input(::WSquareRule, input) = ones_like(input)
 """
     FlatRule()
 
-LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all parameters set to one.
+LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all weights set to one
+and all bias terms set to zero.
 
 # References
 - $REF_LAPUSCHKIN_CLEVER_HANS
 """
 struct FlatRule <: AbstractLRPRule end
-modify_param!(::FlatRule, p) = fill!(p, 1)
+modify_weight!(::FlatRule, w) = fill!(w, 1)
+modify_bias!(::FlatRule, b) = fill!(b, 0)
 modify_input(::FlatRule, input) = ones_like(input)
 
 """
