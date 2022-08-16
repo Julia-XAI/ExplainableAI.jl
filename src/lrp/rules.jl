@@ -376,8 +376,9 @@ for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
         reset! = get_layer_resetter(rule, layer)
         modify_layer!(rule, layer)
-        ãₖ₊₁ = modify_denominator(rule, layer(modify_input(rule, aₖ)))
-        @tullio Rₖ[j, b] = aₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b]
+        ãₖ = modify_input(rule, aₖ)
+        ãₖ₊₁ = modify_denominator(rule, preactivation(layer, ãₖ))
+        @tullio Rₖ[j, b] = ãₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b]
         reset!()
         return nothing
     end
