@@ -9,6 +9,12 @@ activation(l::Conv) = l.σ
 activation(l::BatchNorm) = l.λ
 activation(layer) = nothing # default for all other layer types
 
+function has_activation(layer)
+    hasproperty(layer, :σ) && return true
+    hasproperty(layer, :λ) && return true
+    return false
+end
+
 """
     flatten_model(c)
 
@@ -72,4 +78,33 @@ function require_weight_and_bias(rule, layer)
         ),
     )
     return nothing
+end
+
+# LRP requires computing so called pre-activations `z`.
+# These correspond to calling a layer without applying its activation function.
+preactivation(layer) = x -> preactivation(layer, x)
+function preactivation(d::Dense, x::AbstractVecOrMat)
+    return d.weight * x .+ d.bias
+end
+function preactivation(d::Dense, x::AbstractArray)
+    return reshape(d(reshape(x, size(x, 1), :)), :, size(x)[2:end]...)
+end
+function preactivation(c::Conv, x)
+    cdims = Flux.conv_dims(c, x)
+    return Flux.conv(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
+end
+
+function preactivation(c::ConvTranspose, x)
+    cdims = Flux.conv_transpose_dims(c, x)
+    return Flux.∇conv_data(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
+end
+function preactivation(c::CrossCor, x)
+    cdims = Flux.crosscor_dims(c, x)
+    return Flux.crosscor(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
+end
+function preactivation(l, x)
+    has_activation(l) &&
+        error("""Layer $l contains an activation function and therefore requires an
+            implementation of `preactivation(layer, input)`""")
+    return l(x)
 end
