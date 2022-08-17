@@ -14,8 +14,8 @@ function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRu
     reset! = get_layer_resetter(rule, layer)
     modify_layer!(rule, layer)
     ãₖ = modify_input(rule, aₖ)
-    ãₖ₊₁, pullback = Zygote.pullback(preactivation(layer), ãₖ)
-    Rₖ .= ãₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
+    zₖ₊₁, pullback = Zygote.pullback(preactivation(layer), ãₖ)
+    Rₖ .= ãₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁)))
     reset!()
     return nothing
 end
@@ -235,24 +235,24 @@ function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
     h = zbox_input(aₖ, rule.high)
 
     # Compute pullback for W, b
-    aₖ₊₁, pullback = Zygote.pullback(preactivation(layer), aₖ)
+    zₖ₊₁, pullback = Zygote.pullback(preactivation(layer), aₖ)
 
     # Compute pullback for W⁺, b⁺
     modify_layer!(Val(:keep_positive), layer)
-    aₖ₊₁⁺, pullback⁺ = Zygote.pullback(preactivation(layer), l)
+    zₖ₊₁⁺, pullback⁺ = Zygote.pullback(preactivation(layer), l)
     reset!()
 
     # Compute pullback for W⁻, b⁻
     modify_layer!(Val(:keep_negative), layer)
-    aₖ₊₁⁻, pullback⁻ = Zygote.pullback(preactivation(layer), h)
+    zₖ₊₁⁻, pullback⁻ = Zygote.pullback(preactivation(layer), h)
 
     # Evaluate pullbacks
-    y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ - aₖ₊₁⁺ - aₖ₊₁⁻)
-    Rₖ .= -h .* only(pullback⁻(y))
+    sₖ₊₁ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ - zₖ₊₁⁺ - zₖ₊₁⁻)
+    Rₖ .= -h .* only(pullback⁻(sₖ₊₁))
     reset!()  # re-modify mutated pullback
-    Rₖ .+= aₖ .* only(pullback(y))
+    Rₖ .+= aₖ .* only(pullback(sₖ₊₁))
     modify_layer!(Val(:keep_positive), layer)  # re-modify mutated pullback
-    Rₖ .-= l .* only(pullback⁺(y))
+    Rₖ .-= l .* only(pullback⁺(sₖ₊₁))
     reset!()
     return nothing
 end
@@ -300,30 +300,30 @@ function lrp!(Rₖ, rule::AlphaBetaRule, layer::L, aₖ, Rₖ₊₁) where {L}
 
     # α: positive contributions
     modify_layer!(Val(:keep_negative_zero_bias), layer)
-    aₖ₊₁ᵅ⁻, pullbackᵅ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻)
+    zₖ₊₁ᵅ⁻, pullbackᵅ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻)
     reset!()
     modify_layer!(Val(:keep_positive), layer)
-    aₖ₊₁ᵅ⁺, pullbackᵅ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
+    zₖ₊₁ᵅ⁺, pullbackᵅ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
     # evaluate pullbacks
-    yᵅ = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵅ⁺ + aₖ₊₁ᵅ⁻)
-    Rₖ .= rule.α .* aₖ⁺ .* only(pullbackᵅ⁺(yᵅ))
+    sₖ₊₁ᵅ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ᵅ⁺ + zₖ₊₁ᵅ⁻)
+    Rₖ .= rule.α .* aₖ⁺ .* only(pullbackᵅ⁺(sₖ₊₁ᵅ))
     reset!()
     modify_layer!(Val(:keep_negative_zero_bias), layer) # re-modify mutated pullback
-    Rₖ .+= rule.α .* aₖ⁻ .* only(pullbackᵅ⁻(yᵅ))
+    Rₖ .+= rule.α .* aₖ⁻ .* only(pullbackᵅ⁻(sₖ₊₁ᵅ))
     reset!()
 
     # β: Negative contributions
     modify_layer!(Val(:keep_positive_zero_bias), layer)
-    aₖ₊₁ᵝ⁻, pullbackᵝ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻) #
+    zₖ₊₁ᵝ⁻, pullbackᵝ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻) #
     reset!()
     modify_layer!(Val(:keep_negative), layer)
-    aₖ₊₁ᵝ⁺, pullbackᵝ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
+    zₖ₊₁ᵝ⁺, pullbackᵝ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
     # evaluate pullbacks
-    yᵝ = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁ᵝ⁺ + aₖ₊₁ᵝ⁻)
-    Rₖ .-= rule.β .* aₖ⁺ .* only(pullbackᵝ⁺(yᵝ))
+    sₖ₊₁ᵝ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ᵝ⁺ + zₖ₊₁ᵝ⁻)
+    Rₖ .-= rule.β .* aₖ⁺ .* only(pullbackᵝ⁺(sₖ₊₁ᵝ))
     reset!()
     modify_layer!(Val(:keep_positive_zero_bias), layer)  # re-modify mutated pullback
-    Rₖ .-= rule.β .* aₖ⁻ .* only(pullbackᵝ⁻(yᵝ))
+    Rₖ .-= rule.β .* aₖ⁻ .* only(pullbackᵝ⁻(sₖ₊₁ᵝ))
     reset!()
     return nothing
 end
@@ -350,17 +350,17 @@ function lrp!(Rₖ, rule::ZPlusRule, layer::L, aₖ, Rₖ₊₁) where {L}
 
     # Linearize around positive & negative activations (aₖ⁺, aₖ⁻)
     modify_layer!(Val(:keep_positive), layer)
-    aₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺)
+    zₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺)
     reset!()
     modify_layer!(Val(:keep_negative_zero_bias), layer)
-    aₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻)
+    zₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻)
 
     # Evaluate pullbacks
-    y = Rₖ₊₁ ./ modify_denominator(rule, aₖ₊₁⁺ + aₖ₊₁⁻)
-    Rₖ .= aₖ⁻ .* only(pullback⁻(y))
+    sₖ₊₁ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁⁺ + zₖ₊₁⁻)
+    Rₖ .= aₖ⁻ .* only(pullback⁻(sₖ₊₁))
     reset!()
     modify_layer!(Val(:keep_positive), layer) # re-modify mutated pullback
-    Rₖ .+= aₖ⁺ .* only(pullback⁺(y))
+    Rₖ .+= aₖ⁺ .* only(pullback⁺(sₖ₊₁))
     reset!()
     return nothing
 end
@@ -378,8 +378,8 @@ for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule)
         reset! = get_layer_resetter(rule, layer)
         modify_layer!(rule, layer)
         ãₖ = modify_input(rule, aₖ)
-        ãₖ₊₁ = modify_denominator(rule, preactivation(layer, ãₖ))
-        @tullio Rₖ[j, b] = ãₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b]
+        zₖ₊₁ = modify_denominator(rule, preactivation(layer, ãₖ))
+        @tullio Rₖ[j, b] = ãₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / zₖ₊₁[k, b]
         reset!()
         return nothing
     end
