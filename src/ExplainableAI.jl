@@ -50,7 +50,7 @@ export ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule, PassRule
 export ZBoxRule, ZPlusRule, AlphaBetaRule
 export modify_input, modify_denominator
 export modify_param!, modify_layer!
-export check_model
+export check_compat
 
 # LRP composites
 export Composite, AbstractCompositePrimitive
@@ -67,6 +67,6 @@ export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 export heatmap
 
 # utils
-export strip_softmax, flatten_model, flatten_chain, canonize
+export strip_softmax, flatten_model, check_model, flatten_chain, canonize
 export preprocess_imagenet
 end # module
