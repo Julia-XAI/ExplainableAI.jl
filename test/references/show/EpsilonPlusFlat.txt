@@ -1,12 +1,12 @@
 Composite(
   GlobalTypeRule(     # on all layers
-    Conv => ZPlusRule(),
+    Union{Conv, ConvTranspose, CrossCor} => ZPlusRule(),
     Dense => EpsilonRule{Float32}(1.0f-6),
     Union{typeof(Flux.dropout), AlphaDropout, Dropout} => PassRule(),
     Union{typeof(flatten), typeof(MLUtils.flatten)} => PassRule(),
   ),
   FirstLayerTypeRule( # on first layer
-    Conv => FlatRule(),
+    Union{Conv, ConvTranspose, CrossCor} => FlatRule(),
     Dense => FlatRule(),
   ),
 )
