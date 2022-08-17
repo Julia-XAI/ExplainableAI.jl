@@ -18,8 +18,8 @@ algs = Dict(
     "Gradient" => Gradient,
     "InputTimesGradient" => InputTimesGradient,
     "LRP" => LRP,
-    "SmoothGrad" => model -> SmoothGrad(model, 10),
-    "IntegratedGradients" => model -> IntegratedGradients(model, 10),
+    "SmoothGrad" => model -> SmoothGrad(model, 5),
+    "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
 
 # Define benchmark
@@ -51,10 +51,11 @@ rules = Dict(
     "ZeroRule" => ZeroRule(),
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
-    "ZBoxRule" => ZBoxRule(zero(T), oneunit(T)),
-    "FlatRule" => FlatRule(),
     "WSquareRule" => WSquareRule(),
+    "FlatRule" => FlatRule(),
     "AlphaBetaRule" => AlphaBetaRule(),
+    "ZPlusRule" => ZPlusRule(),
+    "ZBoxRule" => ZBoxRule(zero(T), oneunit(T)),
 )
 
 SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
