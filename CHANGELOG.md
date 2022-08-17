@@ -1,11 +1,23 @@
 # ExplainableAI.jl
+## Version `v0.5.4`
+This release brings bugfixes and usability features:
+- ![Feature][badge-feature] Add pretty printing of LRP analyzers, summarizing how layers and rules are matched up ([#89][pr-89])
+- ![Feature][badge-feature] Add LRP support for `ConvTranspose` and `CrossCor` layers
+- ![Documentation][badge-docs] Add equations of LRP rules to docstrings
+
+Bugfixes:
+- ![Bugfix][badge-bugfix] Fix bug affecting `AlphaBetaRule`, `ZPlusRule` and `ZBoxRule`, where mutating the layer modified Zygote pullbacks ([#92][pr-92])
+- ![Bugfix][badge-bugfix] Fix bug in `FlatRule` bias ([#92][pr-92])
+- ![Bugfix][badge-bugfix] Fix input modification for `FlatRule` and `WSquareRule` ([#93][pr-93])
+
+
 ## Version `v0.5.3`
 Big feature release that adds LRP composites and presets:
-- ![Feature][badge-feature] Add LRP `Composite` and composite primitives([#84][pr-84]) 
+- ![Feature][badge-feature] Add LRP `Composite` and composite primitives ([#84][pr-84]) 
 - ![Feature][badge-feature] Add LRP composite presets ([#87][pr-87])
 - ![Feature][badge-feature] Add LRP `ZPlusRule` ([#88][pr-88])
 - ![Enhancement][badge-enhancement] Export union-types of Flux layers for easy definition of LRP composites
-- ![Enhancement][badge-enhancement] Improvements to docstrings and documentation
+- ![Documentation][badge-docs] Improvements to docstrings and documentation
 
 ## Version `v0.5.2`
 This release temporarily adds ImageNet pre-processing utilities. This enables users users to apply XAI methods on pretrained vision models from Metalhead.jl. *Note that this functionality will be deprecated once matching functionality is in either Metalhead.jl or MLDatasets.jl.*
@@ -94,6 +106,10 @@ Performance improvements:
 [pr-84]: https://github.com/adrhill/ExplainableAI.jl/pull/84
 [pr-87]: https://github.com/adrhill/ExplainableAI.jl/pull/87
 [pr-88]: https://github.com/adrhill/ExplainableAI.jl/pull/88
+[pr-89]: https://github.com/adrhill/ExplainableAI.jl/pull/89
+[pr-92]: https://github.com/adrhill/ExplainableAI.jl/pull/92
+[pr-93]: https://github.com/adrhill/ExplainableAI.jl/pull/93
+
 [flat-wsquare-commit]: https://github.com/adrhill/ExplainableAI.jl/commit/a6e2c59094fe4f1d4b744123de79407ccbd4b972
 
 
