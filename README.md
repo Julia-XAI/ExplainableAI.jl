@@ -31,7 +31,8 @@ model = VGG(16, pretrain=true).layers
 model = strip_softmax(flatten_chain(model))
 
 # Load input
-img = load("castle.jpg")
+url = "https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg"
+img = load(url)
 input = preprocess_imagenet(img)
 input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
 
@@ -53,14 +54,18 @@ heatmap(input, analyzer, 920)  # for heatmap
 ```
 Heatmaps for all implemented analyzers are shown in the following table. Red color indicate regions of positive relevance towards the selected class, whereas regions in blue are of negative relevance.
 
-| **Analyzer**                             | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
-|:---------------------------------------- |:------------------------------:|:----------------------------------:|
-| `LRP` composite using `EpsilonGammaBox`  | ![][castle-lrp-comp]           | ![][streetsign-lrp-comp]           |
-| `LRP`                                    | ![][castle-lrp]                | ![][streetsign-lrp]                |
-| `InputTimesGradient`                     | ![][castle-ixg]                | ![][streetsign-ixg]                |
-| `Gradient`                               | ![][castle-grad]               | ![][streetsign-grad]               |
-| `SmoothGrad`                             | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
-| `IntegratedGradients`                    | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
+| **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
+|:--------------------------------------------- |:------------------------------:|:----------------------------------:|
+| `LRP` with `EpsilonPlus` composite            | ![][castle-comp-ep]            | ![][streetsign-comp-ep]            |
+| `LRP` with `EpsilonPlusFlat` composite        | ![][castle-comp-epf]           | ![][streetsign-comp-epf]           |
+| `LRP` with `EpsilonAlpha2Beta1` composite     | ![][castle-comp-eab]           | ![][streetsign-comp-eab]           |
+| `LRP` with `EpsilonAlpha2Beta1Flat` composite | ![][castle-comp-eabf]          | ![][streetsign-comp-eabf]          |
+| `LRP` with `EpsilonGammaBox` composite        | ![][castle-comp-egb]           | ![][streetsign-comp-egb]           |
+| `LRP`                                         | ![][castle-lrp]                | ![][streetsign-lrp]                |
+| `InputTimesGradient`                          | ![][castle-ixg]                | ![][streetsign-ixg]                |
+| `Gradient`                                    | ![][castle-grad]               | ![][streetsign-grad]               |
+| `SmoothGrad`                                  | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
+| `IntegratedGradients`                         | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
 
 The code used to generate these heatmaps can be found [here][asset-code].
 
@@ -91,8 +96,8 @@ Currently, the following analyzers are implemented:
     └── Composite
         ├── EpsilonGammaBox
         ├── EpsilonPlus
-        ├── EpsilonAlpha2Beta1
         ├── EpsilonPlusFlat
+        ├── EpsilonAlpha2Beta1
         └── EpsilonAlpha2Beta1Flat
 
 ```
@@ -116,18 +121,28 @@ Contributions are welcome!
 
 [asset-code]: https://github.com/adrhill/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/generate_assets.jl
 [castle]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
+
 [castle-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP.png
-[castle-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonGammaBox.png
 [castle-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_InputTimesGradient.png
 [castle-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_Gradient.png
 [castle-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_SmoothGrad.png
 [castle-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_IntegratedGradients.png
+[castle-comp-egb]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonGammaBox.png
+[castle-comp-ep]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlus.png
+[castle-comp-epf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlusFlat.png
+[castle-comp-eab]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1.png
+[castle-comp-eabf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1Flat.png
+
 [streetsign-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP.png
-[streetsign-lrp-comp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonGammaBox.png
 [streetsign-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_InputTimesGradient.png
 [streetsign-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_Gradient.png
 [streetsign-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_SmoothGrad.png
 [streetsign-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_IntegratedGradients.png
+[streetsign-comp-egb]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonGammaBox.png
+[streetsign-comp-ep]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlus.png
+[streetsign-comp-epf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlusFlat.png
+[streetsign-comp-eab]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1.png
+[streetsign-comp-eabf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://adrhill.github.io/ExplainableAI.jl/stable
