@@ -205,6 +205,7 @@ end
 ## Test ConvLayers and others
 layers = Dict(
     "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
+    "Conv_relu" => Conv((3, 3), 2 => 4, relu; init=pseudorandn),
     "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
     "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
     "MaxPool" => MaxPool((3, 3)),
