@@ -6,13 +6,15 @@ In case the layer is unknown or no activation function is found, `nothing` is re
 """
 activation(l::Dense) = l.σ
 activation(l::Conv) = l.σ
+activation(l::ConvTranspose) = l.σ
+activation(l::CrossCor) = l.σ
 activation(l::BatchNorm) = l.λ
 activation(layer) = nothing # default for all other layer types
 
 function has_activation(layer)
     hasproperty(layer, :σ) && return true
     hasproperty(layer, :λ) && return true
-    return false
+    return !isnothing(activation(layer))
 end
 
 """

@@ -1,6 +1,6 @@
 ## Layer types
 """Union type for convolutional layers."""
-const ConvLayer = Union{Conv} # TODO: DepthwiseConv, ConvTranspose, CrossCor
+const ConvLayer = Union{Conv, ConvTranspose, CrossCor}
 
 """Union type for dropout layers."""
 const DropoutLayer = Union{Dropout,typeof(Flux.dropout),AlphaDropout}
