@@ -115,6 +115,12 @@ end
 
 LRP-``0`` rule. Commonly used on upper layers.
 
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i \\frac{w_{ij}a_j^k}{\\sum_l w_{il}a_l^k+b_i} R_i^{k+1}
+```
+
 # References
 - $REF_BACH_LRP
 """
@@ -129,7 +135,13 @@ get_layer_resetter(::ZeroRule, layer) = Returns(nothing)
 
 LRP-``ϵ`` rule. Commonly used on middle layers.
 
-# Arguments:
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\frac{w_{ij}a_j^k}{\\epsilon +\\sum_{l}w_{il}a_l^k+b_i} R_i^{k+1}
+```
+
+# Optional arguments
 - `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
 
 # References
@@ -150,7 +162,14 @@ get_layer_resetter(::EpsilonRule, layer) = Returns(nothing)
 
 LRP-``γ`` rule. Commonly used on lower layers.
 
-# Arguments:
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
+    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_l^k+b_i} R_i^{k+1}
+```
+
+# Optional arguments
 - `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
 
 # References
@@ -169,7 +188,13 @@ end
 """
     WSquareRule()
 
-LRP-``W^2`` rule. Commonly used on the first layer when values are unbounded.
+LRP-``w²`` rule. Commonly used on the first layer when values are unbounded.
+
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2+b_i^2} R_i^{k+1}
+```
 
 # References
 - $REF_MONTAVON_DTD
@@ -184,6 +209,13 @@ modify_input(::WSquareRule, input) = ones_like(input)
 LRP-Flat rule. Similar to the [`WSquareRule`](@ref), but with all weights set to one
 and all bias terms set to zero.
 
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\frac{1}{\\sum_l 1} R_i^{k+1} = \\frac{1}{n}\\sum_i R_i^{k+1}
+```
+where ``n`` is the number of input neurons connected to the output neuron at index ``i``.
+
 # References
 - $REF_LAPUSCHKIN_CLEVER_HANS
 """
@@ -196,7 +228,14 @@ modify_input(::FlatRule, input) = ones_like(input)
     PassRule()
 
 Pass-through rule. Passes relevance through to the lower layer.
-Supports reshaping layers.
+
+Supports layers with constant input and output shapes, e.g. reshaping layers.
+
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = R_j^{k+1}
+```
 """
 struct PassRule <: AbstractLRPRule end
 function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
@@ -212,11 +251,18 @@ check_compat(::PassRule, layer) = nothing
 """
     ZBoxRule(low, high)
 
-LRP-``z^{\\mathcal{B}}``-rule. Commonly used on the first layer for pixel input.
+LRP-``zᴮ``-rule. Commonly used on the first layer for pixel input.
 
 The parameters `low` and `high` should be set to the lower and upper bounds
 of the input features, e.g. `0.0` and `1.0` for raw image data.
 It is also possible to provide two arrays of that match the input size.
+
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k=\\sum_i \\frac{w_{ij}a_j^k - w_{ij}^{+}l_j - w_{ij}^{-}h_j}
+    {\\sum_l w_{il}a_l^k+b_i - \\left(w_{il}^{+}l_l+b_i^{+}\\right) - \\left(w_{il}^{-}h_l+b_i^{-}\\right)} R_i^{k+1}
+```
 
 # References
 - $REF_MONTAVON_OVERVIEW
@@ -264,16 +310,24 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
 end
 
 """
-    AlphaBetaRule(alpha, beta)
-    AlphaBetaRule([alpha=2.0], [beta=1.0])
+    AlphaBetaRule([α=2.0], [β=1.0])
 
-LRP-``\\alpha\\beta`` rule. Weights positive and negative contributions according to the
-parameters `alpha` and `beta` respectively. The difference `alpha - beta` must be equal one.
+LRP-``αβ`` rule. Weights positive and negative contributions according to the
+parameters `α` and `β` respectively. The difference `α-β` must be equal to one.
 Commonly used on lower layers.
 
-# Arguments:
-- `alpha`: Multiplier for the positive output term, defaults to `2.0`.
-- `beta`: Multiplier for the negative output term, defaults to `1.0`.
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\left(
+    \\alpha\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^+}
+    -\\beta\\frac{\\left(w_{ij}a_j^k\\right)^-}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^-}
+\\right) R_i^{k+1}
+```
+
+# Optional arguments
+- `α`: Multiplier for the positive output term, defaults to `2.0`.
+- `β`: Multiplier for the negative output term, defaults to `1.0`.
 
 # References
 - $REF_BACH_LRP
@@ -331,14 +385,20 @@ end
 """
     ZPlusRule()
 
-LRP-``z^{+}`` rule. Commonly used on lower layers.
+LRP-``z⁺`` rule. Commonly used on lower layers.
 
 Equivalent to `AlphaBetaRule(1.0f0, 0.0f0)`, but slightly faster.
 See also [`AlphaBetaRule`](@ref).
 
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k = \\sum_i\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^+} R_i^{k+1}
+```
+
 # References
-- [1] $REF_BACH_LRP
-- [2] $REF_MONTAVON_DTD
+- $REF_BACH_LRP
+- $REF_MONTAVON_DTD
 """
 struct ZPlusRule <: AbstractLRPRule end
 function lrp!(Rₖ, rule::ZPlusRule, layer::L, aₖ, Rₖ₊₁) where {L}

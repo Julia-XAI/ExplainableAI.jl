@@ -21,15 +21,16 @@ NoiseAugmentation
 InterpolationAugmentation
 ```
 
-# LRP
-## Rules
+# Layer-wise Relevance Propagation
+## LRP rules
 ```@docs
 ZeroRule
 EpsilonRule
 GammaRule
 WSquareRule
-AlphaBetaRule
 FlatRule
+AlphaBetaRule
+ZPlusRule
 ZBoxRule
 PassRule
 ```
