@@ -12,7 +12,7 @@ const RULES = Dict(
     "EpsilonRule" => EpsilonRule(),
     "GammaRule" => GammaRule(),
     "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
-    "AlphaBetaRule" => AlphaBetaRule(),
+    "AlphaBetaRule" => AlphaBetaRule(2.0f0, 1.0f0),
     "WSquareRule" => WSquareRule(),
     "FlatRule" => FlatRule(),
     "ZPlusRule" => ZPlusRule(),
@@ -50,6 +50,26 @@ isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
     R̂ₖ = similar(aₖ) # will be inplace updated
     @inferred lrp!(R̂ₖ, rule, layer, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
+end
+
+@testset "AlphaBetaRule analytic" begin
+    aₖ = [1.0f0, 1.0f0]
+    W = [1.0f0 -1.0f0]
+    b = [-1.0f0]
+    layer = Dense(W, b, identity)
+    Rₖ₊₁ = layer(aₖ)
+
+    # Expected outputs
+    Rₖ_α1β0 = [-1.0f0, 0.0f0]
+    Rₖ_α2β1 = [-2.0f0, 0.5f0]
+
+    R̂ₖ = similar(aₖ) # will be inplace updated
+    @inferred lrp!(R̂ₖ, AlphaBetaRule(1.0f0, 0.0f0), layer, aₖ, Rₖ₊₁)
+    @test R̂ₖ ≈ Rₖ_α1β0
+    @inferred lrp!(R̂ₖ, AlphaBetaRule(2.0f0, 1.0f0), layer, aₖ, Rₖ₊₁)
+    @test R̂ₖ ≈ Rₖ_α2β1
+    @inferred lrp!(R̂ₖ, ZPlusRule(), layer, aₖ, Rₖ₊₁) # equivalent to α=1, β=0
+    @test R̂ₖ ≈ Rₖ_α1β0
 end
 
 # Fixed pseudo-random numbers

@@ -1,5 +1,6 @@
 using LoopVectorization
 using ExplainableAI
+using Flux
 using Test
 using ReferenceTests
 
