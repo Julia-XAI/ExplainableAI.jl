@@ -13,8 +13,9 @@ function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRu
     check_compat(rule, layer)
     reset! = get_layer_resetter(rule, layer)
     modify_layer!(rule, layer)
-    ãₖ₊₁, pullback = Zygote.pullback(preactivation(layer), modify_input(rule, aₖ))
-    Rₖ .= aₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
+    ãₖ = modify_input(rule, aₖ)
+    ãₖ₊₁, pullback = Zygote.pullback(preactivation(layer), ãₖ)
+    Rₖ .= ãₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
     reset!()
     return nothing
 end
