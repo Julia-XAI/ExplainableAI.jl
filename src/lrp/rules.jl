@@ -452,3 +452,8 @@ function lrp!(Rₖ, ::FlatRule, layer::Dense, aₖ, Rₖ₊₁)
     end
     return nothing
 end
+function lrp!(Rₖ, ::WSquareRule, layer::Dense, aₖ, Rₖ₊₁)
+    den = sum(layer.weight .^ 2; dims=2)
+    @tullio Rₖ[j, b] = layer.weight[i, j]^2 / den[i] * Rₖ₊₁[i, b]
+    return nothing
+end
