@@ -193,14 +193,15 @@ LRP-``w²`` rule. Commonly used on the first layer when values are unbounded.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2+b_i^2} R_i^{k+1}
+R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2} R_i^{k+1}
 ```
 
 # References
 - $REF_MONTAVON_DTD
 """
 struct WSquareRule <: AbstractLRPRule end
-modify_param!(::WSquareRule, p) = p .^= 2
+modify_weight!(::WSquareRule, w) = w .^= 2
+modify_bias!(::WSquareRule, b) = fill!(b, 0)
 modify_input(::WSquareRule, input) = ones_like(input)
 
 """
