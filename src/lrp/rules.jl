@@ -440,7 +440,7 @@ for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule)
         modify_layer!(rule, layer)
         ãₖ = modify_input(rule, aₖ)
         zₖ₊₁ = modify_denominator(rule, preactivation(layer, ãₖ))
-        @tullio Rₖ[j, b] = ãₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / zₖ₊₁[k, b]
+        @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / zₖ₊₁[i, b] * Rₖ₊₁[i, b]
         reset!()
         return nothing
     end
