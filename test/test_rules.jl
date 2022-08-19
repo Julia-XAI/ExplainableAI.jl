@@ -125,14 +125,14 @@ end
 
 ## Test Dense layer
 # Define Dense test input
-ins_dense = 20 # input dimension
-outs_dense = 10 # output dimension
+din = 20 # input dimension
+dout = 10 # output dimension
 batchsize = 2
-aₖ_dense = pseudorandn(ins_dense, batchsize)
+aₖ_dense = pseudorandn(din, batchsize)
 
 layers = Dict(
-    "Dense_relu" => Dense(ins_dense, outs_dense, relu; init=pseudorandn),
-    "Dense_identity" => Dense(Matrix{Float32}(I, outs_dense, ins_dense), false, identity),
+    "Dense_relu" => Dense(pseudorandn(dout, din), pseudorandn(dout), relu),
+    "Dense_identity" => Dense(Matrix{Float32}(I, dout, din), false, identity),
 )
 @testset "Dense" begin
     for (rulename, rule) in RULES
@@ -147,10 +147,10 @@ layers = Dict(
                     @test size(Rₖ) == size(aₖ_dense)
 
                     if rulename == "Dense_identity"
-                        # First `outs_dense` dimensions should propagate
+                        # First `dout` dimensions should propagate
                         # activations as relevances, rest should be ≈ 0.
-                        @test Rₖ[1:outs_dense] ≈ aₖ_dense[1:outs_dense]
-                        @test all(Rₖ[outs_dense:end] .< 1e-8)
+                        @test Rₖ[1:dout] ≈ aₖ_dense[1:dout]
+                        @test all(Rₖ[dout:end] .< 1e-8)
                     end
 
                     @test_reference "references/rules/$rulename/$layername.jld2" Dict(
@@ -203,11 +203,15 @@ equalpairs = Dict( # these pairs of layers are all equal
 end
 
 ## Test ConvLayers and others
+cin = 2
+cout = 4
 layers = Dict(
-    "Conv" => Conv((3, 3), 2 => 4; init=pseudorandn),
-    "Conv_relu" => Conv((3, 3), 2 => 4, relu; init=pseudorandn),
-    "ConvTranspose" => ConvTranspose((3, 3), 2 => 4; init=pseudorandn),
-    "CrossCor" => CrossCor((3, 3), 2 => 4; init=pseudorandn),
+    "Conv" => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "Conv_relu" =>
+        Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
+    "ConvTranspose" =>
+        ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "CrossCor" => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
     "MaxPool" => MaxPool((3, 3)),
     "MeanPool" => MaxPool((3, 3)),
     "flatten" => Flux.flatten,
