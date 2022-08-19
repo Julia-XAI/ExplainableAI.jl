@@ -213,9 +213,9 @@ and all bias terms set to zero.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{1}{\\sum_l 1} R_i^{k+1} = \\frac{1}{n}\\sum_i R_i^{k+1}
+R_j^k = \\sum_i\\frac{1}{\\sum_l 1} R_i^{k+1} = \\sum_i\\frac{1}{n_i} R_i^{k+1}
 ```
-where ``n`` is the number of input neurons connected to the output neuron at index ``i``.
+where ``n_i`` is the number of input neurons connected to the output neuron at index ``i``.
 
 # References
 - $REF_LAPUSCHKIN_CLEVER_HANS
@@ -434,7 +434,7 @@ for R in (ZeroRule, EpsilonRule)
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
-for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule)
+for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
         reset! = get_layer_resetter(rule, layer)
         modify_layer!(rule, layer)
@@ -444,4 +444,11 @@ for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule)
         reset!()
         return nothing
     end
+end
+function lrp!(Rₖ, ::FlatRule, layer::Dense, aₖ, Rₖ₊₁)
+    n = size(Rₖ, 1) # number of input neurons connected to each output neuron
+    for i in axes(Rₖ, 2) # samples in batch
+        fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
+    end
+    return nothing
 end
