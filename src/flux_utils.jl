@@ -92,7 +92,9 @@ function preactivation(d::Dense, x::AbstractArray)
     return reshape(d(reshape(x, size(x, 1), :)), :, size(x)[2:end]...)
 end
 function preactivation(c::Conv, x)
-    cdims = Flux.conv_dims(c, x)
+    cdims = Flux.DenseConvDims(
+        x, c.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups
+    )
     return Flux.conv(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
 end
 
@@ -101,7 +103,9 @@ function preactivation(c::ConvTranspose, x)
     return Flux.∇conv_data(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
 end
 function preactivation(c::CrossCor, x)
-    cdims = Flux.crosscor_dims(c, x)
+    cdims = Flux.DenseConvDims(
+        x, c.weight; stride=c.stride, padding=c.pad, dilation=c.dilation
+    )
     return Flux.crosscor(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
 end
 function preactivation(l, x)

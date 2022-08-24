@@ -68,8 +68,7 @@ function modify_layer!(rule::R, layer::L; ignore_bias=false) where {R,L}
 
     # Checks that skip bias modification:
     ignore_bias && return nothing
-    isa(layer.bias, Flux.Zeros) && return nothing # skip if bias=Flux.Zeros (Flux <= v0.12)
-    isa(layer.bias, Bool) && !layer.bias && return nothing  # skip if bias=false (Flux >= v0.13)
+    isa(layer.bias, Bool) && !layer.bias && return nothing
 
     modify_bias!(rule, layer.bias)
     return nothing
