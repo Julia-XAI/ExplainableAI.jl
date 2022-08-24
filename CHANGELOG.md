@@ -1,4 +1,7 @@
 # ExplainableAI.jl
+## Version `v0.5.6`
+- ![Bugfix][badge-bugfix] Drop Flux `v0.12` due to compatibility issues in `preactivation` ([#99][pr-99])
+
 ## Version `v0.5.5`
 - ![Bugfix][badge-bugfix] Ignore bias in `WSquareRule`
 - ![Enhancement][badge-enhancement] Faster `FlatRule` on Dense layers ([#96][pr-96])
@@ -118,6 +121,7 @@ Performance improvements:
 [pr-93]: https://github.com/adrhill/ExplainableAI.jl/pull/93
 [pr-96]: https://github.com/adrhill/ExplainableAI.jl/pull/96
 [pr-98]: https://github.com/adrhill/ExplainableAI.jl/pull/98
+[pr-99]: https://github.com/adrhill/ExplainableAI.jl/pull/99
 
 [flat-wsquare-commit]: https://github.com/adrhill/ExplainableAI.jl/commit/a6e2c59094fe4f1d4b744123de79407ccbd4b972
 
