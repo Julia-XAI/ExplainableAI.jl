@@ -1,4 +1,10 @@
 # ExplainableAI.jl
+## Version `v0.5.5`
+- ![Bugfix][badge-bugfix] Ignore bias in `WSquareRule`
+- ![Enhancement][badge-enhancement] Faster `FlatRule` on Dense layers ([#96][pr-96])
+- ![Enhancement][badge-enhancement] Faster `WSquareRule` on Dense layers ([#98][pr-98])
+- ![Maintenance][badge-maintenance] Update rule tests and references
+
 ## Version `v0.5.4`
 This release brings bugfixes and usability features:
 - ![Feature][badge-feature] Add pretty printing of LRP analyzers, summarizing how layers and rules are matched up ([#89][pr-89])
@@ -18,6 +24,7 @@ Big feature release that adds LRP composites and presets:
 - ![Feature][badge-feature] Add LRP `ZPlusRule` ([#88][pr-88])
 - ![Enhancement][badge-enhancement] Export union-types of Flux layers for easy definition of LRP composites
 - ![Documentation][badge-docs] Improvements to docstrings and documentation
+- ![Maintenance][badge-maintenance] Add `test/Project.toml` with compat entries for test dependencies ([#87][pr-87])
 
 ## Version `v0.5.2`
 This release temporarily adds ImageNet pre-processing utilities. This enables users users to apply XAI methods on pretrained vision models from Metalhead.jl. *Note that this functionality will be deprecated once matching functionality is in either Metalhead.jl or MLDatasets.jl.*
@@ -109,6 +116,8 @@ Performance improvements:
 [pr-89]: https://github.com/adrhill/ExplainableAI.jl/pull/89
 [pr-92]: https://github.com/adrhill/ExplainableAI.jl/pull/92
 [pr-93]: https://github.com/adrhill/ExplainableAI.jl/pull/93
+[pr-96]: https://github.com/adrhill/ExplainableAI.jl/pull/96
+[pr-98]: https://github.com/adrhill/ExplainableAI.jl/pull/98
 
 [flat-wsquare-commit]: https://github.com/adrhill/ExplainableAI.jl/commit/a6e2c59094fe4f1d4b744123de79407ccbd4b972
 
