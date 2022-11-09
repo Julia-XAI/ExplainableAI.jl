@@ -433,7 +433,7 @@ for R in (ZeroRule, EpsilonRule)
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
-for R in (ZeroRule, EpsilonRule, GammaRule, WSquareRule)
+for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
         reset! = get_layer_resetter(rule, layer)
         modify_layer!(rule, layer)
