@@ -186,12 +186,12 @@ function (r::LastLayerTypeRule)(rules, layers)
     return _layer_rule_map!(rules, last(layers), r.map, length(layers))
 end
 # Convenience constructors
-GlobalTypeRule(ps::Vararg{<:TypeRulePair}) = GlobalTypeRule([ps...])
-RangeTypeRule(r, ps::Vararg{<:TypeRulePair}) = RangeTypeRule(r, [ps...])
-FirstLayerTypeRule(ps::Vararg{<:TypeRulePair}) = FirstLayerTypeRule([ps...])
-LastLayerTypeRule(ps::Vararg{<:TypeRulePair}) = LastLayerTypeRule([ps...])
-FirstNTypeRule(n, ps::Vararg{<:TypeRulePair}) = FirstNTypeRule(n, [ps...])
-LastNTypeRule(n, ps::Vararg{<:TypeRulePair}) = LastNTypeRule(n, [ps...])
+GlobalTypeRule(ps::Vararg{TypeRulePair}) = GlobalTypeRule([ps...])
+RangeTypeRule(r, ps::Vararg{TypeRulePair}) = RangeTypeRule(r, [ps...])
+FirstLayerTypeRule(ps::Vararg{TypeRulePair}) = FirstLayerTypeRule([ps...])
+LastLayerTypeRule(ps::Vararg{TypeRulePair}) = LastLayerTypeRule([ps...])
+FirstNTypeRule(n, ps::Vararg{TypeRulePair}) = FirstNTypeRule(n, [ps...])
+LastNTypeRule(n, ps::Vararg{TypeRulePair}) = LastNTypeRule(n, [ps...])
 
 function _layer_rule_map!(rules, layer, map, index)
     for (Type, rule) in map
