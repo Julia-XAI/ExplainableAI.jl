@@ -1,4 +1,8 @@
 # ExplainableAI.jl
+## Version `v0.5.7`
+- ![Bugfix][badge-bugfix] Fix `WSquareRule` dispatch on Dense layers
+- ![Maintenance][badge-maintenance] Fix `Vararg` deprecation warnings from composites
+
 ## Version `v0.5.6`
 - ![Bugfix][badge-bugfix] Drop Flux `v0.12` due to compatibility issues in `preactivation` ([#99][pr-99])
 
