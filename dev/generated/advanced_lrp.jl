@@ -44,12 +44,9 @@ analyzer = LRP(model, composite)
 
 struct MyGammaRule <: AbstractLRPRule end
 
-import ExplainableAI: modify_param!
+import ExplainableAI: modify_parameters
 
-function modify_param!(::MyGammaRule, param)
-    param .+= 0.25f0 * relu.(param)
-    return nothing
-end
+modify_parameters(::MyGammaRule, param) = param + 0.25f0 * relu.(param)
 
 rules = [
     ZBoxRule(0.0f0, 1.0f0),
