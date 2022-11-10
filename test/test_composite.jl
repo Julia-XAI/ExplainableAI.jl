@@ -1,4 +1,5 @@
 using ExplainableAI
+using ExplainableAI: rules
 using Flux
 
 # Load VGG model:
@@ -39,7 +40,7 @@ composite1 = Composite(
 )
 
 analyzer1 = LRP(model, composite1)
-@test analyzer1.rules == [
+@test rules(analyzer1) == [
     ZBoxRule(-3.0f0, 3.0f0)
     EpsilonRule(1.0f-6)
     FlatRule()
@@ -80,7 +81,7 @@ composite2 = Composite(
     ),
 )
 analyzer2 = LRP(model, composite2)
-@test analyzer2.rules == [
+@test rules(analyzer2) == [
     AlphaBetaRule(2.0f0, 1.0f0)
     ZeroRule()
     ZeroRule()

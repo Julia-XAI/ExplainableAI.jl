@@ -40,9 +40,11 @@ These utilities can be used to define custom rules without writing boilerplate c
 ```@docs
 modify_input
 modify_denominator
-modify_param!
-modify_layer!
-check_compat
+modify_parameters
+modify_weight
+modify_bias
+modify_layer
+is_compatible
 LRP_CONFIG.supports_layer
 LRP_CONFIG.supports_activation
 ```

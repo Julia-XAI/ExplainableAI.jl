@@ -67,50 +67,23 @@ function strip_softmax(model::Chain)
     end
     return model
 end
-strip_softmax(l::Dense) = Dense(l.weight, l.bias, identity)
-function strip_softmax(l::Conv)
-    return Conv(identity, l.weight, l.bias, l.stride, l.pad, l.dilation, l.groups)
-end
+strip_softmax(l) = copy_layer(l, l.weight, l.bias; σ=identity)
 
-has_weight_and_bias(layer) = hasproperty(layer, :weight) && hasproperty(layer, :bias)
-function require_weight_and_bias(rule, layer)
-    !has_weight_and_bias(layer) && throw(
-        ArgumentError(
-            "$rule requires linear layer with weight and bias parameters, got $layer."
-        ),
-    )
-    return nothing
-end
+has_weight(layer) = hasproperty(layer, :weight)
+has_bias(layer) = hasproperty(layer, :bias)
+has_weight_and_bias(layer) = has_weight(layer) && has_bias(layer)
 
-# LRP requires computing so called pre-activations `z`.
-# These correspond to calling a layer without applying its activation function.
-preactivation(layer) = x -> preactivation(layer, x)
-function preactivation(d::Dense, x::AbstractVecOrMat)
-    return d.weight * x .+ d.bias
-end
-function preactivation(d::Dense, x::AbstractArray)
-    return reshape(d(reshape(x, size(x, 1), :)), :, size(x)[2:end]...)
-end
-function preactivation(c::Conv, x)
-    cdims = Flux.DenseConvDims(
-        x, c.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups
-    )
-    return Flux.conv(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
-end
+"""
+    copy_layer(layer, W, b, [σ=identity])
 
-function preactivation(c::ConvTranspose, x)
-    cdims = Flux.conv_transpose_dims(c, x)
-    return Flux.∇conv_data(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
+Copy layer using weights `W` and `b`. The activation function `σ` can also be set,
+defaulting to `identity`.
+"""
+copy_layer(::Dense, W, b; σ=identity) = Dense(W, b, σ)
+copy_layer(l::Conv, W, b; σ=identity) = Conv(σ, W, b, l.stride, l.pad, l.dilation, l.groups)
+function copy_layer(l::ConvTranspose, W, b; σ=identity)
+    return ConvTranspose(σ, W, b, l.stride, l.pad, l.dilation, l.groups)
 end
-function preactivation(c::CrossCor, x)
-    cdims = Flux.DenseConvDims(
-        x, c.weight; stride=c.stride, padding=c.pad, dilation=c.dilation
-    )
-    return Flux.crosscor(x, c.weight, cdims) .+ Flux.conv_reshape_bias(c)
-end
-function preactivation(l, x)
-    has_activation(l) &&
-        error("""Layer $l contains an activation function and therefore requires an
-            implementation of `preactivation(layer, input)`""")
-    return l(x)
+function copy_layer(l::CrossCor, W, b; σ=identity)
+    return CrossCor(σ, W, b, l.stride, l.pad, l.dilation)
 end

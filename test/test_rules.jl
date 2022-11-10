@@ -1,7 +1,8 @@
 using LoopVectorization
 using ExplainableAI
-using ExplainableAI: modify_param!, modify_bias!, has_weight_and_bias
-import ExplainableAI: lrp!, modify_layer!, get_layer_resetter
+using ExplainableAI: lrp!, has_weight_and_bias
+using ExplainableAI: modify_input, modify_denominator, is_compatible
+using ExplainableAI: modify_parameters, modify_weight, modify_bias, modify_layer
 using Flux
 using LinearAlgebra: I
 using ReferenceTests
@@ -64,11 +65,19 @@ end
     Rₖ_α2β1 = [-2.0f0, 0.5f0]
 
     R̂ₖ = similar(aₖ) # will be inplace updated
-    @inferred lrp!(R̂ₖ, AlphaBetaRule(1.0f0, 0.0f0), layer, aₖ, Rₖ₊₁)
+    rule = AlphaBetaRule(1.0f0, 0.0f0)
+    modified_layers = modify_layer(rule, layer)
+    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α1β0
-    @inferred lrp!(R̂ₖ, AlphaBetaRule(2.0f0, 1.0f0), layer, aₖ, Rₖ₊₁)
+
+    rule = AlphaBetaRule(2.0f0, 1.0f0)
+    modified_layers = modify_layer(rule, layer)
+    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α2β1
-    @inferred lrp!(R̂ₖ, ZPlusRule(), layer, aₖ, Rₖ₊₁) # equivalent to α=1, β=0
+
+    rule = ZPlusRule()
+    modified_layers = modify_layer(rule, layer)
+    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α1β0
 end
 
@@ -77,48 +86,35 @@ T = Float32
 pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 
 ## Test individual rules
-@testset "modify_param" begin
+@testset "modify_parameters" begin
     rule = GammaRule(0.42)
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
     layer = Dense(W, b, relu)
-    reset! = get_layer_resetter(rule, layer)
 
-    modify_layer!(rule, layer; ignore_bias=true)
-    @test layer.weight ≈ [1.42 -1.0; 2.84 0.0]
-    @test layer.bias ≈ b
-    reset!()
+    modified_layer = modify_layer(rule, layer)
+    @test modified_layer.weight ≈ [1.42 -1.0; 2.84 0.0]
+    @test modified_layer.bias ≈ [-1.0, 1.42]
     @test layer.weight ≈ W
     @test layer.bias ≈ b
 
-    modify_layer!(rule, layer)
-    @test layer.weight ≈ [1.42 -1.0; 2.84 0.0]
-    @test layer.bias ≈ [-1.0, 1.42]
-    reset!()
-    @test layer.weight ≈ W
-    @test layer.bias ≈ b
+    modified_layer = modify_layer(Val(:keep_positive), layer)
+    @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
+    @test modified_layer.bias ≈ [0.0, 1.0]
 
-    modify_layer!(Val(:keep_positive), layer)
-    @test layer.weight ≈ [1.0 0.0; 2.0 0.0]
-    @test layer.bias ≈ [0.0, 1.0]
-    reset!()
+    modified_layer = modify_layer(Val(:keep_positive_zero_bias), layer)
+    @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
+    @test modified_layer.bias ≈ [0.0, 0.0]
 
-    modify_layer!(Val(:keep_positive_zero_bias), layer)
-    @test layer.weight ≈ [1.0 0.0; 2.0 0.0]
-    @test layer.bias ≈ [0.0, 0.0]
-    reset!()
+    modified_layer = modify_layer(Val(:keep_negative), layer)
+    @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
+    @test modified_layer.bias ≈ [-1.0, 0.0]
 
-    modify_layer!(Val(:keep_negative), layer)
-    @test layer.weight ≈ [0.0 -1.0; 0.0 0.0]
-    @test layer.bias ≈ [-1.0, 0.0]
-    reset!()
+    modified_layer = modify_layer(Val(:keep_negative_zero_bias), layer)
+    @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
+    @test modified_layer.bias ≈ [0.0, 0.0]
 
-    modify_layer!(Val(:keep_negative_zero_bias), layer)
-    @test layer.weight ≈ [0.0 -1.0; 0.0 0.0]
-    @test layer.bias ≈ [0.0, 0.0]
-    reset!()
-
-    @inferred modify_param!(rule, W)
-    @inferred modify_bias!(rule, b)
+    W = @inferred modify_weight(rule, W)
+    b = @inferred modify_bias(rule, b)
     @test W ≈ [1.42 -1.0; 2.84 0.0]
     @test b ≈ [-1.0, 1.42]
 end
@@ -141,7 +137,8 @@ layers = Dict(
                 @testset "$layername" begin
                     Rₖ₊₁ = layer(aₖ_dense)
                     Rₖ = similar(aₖ_dense)
-                    @inferred lrp!(Rₖ, rule, layer, aₖ_dense, Rₖ₊₁)
+                    modified_layer = modify_layer(rule, layer)
+                    @inferred lrp!(Rₖ, rule, modified_layer, aₖ_dense, Rₖ₊₁)
 
                     @test typeof(Rₖ) == typeof(aₖ_dense)
                     @test size(Rₖ) == size(aₖ_dense)
@@ -176,25 +173,29 @@ equalpairs = Dict( # these pairs of layers are all equal
 @testset "PoolingLayers" begin
     for (rulename, rule) in RULES
         @testset "$rulename" begin
-            for (layername, layers) in equalpairs
-                @testset "$layername" begin
-                    l1, l2 = layers
-                    Rₖ₊₁ = l1(aₖ)
-                    @test Rₖ₊₁ == l2(aₖ)
-                    Rₖ1 = similar(aₖ)
-                    Rₖ2 = similar(aₖ)
+            for (layername, (l1, l2)) in equalpairs
+                if is_compatible(rule, l1) && is_compatible(rule, l2)
+                    @testset "$layername" begin
+                        ml1 = modify_layer(rule, l1)
+                        ml2 = modify_layer(rule, l2)
 
-                    if isa_constant_param_rule(rule)
-                        @inferred lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
-                        @inferred lrp!(Rₖ2, rule, l2, aₖ, Rₖ₊₁)
-                        @test Rₖ1 == Rₖ2
-                        @test typeof(Rₖ1) == typeof(aₖ)
-                        @test size(Rₖ1) == size(aₖ)
-                        @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                            "R" => Rₖ1
-                        ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
-                    else
-                        @test_throws ArgumentError lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
+                        Rₖ₊₁ = l1(aₖ)
+                        @test Rₖ₊₁ == l2(aₖ)
+                        Rₖ1 = similar(aₖ)
+                        Rₖ2 = similar(aₖ)
+
+                        if isa_constant_param_rule(rule)
+                            @inferred lrp!(Rₖ1, rule, ml1, aₖ, Rₖ₊₁)
+                            @inferred lrp!(Rₖ2, rule, ml2, aₖ, Rₖ₊₁)
+                            @test Rₖ1 == Rₖ2
+                            @test typeof(Rₖ1) == typeof(aₖ)
+                            @test size(Rₖ1) == size(aₖ)
+                            @test_reference "references/rules/$rulename/$layername.jld2" Dict(
+                                "R" => Rₖ1
+                            ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
+                        else
+                            @test_throws ArgumentError lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
+                        end
                     end
                 end
             end
@@ -222,18 +223,22 @@ layers = Dict(
     for (rulename, rule) in RULES
         @testset "$rulename" begin
             for (layername, layer) in layers
-                @testset "$layername" begin
-                    Rₖ₊₁ = layer(aₖ)
-                    Rₖ = similar(aₖ)
-                    if has_weight_and_bias(layer) || isa_constant_param_rule(rule)
-                        @inferred lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-                        @test typeof(Rₖ) == typeof(aₖ)
-                        @test size(Rₖ) == size(aₖ)
-                        @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                            "R" => Rₖ
-                        ) by = (r, a) -> isapprox(r["R"], a["R"]; atol=1e-5, rtol=0.02)
-                    else
-                        @test_throws ArgumentError lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+                if is_compatible(rule, layer)
+                    @testset "$layername" begin
+                        Rₖ₊₁ = layer(aₖ)
+                        Rₖ = similar(aₖ)
+                        modified_layer = modify_layer(rule, layer)
+
+                        if has_weight_and_bias(layer) || isa_constant_param_rule(rule)
+                            @inferred lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+                            @test typeof(Rₖ) == typeof(aₖ)
+                            @test size(Rₖ) == size(aₖ)
+                            @test_reference "references/rules/$rulename/$layername.jld2" Dict(
+                                "R" => Rₖ
+                            ) by = (r, a) -> isapprox(r["R"], a["R"]; atol=1e-5, rtol=0.02)
+                        else
+                            @test_throws ArgumentError lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+                        end
                     end
                 end
             end
@@ -242,10 +247,14 @@ layers = Dict(
 end
 
 # Test equivalence of ZPlusRule() and AlphaBetaRule(1.0f0, 0.0f0)
-l = layers["Conv"]
-Rₖ₊₁ = l(aₖ)
+layer = layers["Conv"]
+Rₖ₊₁ = layer(aₖ)
 Rₖ_z⁺ = similar(aₖ)
 Rₖ_αβ = similar(aₖ)
-lrp!(Rₖ_z⁺, ZPlusRule(), l, aₖ, Rₖ₊₁)
-lrp!(Rₖ_αβ, AlphaBetaRule(1.0f0, 0.0f0), l, aₖ, Rₖ₊₁)
+rule = ZPlusRule()
+modified_layers = modify_layer(rule, layer)
+lrp!(Rₖ_z⁺, rule, modified_layers, aₖ, Rₖ₊₁)
+rule = AlphaBetaRule(1.0f0, 0.0f0)
+modified_layers = modify_layer(rule, layer)
+lrp!(Rₖ_αβ, rule, modified_layers, aₖ, Rₖ₊₁)
 @test Rₖ_z⁺ ≈ Rₖ_αβ
