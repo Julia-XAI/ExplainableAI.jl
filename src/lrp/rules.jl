@@ -88,7 +88,26 @@ function modify_layer(rule, layer)
     return copy_layer(layer, w, layer.bias)
 end
 
+"""
+    modify_weight(rule, W)
+
+Modify layer weights before computing the relevance.
+
+## Note
+When implementing a custom `modify_weight` function, `modify_parameters` will only be called
+on the bias.
+"""
 modify_weight(rule, W) = modify_parameters(rule, W)
+
+"""
+    modify_bias(rule, b)
+
+Modify layer bias before computing the relevance.
+
+## Note
+When implementing a custom `modify_bias` function, `modify_parameters` will only be called
+on the layer weights.
+"""
 modify_bias(rule, b) = modify_parameters(rule, b)
 
 """
@@ -97,7 +116,7 @@ modify_bias(rule, b) = modify_parameters(rule, b)
 
 Modify parameters before computing the relevance.
 """
-modify_parameters(rule, param) = param # general fallback
+modify_parameters(rule, param) = param
 
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
