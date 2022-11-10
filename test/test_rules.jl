@@ -91,25 +91,25 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
     W, b = [1.0 -1.0; 2.0 0.0], [-1.0, 1.0]
     layer = Dense(W, b, relu)
 
-    modified_layer = @inferred modify_layer(rule, layer)
+    modified_layer = modify_layer(rule, layer)
     @test modified_layer.weight ≈ [1.42 -1.0; 2.84 0.0]
     @test modified_layer.bias ≈ [-1.0, 1.42]
     @test layer.weight ≈ W
     @test layer.bias ≈ b
 
-    modified_layer = @inferred modify_layer(Val(:keep_positive), layer)
+    modified_layer = modify_layer(Val(:keep_positive), layer)
     @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
     @test modified_layer.bias ≈ [0.0, 1.0]
 
-    modified_layer = @inferred modify_layer(Val(:keep_positive_zero_bias), layer)
+    modified_layer = modify_layer(Val(:keep_positive_zero_bias), layer)
     @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
     @test modified_layer.bias ≈ [0.0, 0.0]
 
-    modified_layer = @inferred modify_layer(Val(:keep_negative), layer)
+    modified_layer = modify_layer(Val(:keep_negative), layer)
     @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
     @test modified_layer.bias ≈ [-1.0, 0.0]
 
-    modified_layer = @inferred modify_layer(Val(:keep_negative_zero_bias), layer)
+    modified_layer = modify_layer(Val(:keep_negative_zero_bias), layer)
     @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
     @test modified_layer.bias ≈ [0.0, 0.0]
 
@@ -176,8 +176,8 @@ equalpairs = Dict( # these pairs of layers are all equal
             for (layername, (l1, l2)) in equalpairs
                 if is_compatible(rule, l1) && is_compatible(rule, l2)
                     @testset "$layername" begin
-                        ml1 = @inferred modify_layer(rule, l1)
-                        ml2 = @inferred modify_layer(rule, l2)
+                        ml1 = modify_layer(rule, l1)
+                        ml2 = modify_layer(rule, l2)
 
                         Rₖ₊₁ = l1(aₖ)
                         @test Rₖ₊₁ == l2(aₖ)
@@ -227,7 +227,7 @@ layers = Dict(
                     @testset "$layername" begin
                         Rₖ₊₁ = layer(aₖ)
                         Rₖ = similar(aₖ)
-                        modified_layer = @inferred modify_layer(rule, layer)
+                        modified_layer = modify_layer(rule, layer)
 
                         if has_weight_and_bias(layer) || isa_constant_param_rule(rule)
                             @inferred lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
