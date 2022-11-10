@@ -48,9 +48,6 @@ export AbstractLRPRule
 export LRP_CONFIG
 export ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule, PassRule
 export ZBoxRule, ZPlusRule, AlphaBetaRule
-export modify_input, modify_denominator
-export modify_param!, modify_layer!
-export check_compat
 
 # LRP composites
 export Composite, AbstractCompositePrimitive

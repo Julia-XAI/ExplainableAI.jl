@@ -67,20 +67,11 @@ function strip_softmax(model::Chain)
     end
     return model
 end
-strip_softmax(l::Dense) = Dense(l.weight, l.bias, identity)
-function strip_softmax(l::Conv)
-    return Conv(identity, l.weight, l.bias, l.stride, l.pad, l.dilation, l.groups)
-end
+strip_softmax(l) = copy_layer(l, l.weight, l.bias; σ=identity)
 
-has_weight_and_bias(layer) = hasproperty(layer, :weight) && hasproperty(layer, :bias)
-function require_weight_and_bias(rule, layer)
-    !has_weight_and_bias(layer) && throw(
-        ArgumentError(
-            "$rule requires linear layer with weight and bias parameters, got $layer."
-        ),
-    )
-    return nothing
-end
+has_weight(layer) = hasproperty(layer, :weight)
+has_bias(layer) = hasproperty(layer, :bias)
+has_weight_and_bias(layer) = has_weight(layer) && has_bias(layer)
 
 """
     copy_layer(layer, W, b, [σ=identity])

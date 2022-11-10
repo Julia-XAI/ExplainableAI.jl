@@ -7,107 +7,113 @@ const REF_LAPUSCHKIN_CLEVER_HANS = "S. Lapuschkin et al., *Unmasking Clever Hans
 const REF_MONTAVON_DTD = "G. Montavon et al., *Explaining Nonlinear Classification Decisions with Deep Taylor Decomposition*"
 const REF_MONTAVON_OVERVIEW = "G. Montavon et al., *Layer-Wise Relevance Propagation: An Overview*"
 
-# Generic LRP rule. Since it uses autodiff, it is used as a fallback for layer types
-# without custom implementations.
-function lrp!(Rₖ, rule::R, layer::L, aₖ, Rₖ₊₁) where {R<:AbstractLRPRule,L}
-    check_compat(rule, layer)
-    reset! = get_layer_resetter(rule, layer)
-    modify_layer!(rule, layer)
+# Generic LRP rule. Used by all rules without custom implementations.
+function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
     ãₖ = modify_input(rule, aₖ)
-    zₖ₊₁, pullback = Zygote.pullback(preactivation(layer), ãₖ)
-    Rₖ .= ãₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁)))
-    reset!()
+    z, back = Zygote.pullback(modified_layer, ãₖ)
+    s = Rₖ₊₁ ./ modify_denominator(rule, z)
+    Rₖ .= ãₖ .* only(back(s))
     return nothing
 end
 
-# To implement new rules, define the following custom functions:
-#   * `modify_input(rule, input)`
-#   * `modify_denominator(rule, d)`
-#   * `check_compat(rule, layer)`
-#   * `modify_param!(rule, param)` or `modify_layer!(rule, layer)`,
-#     the latter overriding the former
+#####################################
+# Functions used to implement rules #
+#####################################
+
+# The function that follow define the default fallbacks used by LRP rules
+# when calling the generic `lrp!` implementation above.
+# Rule types are used to dispatch on rule-specific implementations.
 #
-# The following fallbacks are used by default:
+# To implement a new rule, extend the following functions for your rule type:
+# - modify_input
+# - modify_denominator
+# - is_compatible
+# - One of the following sets of functions to modify layers. The latter override the former:
+#   - modify_parameters
+#   - modify_weight and modify_bias
+#   - modify_layer
+#
 """
     modify_input(rule, input)
 
 Modify input activation before computing relevance propagation.
 """
-modify_input(rule, input) = input # general fallback
+modify_input(rule, input) = input
 
 """
     modify_denominator(rule, d)
 
 Modify denominator ``z`` for numerical stability on the forward pass.
 """
-modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9) # general fallback
+modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9)
 
 """
-    check_compat(rule, layer)
+    is_compatible(rule, layer)
 
 Check compatibility of a LRP-Rule with layer type.
 
 ## Note
-When implementing a custom `check_compat` function, return `nothing` if checks passed,
-otherwise throw an `ArgumentError`.
+Custom `is_compatible` functions have to return Boolean values.
 """
-check_compat(rule, layer) = require_weight_and_bias(rule, layer)
+is_compatible(rule, layer) = has_weight_and_bias(layer)
+
+struct LRPCompatibilityError <: Exception
+    rule::String
+    layer::String
+    LRPCompatibilityError(rule, layer) = new("$rule", "$layer")
+end
+function Base.showerror(io::IO, e::LRPCompatibilityError)
+    return print(io, "LRP rule", e.rule, "isn't compatible with layer ", e.layer)
+end
 
 """
-    modify_layer!(rule, layer; ignore_bias=false)
+    modify_layer(rule, layer)
 
-In-place modify layer parameters by calling `modify_param!` before computing relevance
-propagation.
+Create a copy of `layer` with modified parameters by calling `modify_bias`
+and `modify_weight`, which in turn call `modify_parameters`.
 
 ## Note
-When implementing a custom `modify_layer!` function, `modify_param!` will not be called.
+When implementing a custom `modify_layer` function, `modify_parameters`, `modify_weight`
+and `modify_bias` will not be called.
 """
-function modify_layer!(rule::R, layer::L; ignore_bias=false) where {R,L}
-    !has_weight_and_bias(layer) && return nothing # skip all
-    modify_weight!(rule, layer.weight)
+function modify_layer(rule, layer)
+    !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
+    !has_weight_and_bias(layer) && return layer # skip all
 
-    # Checks that skip bias modification:
-    ignore_bias && return nothing
-    isa(layer.bias, Bool) && !layer.bias && return nothing
-
-    modify_bias!(rule, layer.bias)
-    return nothing
-end
-modify_weight!(rule::R, W) where {R} = modify_param!(rule, W)
-modify_bias!(rule::R, b) where {R} = modify_param!(rule, b)
-
-"""
-    modify_param!(rule, W)
-    modify_param!(rule, b)
-
-Inplace-modify parameters before computing the relevance.
-"""
-modify_param!(rule, param) = nothing # general fallback
-
-# Useful presets that allow us to work around bias-free layers:
-modify_param!(::Val{:keep_positive}, p) = keep_positive!(p)
-modify_param!(::Val{:keep_negative}, p) = keep_negative!(p)
-
-modify_weight!(::Val{:keep_positive_zero_bias}, W) = keep_positive!(W)
-modify_bias!(::Val{:keep_positive_zero_bias}, b) = fill!(b, zero(eltype(b)))
-
-modify_weight!(::Val{:keep_negative_zero_bias}, W) = keep_negative!(W)
-modify_bias!(::Val{:keep_negative_zero_bias}, b) = fill!(b, zero(eltype(b)))
-
-# Internal function that resets parameters by capturing them in a closure.
-# Returns a function `reset!` that resets the parameters to their original state when called.
-function get_layer_resetter(rule, layer)
-    !has_weight_and_bias(layer) && return Returns(nothing)
-    W = deepcopy(layer.weight)
-    b = deepcopy(layer.bias)
-
-    function reset!()
-        layer.weight .= W
-        isa(layer.bias, AbstractArray) && (layer.bias .= b)
-        return nothing
+    w = modify_weight(rule, layer.weight)
+    if layer.bias !== false
+        b = modify_bias(rule, layer.bias)
+        return copy_layer(layer, w, b)
     end
-    return reset!
+    return copy_layer(layer, w, layer.bias)
 end
+
+modify_weight(rule, W) = modify_parameters(rule, W)
+modify_bias(rule, b) = modify_parameters(rule, b)
+
+"""
+    modify_parameters(rule, W)
+    modify_parameters(rule, b)
+
+Modify parameters before computing the relevance.
+"""
+modify_parameters(rule, param) = param # general fallback
+
+# Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
+modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
+modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
+
+modify_weight(::Val{:keep_positive_zero_bias}, W) = keep_positive(W)
+modify_bias(::Val{:keep_positive_zero_bias}, b) = zero(b)
+
+modify_weight(::Val{:keep_negative_zero_bias}, W) = keep_negative(W)
+modify_bias(::Val{:keep_negative_zero_bias}, b) = zero(b)
+
+#############
+# LRP Rules #
+#############
+
+# The following LRP rules use the generic `lrp!` implementation at the top of this file.
 
 """
     ZeroRule()
@@ -124,10 +130,7 @@ R_j^k = \\sum_i \\frac{w_{ij}a_j^k}{\\sum_l w_{il}a_l^k+b_i} R_i^{k+1}
 - $REF_BACH_LRP
 """
 struct ZeroRule <: AbstractLRPRule end
-check_compat(::ZeroRule, layer) = nothing
-
-# Optimization to save allocations since weights don't need to be reset:
-get_layer_resetter(::ZeroRule, layer) = Returns(nothing)
+is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
     EpsilonRule([ϵ=1.0f-6])
@@ -151,10 +154,7 @@ struct EpsilonRule{T} <: AbstractLRPRule
     EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
-check_compat(::EpsilonRule, layer) = nothing
-
-# Optimization to save allocations since weights don't need to be reset:
-get_layer_resetter(::EpsilonRule, layer) = Returns(nothing)
+is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """
     GammaRule([γ=0.25])
@@ -178,10 +178,9 @@ struct GammaRule{T} <: AbstractLRPRule
     γ::T
     GammaRule(γ=0.25f0) = new{Float32}(γ)
 end
-function modify_param!(r::GammaRule, param::AbstractArray{T}) where {T}
+function modify_parameters(r::GammaRule, param::AbstractArray{T}) where {T}
     γ = convert(T, r.γ)
-    param .+= γ .* relu.(param)
-    return nothing
+    return @. param + γ * relu(param)
 end
 
 """
@@ -199,8 +198,8 @@ R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2} R_i^{k+1}
 - $REF_MONTAVON_DTD
 """
 struct WSquareRule <: AbstractLRPRule end
-modify_weight!(::WSquareRule, w) = w .^= 2
-modify_bias!(::WSquareRule, b) = fill!(b, 0)
+modify_weight(::WSquareRule, w) = w .^ 2
+modify_bias(::WSquareRule, b) = zero(b)
 modify_input(::WSquareRule, input) = ones_like(input)
 
 """
@@ -220,9 +219,17 @@ where ``n_i`` is the number of input neurons connected to the output neuron at i
 - $REF_LAPUSCHKIN_CLEVER_HANS
 """
 struct FlatRule <: AbstractLRPRule end
-modify_weight!(::FlatRule, w) = fill!(w, 1)
-modify_bias!(::FlatRule, b) = fill!(b, 0)
+modify_weight(::FlatRule, w) = ones_like(w)
+modify_bias(::FlatRule, b) = zero(b)
 modify_input(::FlatRule, input) = ones_like(input)
+
+#####################
+# Complex LRP Rules #
+#####################
+
+# The following rules use custom `lrp!` implementations
+# and optionally custom `modify_layer` functions which return multiple modified layers.
+# The convention used here is to return multiple modified layers as named tuples.
 
 """
     PassRule()
@@ -246,7 +253,7 @@ function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
     return nothing
 end
 # No extra checks as reshaping operation will throw an error if layer isn't compatible:
-check_compat(::PassRule, layer) = nothing
+is_compatible(::PassRule, layer) = true # compatible with all layer types
 
 """
     ZBoxRule(low, high)
@@ -271,35 +278,25 @@ struct ZBoxRule{T} <: AbstractLRPRule
     low::T
     high::T
 end
+function modify_layer(::ZBoxRule, layer)
+    return (
+        layer=layer,
+        layer⁺=modify_layer(Val(:keep_positive), layer),
+        layer⁻=modify_layer(Val(:keep_negative), layer),
+    )
+end
 
 # The ZBoxRule requires its own implementation of relevance propagation.
-function lrp!(Rₖ, rule::ZBoxRule, layer::L, aₖ, Rₖ₊₁) where {L}
-    require_weight_and_bias(rule, layer)
-    reset! = get_layer_resetter(rule, layer)
-
+function lrp!(Rₖ, rule::ZBoxRule, modified_layers, aₖ, Rₖ₊₁)
     l = zbox_input(aₖ, rule.low)
     h = zbox_input(aₖ, rule.high)
 
-    # Compute pullback for W, b
-    zₖ₊₁, pullback = Zygote.pullback(preactivation(layer), aₖ)
+    z, back = Zygote.pullback(modified_layers.layer, aₖ)
+    z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, l)
+    z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
-    # Compute pullback for W⁺, b⁺
-    modify_layer!(Val(:keep_positive), layer)
-    zₖ₊₁⁺, pullback⁺ = Zygote.pullback(preactivation(layer), l)
-    reset!()
-
-    # Compute pullback for W⁻, b⁻
-    modify_layer!(Val(:keep_negative), layer)
-    zₖ₊₁⁻, pullback⁻ = Zygote.pullback(preactivation(layer), h)
-
-    # Evaluate pullbacks
-    sₖ₊₁ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ - zₖ₊₁⁺ - zₖ₊₁⁻)
-    Rₖ .= -h .* only(pullback⁻(sₖ₊₁))
-    reset!()  # re-modify mutated pullback
-    Rₖ .+= aₖ .* only(pullback(sₖ₊₁))
-    modify_layer!(Val(:keep_positive), layer)  # re-modify mutated pullback
-    Rₖ .-= l .* only(pullback⁺(sₖ₊₁))
-    reset!()
+    s = Rₖ₊₁ ./ modify_denominator(rule, z - z⁺ - z⁻)
+    Rₖ .= aₖ .* only(back(s)) .- l .* only(back⁺(s)) .- h .* only(back⁻(s))
     return nothing
 end
 
@@ -343,42 +340,30 @@ struct AlphaBetaRule{T} <: AbstractLRPRule
         return new{eltype(alpha)}(alpha, beta)
     end
 end
+function modify_layer(::AlphaBetaRule, layer)
+    return (
+        layerᵅ⁺=modify_layer(Val(:keep_positive), layer),
+        layerᵅ⁻=modify_layer(Val(:keep_negative_zero_bias), layer),
+        layerᵝ⁺=modify_layer(Val(:keep_negative), layer),
+        layerᵝ⁻=modify_layer(Val(:keep_positive_zero_bias), layer),
+    )
+end
 
 # The AlphaBetaRule requires its own implementation of relevance propagation.
-function lrp!(Rₖ, rule::AlphaBetaRule, layer::L, aₖ, Rₖ₊₁) where {L}
-    require_weight_and_bias(rule, layer)
-    reset! = get_layer_resetter(rule, layer)
-
+function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
-    # α: positive contributions
-    modify_layer!(Val(:keep_negative_zero_bias), layer)
-    zₖ₊₁ᵅ⁻, pullbackᵅ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻)
-    reset!()
-    modify_layer!(Val(:keep_positive), layer)
-    zₖ₊₁ᵅ⁺, pullbackᵅ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
-    # evaluate pullbacks
-    sₖ₊₁ᵅ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ᵅ⁺ + zₖ₊₁ᵅ⁻)
-    Rₖ .= rule.α .* aₖ⁺ .* only(pullbackᵅ⁺(sₖ₊₁ᵅ))
-    reset!()
-    modify_layer!(Val(:keep_negative_zero_bias), layer) # re-modify mutated pullback
-    Rₖ .+= rule.α .* aₖ⁻ .* only(pullbackᵅ⁻(sₖ₊₁ᵅ))
-    reset!()
+    zᵅ⁺, backᵅ⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
+    zᵅ⁻, backᵅ⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
+    zᵝ⁺, backᵝ⁺ = Zygote.pullback(modified_layers.layerᵝ⁺, aₖ⁺)
+    zᵝ⁻, backᵝ⁻ = Zygote.pullback(modified_layers.layerᵝ⁻, aₖ⁻)
 
-    # β: Negative contributions
-    modify_layer!(Val(:keep_positive_zero_bias), layer)
-    zₖ₊₁ᵝ⁻, pullbackᵝ⁻ = Zygote.pullback(preactivation(layer), aₖ⁻) #
-    reset!()
-    modify_layer!(Val(:keep_negative), layer)
-    zₖ₊₁ᵝ⁺, pullbackᵝ⁺ = Zygote.pullback(preactivation(layer), aₖ⁺)
-    # evaluate pullbacks
-    sₖ₊₁ᵝ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁ᵝ⁺ + zₖ₊₁ᵝ⁻)
-    Rₖ .-= rule.β .* aₖ⁺ .* only(pullbackᵝ⁺(sₖ₊₁ᵝ))
-    reset!()
-    modify_layer!(Val(:keep_positive_zero_bias), layer)  # re-modify mutated pullback
-    Rₖ .-= rule.β .* aₖ⁻ .* only(pullbackᵝ⁻(sₖ₊₁ᵝ))
-    reset!()
+    sᵅ = Rₖ₊₁ ./ modify_denominator(rule, zᵅ⁺ + zᵅ⁻)
+    sᵝ = Rₖ₊₁ ./ modify_denominator(rule, zᵝ⁺ + zᵝ⁻)
+    Rₖ .=
+        rule.α .* (aₖ⁺ .* only(backᵅ⁺(sᵅ)) .+ aₖ⁻ .* only(backᵅ⁻(sᵅ))) .-
+        rule.β .* (aₖ⁺ .* only(backᵝ⁺(sᵝ)) .+ aₖ⁻ .* only(backᵝ⁻(sᵝ)))
     return nothing
 end
 
@@ -401,58 +386,59 @@ R_j^k = \\sum_i\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_
 - $REF_MONTAVON_DTD
 """
 struct ZPlusRule <: AbstractLRPRule end
-function lrp!(Rₖ, rule::ZPlusRule, layer::L, aₖ, Rₖ₊₁) where {L}
-    require_weight_and_bias(rule, layer)
-    reset! = get_layer_resetter(rule, layer)
+function modify_layer(::ZPlusRule, layer)
+    return (
+        layer⁺=modify_layer(Val(:keep_positive), layer),
+        layer⁻=modify_layer(Val(:keep_negative_zero_bias), layer),
+    )
+end
 
+function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
-    # Linearize around positive & negative activations (aₖ⁺, aₖ⁻)
-    modify_layer!(Val(:keep_positive), layer)
-    zₖ₊₁⁺, pullback⁺ = Zygote.pullback(layer, aₖ⁺)
-    reset!()
-    modify_layer!(Val(:keep_negative_zero_bias), layer)
-    zₖ₊₁⁻, pullback⁻ = Zygote.pullback(layer, aₖ⁻)
+    z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, aₖ⁺)
+    z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, aₖ⁻)
 
-    # Evaluate pullbacks
-    sₖ₊₁ = Rₖ₊₁ ./ modify_denominator(rule, zₖ₊₁⁺ + zₖ₊₁⁻)
-    Rₖ .= aₖ⁻ .* only(pullback⁻(sₖ₊₁))
-    reset!()
-    modify_layer!(Val(:keep_positive), layer) # re-modify mutated pullback
-    Rₖ .+= aₖ⁺ .* only(pullback⁺(sₖ₊₁))
-    reset!()
+    s = Rₖ₊₁ ./ modify_denominator(rule, z⁺ + z⁻)
+    Rₖ .= aₖ⁺ .* only(back⁺(s)) + aₖ⁻ .* only(back⁻(s))
     return nothing
 end
+
+###########################
+# Perfomance improvements #
+###########################
+
+# The following functions aren't strictly necessary – tests still pass when removing them.
+# However they improve performance on specific combinations of rule and layer types.
 
 # Special cases for rules that don't modify params for extra performance:
 for R in (ZeroRule, EpsilonRule)
     for L in (DropoutLayer, ReshapingLayer)
-        @eval lrp!(Rₖ, ::$R, l::$L, aₖ, Rₖ₊₁) = lrp!(Rₖ, PassRule(), l, aₖ, Rₖ₊₁)
+        @eval function lrp!(Rₖ, ::$R, l::$L, aₖ, Rₖ₊₁)
+            return lrp!(Rₖ, PassRule(), l, aₖ, Rₖ₊₁)
+        end
     end
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
-    @eval function lrp!(Rₖ, rule::$R, layer::Dense, aₖ, Rₖ₊₁)
-        reset! = get_layer_resetter(rule, layer)
-        modify_layer!(rule, layer)
+    @eval function lrp!(Rₖ, rule::$R, modified_layer::Dense, aₖ, Rₖ₊₁)
         ãₖ = modify_input(rule, aₖ)
-        zₖ₊₁ = modify_denominator(rule, preactivation(layer, ãₖ))
-        @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / zₖ₊₁[i, b] * Rₖ₊₁[i, b]
-        reset!()
+        z = modify_denominator(rule, modified_layer(ãₖ))
+        @tullio Rₖ[j, b] = modified_layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
         return nothing
     end
 end
-function lrp!(Rₖ, ::FlatRule, layer::Dense, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, ::FlatRule, ::Dense, aₖ, Rₖ₊₁)
     n = size(Rₖ, 1) # number of input neurons connected to each output neuron
     for i in axes(Rₖ, 2) # samples in batch
         fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
     end
     return nothing
 end
-function lrp!(Rₖ, ::WSquareRule, layer::Dense, aₖ, Rₖ₊₁)
-    den = sum(layer.weight .^ 2; dims=2)
-    @tullio Rₖ[j, b] = layer.weight[i, j]^2 / den[i] * Rₖ₊₁[i, b]
+function lrp!(Rₖ, ::WSquareRule, modified_layer::Dense, aₖ, Rₖ₊₁)
+    den = sum(modified_layer.weight; dims=2)
+    @tullio Rₖ[j, b] = modified_layer.weight[i, j] / den[i] * Rₖ₊₁[i, b]
     return nothing
 end
