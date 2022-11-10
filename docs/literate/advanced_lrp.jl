@@ -103,15 +103,12 @@ analyzer = LRP(model, composite)
 struct MyGammaRule <: AbstractLRPRule end
 
 # It is then possible to dispatch on the utility functions [`modify_input`](@ref),
-# [`modify_param!`](@ref) and [`modify_denominator`](@ref) with the rule type
+# [`modify_parameters`](@ref) and [`modify_denominator`](@ref) with the rule type
 # `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
 # To extend internal functions, import them explicitly:
-import ExplainableAI: modify_param!
+import ExplainableAI: modify_parameters
 
-function modify_param!(::MyGammaRule, param)
-    param .+= 0.25f0 * relu.(param)
-    return nothing
-end
+modify_parameters(::MyGammaRule, param) = param + 0.25f0 * relu.(param)
 
 # We can directly use this rule to make an analyzer!
 rules = [
@@ -127,23 +124,27 @@ rules = [
 analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
-# We just implemented our own version of the ``γ``-rule in 4 lines of code.
+# We just implemented our own version of the ``γ``-rule in 2 lines of code.
 # The heatmap perfectly matches the previous one!
 
+# For more granular control over weights and biases, [`modify_weight`](@ref)
+# and [`modify_bias`](@ref) can be used.
 # If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
-# ExplainableAI provides a lower-level variant of [`modify_param!`](@ref)
-# called [`modify_layer!`](@ref). This function is expected to take a layer
+# ExplainableAI provides a lower-level variant of [`modify_parameters`](@ref)
+# called [`modify_layer`](@ref). This function is expected to take a layer
 # and return a new, modified layer.
-# To add compatibility checks between rule and layer types, extend [`check_compat`](@ref).
+# To add compatibility checks between rule and layer types, extend [`is_compatible`](@ref).
 
-#md # !!! warning "Using modify_layer!"
+#md # !!! warning "Extending modify_layer"
 #md #
-#md #     Use of the function `modify_layer!` will overwrite functionality of `modify_param!`
+#md #     Use of the function `modify_layer` will overwrite functionality of
+#md #     `modify_parameters`, `modify_weight` and `modify_bias`
 #md #     for the implemented combination of rule and layer types.
-#md #     This is due to the fact that internally, `modify_param!` is called by the default
-#md #     implementation of `modify_layer!`.
+#md #     This is due to the fact that internally, `modify_weight` and `modify_bias`
+#md #     are called by the default implementation of `modify_layer`.
+#md #     `modify_weight` and `modify_bias` in turn call `modify_parameters` by default.
 #md #
-#md #     Therefore it is recommended to only extend `modify_layer!` for a specific rule
+#md #     Therefore `modify_layer` should only be extended for a specific rule
 #md #     and a specific layer type.
 
 # ## Custom layers and activation functions
@@ -253,25 +254,30 @@ LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 analyzer = LRP(model)
 
 # ## How it works internally
-# Internally, ExplainableAI dispatches to low level functions
+# Internally, ExplainableAI pre-allocates modified layers by dispatching `modify_layer`
+# on rule and layer types. This constructs the `state` of a LRP analyzer.
+#
+# Calling `analyze` on a LRP-model then applies a forward-pass of the model,
+# keeping track of the activations `aₖ` for each layer `k`.
+# The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
+# in a backward-pass over the model layers and previous activations.
+#
+# This is done by calling low level functions
 # ```julia
-# lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
+# lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
 # end
 # ```
 # These functions in-place modify a pre-allocated array of the input relevance `Rₖ`
 # (the `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
 # in Julia to denote functions that modify their arguments).
-
-# The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
-# on the types of the arguments `rule` and `layer`.
-# The relevance `Rₖ` is then computed based on the input activation `aₖ` and the output relevance `Rₖ₊₁`.
-# Multiple dispatch is also used to dispatch `modify_param!` and `modify_denominator` on the rule and layer type.
 #
-# Calling `analyze` on a LRP-model applies a forward-pass of the model, keeping track of
-# the activations `aₖ` for each layer `k`.
-# The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
-# in a backward-pass over the model layers and previous activations.
+# The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
+# on the types of the arguments `rule` and `modified_layer`.
+# The relevance `Rₖ` is then computed based on the input activation `aₖ`
+# and the output relevance `Rₖ₊₁`.
+# Multiple dispatch is also used to dispatch `modify_parameters` and `modify_denominator`
+# on the rule and layer type.
 
 # ### Generic rule implementation using automatic differentiation
 # The generic LRP rule–of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases–reads[^1][^2]:
@@ -279,7 +285,7 @@ analyzer = LRP(model)
 # R_{j}=\sum_{k} \frac{a_{j} \cdot \rho\left(w_{j k}\right)}{\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right)} R_{k}
 # ```
 #
-# where ``\rho`` is a function that modifies parameters – what we call `modify_param!`.
+# where ``\rho`` is a function that modifies parameters – what we call `modify_parameters`.
 #
 # The computation of this propagation rule can be decomposed into four steps:
 # ```math
@@ -291,12 +297,8 @@ analyzer = LRP(model)
 # \end{array}
 # ```
 #
-# For deep rectifier networks, the third step can also be written as the gradient computation
-# ```math
-# c_{j}=\left[\nabla\left(\sum_{k} z_{k}(\boldsymbol{a}) \cdot s_{k}\right)\right]_{j}
-# ```
-#
-# and can be implemented via automatic differentiation (AD).
+# For deep rectifier networks,
+# the third step can be implemented via automatic differentiation (AD).
 #
 # This equation is implemented in ExplainableAI as the default method
 # for all layer types that don't have a specialized implementation.
@@ -310,18 +312,15 @@ analyzer = LRP(model)
 # For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
 # compute ``c`` from the previous equation as a VJP, pulling back ``s_{k}=R_{k}/z_{k}``:
 # ```julia
-# function lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-#    check_compat(rule, layer)
-#    reset! = get_layer_resetter(layer)
-#    modify_layer!(rule, layer)
-#    ãₖ₊₁, pullback = Zygote.pullback(layer, modify_input(rule, aₖ))
-#    Rₖ .= aₖ .* only(pullback(Rₖ₊₁ ./ modify_denominator(rule, ãₖ₊₁)))
-#    reset!()
+# function lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+#    ãₖ = modify_input(rule, aₖ)
+#    z, back = Zygote.pullback(modified_layer, ãₖ)
+#    s = Rₖ₊₁ ./ modify_denominator(rule, z)
+#    Rₖ .= ãₖ .* only(back(s))
 # end
 # ```
 #
-# You can see how `check_compat`, `modify_layer!`, `modify_input` and `modify_denominator`
-# dispatch on the rule and layer type. This is how we implemented our own `MyGammaRule`.
+# You can see how `modify_input` and `modify_denominator` dispatch on rule and layer types.
 # Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
 # ### Specialized implementations
@@ -341,15 +340,13 @@ analyzer = LRP(model)
 # We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
 # function lrp!(Rₖ, rule, layer::Dense, aₖ, Rₖ₊₁)
-#     reset! = get_layer_resetter(rule, layer)
-#     modify_layer!(rule, layer)
-#     ãₖ₊₁ = modify_denominator(rule, layer(modify_input(rule, aₖ)))
-#     @tullio Rₖ[j, b] = aₖ[j, b] * layer.weight[k, j] * Rₖ₊₁[k, b] / ãₖ₊₁[k, b] # Tullio ≈ fast einsum
-#     reset!()
+#    ãₖ = modify_input(rule, aₖ)
+#    z = modify_denominator(rule, modified_layer(ãₖ))
+#    @tullio Rₖ[j, b] = modified_layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
 # end
 # ```
 #
-# For maximum low-level control beyond `modify_layer!`, `modify_param!` and `modify_denominator`,
+# For maximum low-level control beyond `modify_input` and `modify_denominator,
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
