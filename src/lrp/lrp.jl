@@ -56,10 +56,8 @@ LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 function (analyzer::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
-    layers = analyzer.model.layers
     # Compute layerwise activations on forward pass through model:
     acts = [input, Flux.activations(analyzer.model, input)...]
-
     # Allocate array for layerwise relevances:
     rels = similar.(acts)
 

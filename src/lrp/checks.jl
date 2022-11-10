@@ -132,5 +132,4 @@ function _show_check_summary(
         alignment=[:r, :l, :r, :c, :r],
         highlighters=(hl_pass, hl_fail),
     )
-    return nothing
 end

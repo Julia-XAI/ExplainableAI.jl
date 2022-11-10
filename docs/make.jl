@@ -20,10 +20,10 @@ makedocs(;
     sitename="ExplainableAI.jl",
     format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),
     pages=[
-        "Home" => "index.md",
+        "Home"            => "index.md",
         "Getting started" => "generated/example.md",
-        "Advanced LRP" => "generated/advanced_lrp.md",
-        "API Reference" => "api.md",
+        "Advanced LRP"    => "generated/advanced_lrp.md",
+        "API Reference"   => "api.md",
     ],
 )
 

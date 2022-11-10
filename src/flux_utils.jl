@@ -4,12 +4,12 @@ activation(layer)
 Return activation function of the layer.
 In case the layer is unknown or no activation function is found, `nothing` is returned.
 """
-activation(l::Dense) = l.σ
-activation(l::Conv) = l.σ
+activation(layer) = nothing
+activation(l::Dense)         = l.σ
+activation(l::Conv)          = l.σ
+activation(l::CrossCor)      = l.σ
 activation(l::ConvTranspose) = l.σ
-activation(l::CrossCor) = l.σ
-activation(l::BatchNorm) = l.λ
-activation(layer) = nothing # default for all other layer types
+activation(l::BatchNorm)     = l.λ
 
 function has_activation(layer)
     hasproperty(layer, :σ) && return true

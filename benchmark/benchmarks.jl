@@ -15,10 +15,10 @@ img = rand(MersenneTwister(123), T, (224, 224, 3, 1))
 
 # Use one representative algorithm of each type
 algs = Dict(
-    "Gradient" => Gradient,
-    "InputTimesGradient" => InputTimesGradient,
-    "LRP" => LRP,
-    "SmoothGrad" => model -> SmoothGrad(model, 5),
+    "Gradient"            => Gradient,
+    "InputTimesGradient"  => InputTimesGradient,
+    "LRP"                 => LRP,
+    "SmoothGrad"          => model -> SmoothGrad(model, 5),
     "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
 
@@ -32,7 +32,6 @@ for (name, alg) in algs
     SUITE["VGG"][name]["construct analyzer"] = @benchmarkable contruct_analyzer(
         $(alg), $(model)
     )
-
     analyzer = alg(model)
     SUITE["VGG"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
 end
@@ -44,18 +43,18 @@ out_dense = 100
 aₖ = randn(T, insize)
 
 layers = Dict(
-    "Conv" => (Conv((3, 3), 3 => 2), aₖ),
+    "Conv"  => (Conv((3, 3), 3 => 2), aₖ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
 )
 rules = Dict(
-    "ZeroRule" => ZeroRule(),
-    "EpsilonRule" => EpsilonRule(),
-    "GammaRule" => GammaRule(),
-    "WSquareRule" => WSquareRule(),
-    "FlatRule" => FlatRule(),
+    "ZeroRule"      => ZeroRule(),
+    "EpsilonRule"   => EpsilonRule(),
+    "GammaRule"     => GammaRule(),
+    "WSquareRule"   => WSquareRule(),
+    "FlatRule"      => FlatRule(),
     "AlphaBetaRule" => AlphaBetaRule(),
-    "ZPlusRule" => ZPlusRule(),
-    "ZBoxRule" => ZBoxRule(zero(T), oneunit(T)),
+    "ZPlusRule"     => ZPlusRule(),
+    "ZBoxRule"      => ZBoxRule(zero(T), oneunit(T)),
 )
 
 SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])

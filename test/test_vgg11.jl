@@ -4,9 +4,9 @@ using Flux
 using JLD2
 
 const GRADIENT_ANALYZERS = Dict(
-    "Gradient" => Gradient,
-    "InputTimesGradient" => InputTimesGradient,
-    "SmoothGrad" => model -> SmoothGrad(model, 5, 0.1, MersenneTwister(123)),
+    "Gradient"            => Gradient,
+    "InputTimesGradient"  => InputTimesGradient,
+    "SmoothGrad"          => model -> SmoothGrad(model, 5, 0.1, MersenneTwister(123)),
     "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
 const LRP_ANALYZERS = Dict(
@@ -66,7 +66,6 @@ function test_vgg11(name, method; kwargs...)
         expl2 = analyzer(img, neuron_selection; kwargs...)
         @test expl.attribution ≈ expl2.attribution
     end
-    return nothing
 end
 
 # Run analyzers

@@ -21,14 +21,13 @@ input2_bd = rand(MersenneTwister(2), Float32, ins, 1)
 input_batch = cat(input1_bd, input2_bd; dims=2)
 
 ANALYZERS = Dict(
-    "LRPZero" => LRP,
-    "Gradient" => Gradient,
-    "InputTimesGradient" => InputTimesGradient,
-    "SmoothGrad" => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
-    "SmoothLRP" =>
-        m -> NoiseAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
+    "LRPZero"             => LRP,
+    "Gradient"            => Gradient,
+    "InputTimesGradient"  => InputTimesGradient,
+    "SmoothGrad"          => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
+    "SmoothLRP"           => m -> NoiseAugmentation(LRP(m), 2, Laplace(0.0f0, 0.1f0), MersenneTwister(123)),
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
-    "IntegratedLRP" => m -> InterpolationAugmentation(LRP(m), 2),
+    "IntegratedLRP"       => m -> InterpolationAugmentation(LRP(m), 2),
 )
 
 for (name, method) in ANALYZERS

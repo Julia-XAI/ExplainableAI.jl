@@ -11,10 +11,10 @@ model = flatten_model(strip_softmax(model.layers))
 
 # Test default composites
 const DEFAULT_COMPOSITES = Dict(
-    "EpsilonGammaBox" => EpsilonGammaBox(-3.0f0, 3.0f0),
-    "EpsilonPlus" => EpsilonPlus(),
-    "EpsilonAlpha2Beta1" => EpsilonAlpha2Beta1(),
-    "EpsilonPlusFlat" => EpsilonPlusFlat(),
+    "EpsilonGammaBox"        => EpsilonGammaBox(-3.0f0, 3.0f0),
+    "EpsilonPlus"            => EpsilonPlus(),
+    "EpsilonAlpha2Beta1"     => EpsilonAlpha2Beta1(),
+    "EpsilonPlusFlat"        => EpsilonPlusFlat(),
     "EpsilonAlpha2Beta1Flat" => EpsilonAlpha2Beta1Flat(),
 )
 for (name, c) in DEFAULT_COMPOSITES
@@ -26,8 +26,8 @@ composite1 = Composite(
     ZeroRule(), # default rule
     GlobalRule(PassRule()), # override default rule
     GlobalTypeRule(
-        ConvLayer => AlphaBetaRule(2.0f0, 1.0f0),
-        Dense => EpsilonRule(1.0f-6),
+        ConvLayer    => AlphaBetaRule(2.0f0, 1.0f0),
+        Dense        => EpsilonRule(1.0f-6),
         PoolingLayer => EpsilonRule(1.0f-6),
     ),
     FirstNTypeRule(7, Conv => FlatRule()),

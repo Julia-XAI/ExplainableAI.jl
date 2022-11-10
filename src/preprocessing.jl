@@ -4,8 +4,8 @@
 
 # Coefficients taken from PyTorch's ImageNet normalization code
 const PYTORCH_MEAN = [0.485f0, 0.456f0, 0.406f0]
-const PYTORCH_STD = [0.229f0, 0.224f0, 0.225f0]
-const IMGSIZE = (224, 224)
+const PYTORCH_STD  = [0.229f0, 0.224f0, 0.225f0]
+const IMGSIZE      = (224, 224)
 
 # Take rectangle of pixels of shape `outsize` at the center of image `im`
 adjust(i::Integer) = ifelse(iszero(i % 2), 1, 0)

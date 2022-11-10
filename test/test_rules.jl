@@ -9,14 +9,14 @@ using ReferenceTests
 using Random
 
 const RULES = Dict(
-    "ZeroRule" => ZeroRule(),
-    "EpsilonRule" => EpsilonRule(),
-    "GammaRule" => GammaRule(),
-    "ZBoxRule" => ZBoxRule(0.0f0, 1.0f0),
+    "ZeroRule"      => ZeroRule(),
+    "EpsilonRule"   => EpsilonRule(),
+    "GammaRule"     => GammaRule(),
+    "ZBoxRule"      => ZBoxRule(0.0f0, 1.0f0),
     "AlphaBetaRule" => AlphaBetaRule(2.0f0, 1.0f0),
-    "WSquareRule" => WSquareRule(),
-    "FlatRule" => FlatRule(),
-    "ZPlusRule" => ZPlusRule(),
+    "WSquareRule"   => WSquareRule(),
+    "FlatRule"      => FlatRule(),
+    "ZPlusRule"     => ZPlusRule(),
 )
 
 isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
@@ -127,7 +127,7 @@ batchsize = 2
 aₖ_dense = pseudorandn(din, batchsize)
 
 layers = Dict(
-    "Dense_relu" => Dense(pseudorandn(dout, din), pseudorandn(dout), relu),
+    "Dense_relu"     => Dense(pseudorandn(dout, din), pseudorandn(dout), relu),
     "Dense_identity" => Dense(Matrix{Float32}(I, dout, din), false, identity),
 )
 @testset "Dense" begin
@@ -164,10 +164,10 @@ insize = (6, 6, 2, batchsize)
 aₖ = pseudorandn(insize)
 
 equalpairs = Dict( # these pairs of layers are all equal
-    "AdaptiveMaxPool" => (AdaptiveMaxPool((3, 3)), MaxPool((2, 2); pad=0)),
-    "GlobalMaxPool" => (GlobalMaxPool(), MaxPool((6, 6); pad=0)),
+    "AdaptiveMaxPool"  => (AdaptiveMaxPool((3, 3)), MaxPool((2, 2); pad=0)),
+    "GlobalMaxPool"    => (GlobalMaxPool(), MaxPool((6, 6); pad=0)),
     "AdaptiveMeanPool" => (AdaptiveMeanPool((3, 3)), MeanPool((2, 2); pad=0)),
-    "GlobalMeanPool" => (GlobalMeanPool(), MeanPool((6, 6); pad=0)),
+    "GlobalMeanPool"   => (GlobalMeanPool(), MeanPool((6, 6); pad=0)),
 )
 
 @testset "PoolingLayers" begin
@@ -207,17 +207,15 @@ end
 cin = 2
 cout = 4
 layers = Dict(
-    "Conv" => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "Conv_relu" =>
-        Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
-    "ConvTranspose" =>
-        ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "CrossCor" => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "MaxPool" => MaxPool((3, 3)),
-    "MeanPool" => MaxPool((3, 3)),
-    "flatten" => Flux.flatten,
-    "Dropout" => Dropout(0.2),
-    "AlphaDropout" => AlphaDropout(0.2),
+    "Conv"          => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "Conv_relu"     => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
+    "ConvTranspose" => ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "CrossCor"      => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "MaxPool"       => MaxPool((3, 3)),
+    "MeanPool"      => MaxPool((3, 3)),
+    "flatten"       => Flux.flatten,
+    "Dropout"       => Dropout(0.2),
+    "AlphaDropout"  => AlphaDropout(0.2),
 )
 @testset "Other Layers" begin
     for (rulename, rule) in RULES

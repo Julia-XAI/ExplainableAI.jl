@@ -13,7 +13,6 @@ function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
     z, back = Zygote.pullback(modified_layer, ãₖ)
     s = Rₖ₊₁ ./ modify_denominator(rule, z)
     Rₖ .= ãₖ .* only(back(s))
-    return nothing
 end
 
 #####################################
@@ -23,7 +22,7 @@ end
 # The function that follow define the default fallbacks used by LRP rules
 # when calling the generic `lrp!` implementation above.
 # Rule types are used to dispatch on rule-specific implementations.
-#
+
 # To implement a new rule, extend the following functions for your rule type:
 # - modify_input
 # - modify_denominator
@@ -32,7 +31,7 @@ end
 #   - modify_parameters
 #   - modify_weight and modify_bias
 #   - modify_layer
-#
+
 """
     modify_input(rule, input)
 
@@ -217,9 +216,9 @@ R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2} R_i^{k+1}
 - $REF_MONTAVON_DTD
 """
 struct WSquareRule <: AbstractLRPRule end
+modify_input(::WSquareRule, input) = ones_like(input)
 modify_weight(::WSquareRule, w) = w .^ 2
 modify_bias(::WSquareRule, b) = zero(b)
-modify_input(::WSquareRule, input) = ones_like(input)
 
 """
     FlatRule()
@@ -238,9 +237,9 @@ where ``n_i`` is the number of input neurons connected to the output neuron at i
 - $REF_LAPUSCHKIN_CLEVER_HANS
 """
 struct FlatRule <: AbstractLRPRule end
+modify_input(::FlatRule, input) = ones_like(input)
 modify_weight(::FlatRule, w) = ones_like(w)
 modify_bias(::FlatRule, b) = zero(b)
-modify_input(::FlatRule, input) = ones_like(input)
 
 #####################
 # Complex LRP Rules #
@@ -269,10 +268,9 @@ function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
         Rₖ .= Rₖ₊₁
     end
     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
-    return nothing
 end
 # No extra checks as reshaping operation will throw an error if layer isn't compatible:
-is_compatible(::PassRule, layer) = true # compatible with all layer types
+is_compatible(::PassRule, layer) = true
 
 """
     ZBoxRule(low, high)
@@ -299,24 +297,22 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 function modify_layer(::ZBoxRule, layer)
     return (
-        layer=layer,
-        layer⁺=modify_layer(Val(:keep_positive), layer),
-        layer⁻=modify_layer(Val(:keep_negative), layer),
+        layer  = layer,
+        layer⁺ = modify_layer(Val(:keep_positive), layer),
+        layer⁻ = modify_layer(Val(:keep_negative), layer),
     )
 end
 
-# The ZBoxRule requires its own implementation of relevance propagation.
 function lrp!(Rₖ, rule::ZBoxRule, modified_layers, aₖ, Rₖ₊₁)
     l = zbox_input(aₖ, rule.low)
     h = zbox_input(aₖ, rule.high)
 
-    z, back = Zygote.pullback(modified_layers.layer, aₖ)
+    z, back   = Zygote.pullback(modified_layers.layer, aₖ)
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, l)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
     s = Rₖ₊₁ ./ modify_denominator(rule, z - z⁺ - z⁻)
     Rₖ .= aₖ .* only(back(s)) .- l .* only(back⁺(s)) .- h .* only(back⁻(s))
-    return nothing
 end
 
 zbox_input(in::AbstractArray{T}, c::Real) where {T} = fill(convert(T, c), size(in))
@@ -361,18 +357,16 @@ struct AlphaBetaRule{T} <: AbstractLRPRule
 end
 function modify_layer(::AlphaBetaRule, layer)
     return (
-        layerᵅ⁺=modify_layer(Val(:keep_positive), layer),
-        layerᵅ⁻=modify_layer(Val(:keep_negative_zero_bias), layer),
-        layerᵝ⁺=modify_layer(Val(:keep_negative), layer),
-        layerᵝ⁻=modify_layer(Val(:keep_positive_zero_bias), layer),
+        layerᵅ⁺ = modify_layer(Val(:keep_positive), layer),
+        layerᵅ⁻ = modify_layer(Val(:keep_negative_zero_bias), layer),
+        layerᵝ⁺ = modify_layer(Val(:keep_negative), layer),
+        layerᵝ⁻ = modify_layer(Val(:keep_positive_zero_bias), layer),
     )
 end
 
-# The AlphaBetaRule requires its own implementation of relevance propagation.
 function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
-
     zᵅ⁺, backᵅ⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
     zᵅ⁻, backᵅ⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
     zᵝ⁺, backᵝ⁺ = Zygote.pullback(modified_layers.layerᵝ⁺, aₖ⁺)
@@ -383,7 +377,6 @@ function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     Rₖ .=
         rule.α .* (aₖ⁺ .* only(backᵅ⁺(sᵅ)) .+ aₖ⁻ .* only(backᵅ⁻(sᵅ))) .-
         rule.β .* (aₖ⁺ .* only(backᵝ⁺(sᵝ)) .+ aₖ⁻ .* only(backᵝ⁻(sᵝ)))
-    return nothing
 end
 
 """
@@ -407,21 +400,19 @@ R_j^k = \\sum_i\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_
 struct ZPlusRule <: AbstractLRPRule end
 function modify_layer(::ZPlusRule, layer)
     return (
-        layer⁺=modify_layer(Val(:keep_positive), layer),
-        layer⁻=modify_layer(Val(:keep_negative_zero_bias), layer),
+        layer⁺ = modify_layer(Val(:keep_positive), layer),
+        layer⁻ = modify_layer(Val(:keep_negative_zero_bias), layer),
     )
 end
 
 function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
-
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, aₖ⁺)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, aₖ⁻)
 
     s = Rₖ₊₁ ./ modify_denominator(rule, z⁺ + z⁻)
     Rₖ .= aₖ⁺ .* only(back⁺(s)) + aₖ⁻ .* only(back⁻(s))
-    return nothing
 end
 
 ###########################
@@ -431,12 +422,18 @@ end
 # The following functions aren't strictly necessary – tests still pass when removing them.
 # However they improve performance on specific combinations of rule and layer types.
 
-# Special cases for rules that don't modify params for extra performance:
+# Rules that don't require layer information:
 for R in (ZeroRule, EpsilonRule)
     for L in (DropoutLayer, ReshapingLayer)
         @eval function lrp!(Rₖ, ::$R, l::$L, aₖ, Rₖ₊₁)
             return lrp!(Rₖ, PassRule(), l, aₖ, Rₖ₊₁)
         end
+    end
+end
+function lrp!(Rₖ, ::FlatRule, ::Dense, aₖ, Rₖ₊₁)
+    n = size(Rₖ, 1) # number of input neurons connected to each output neuron
+    for i in axes(Rₖ, 2) # samples in batch
+        fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
     end
 end
 
@@ -446,18 +443,9 @@ for R in (ZeroRule, EpsilonRule, GammaRule)
         ãₖ = modify_input(rule, aₖ)
         z = modify_denominator(rule, modified_layer(ãₖ))
         @tullio Rₖ[j, b] = modified_layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
-        return nothing
     end
-end
-function lrp!(Rₖ, ::FlatRule, ::Dense, aₖ, Rₖ₊₁)
-    n = size(Rₖ, 1) # number of input neurons connected to each output neuron
-    for i in axes(Rₖ, 2) # samples in batch
-        fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
-    end
-    return nothing
 end
 function lrp!(Rₖ, ::WSquareRule, modified_layer::Dense, aₖ, Rₖ₊₁)
     den = sum(modified_layer.weight; dims=2)
     @tullio Rₖ[j, b] = modified_layer.weight[i, j] / den[i] * Rₖ₊₁[i, b]
-    return nothing
 end
