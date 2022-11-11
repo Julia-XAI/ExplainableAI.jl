@@ -102,8 +102,8 @@ analyzer = LRP(model, composite)
 # The rule has to be of type `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# It is then possible to dispatch on the utility functions [`modify_input`](@ref),
-# [`modify_parameters`](@ref) and [`modify_denominator`](@ref) with the rule type
+# It is then possible to dispatch on the utility functions [`modify_input`](@ref ExplainableAI.modify_input),
+# [`modify_parameters`](@ref ExplainableAI.modify_parameters) and [`modify_denominator`](@ref ExplainableAI.modify_denominator) with the rule type
 # `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
 # To extend internal functions, import them explicitly:
 import ExplainableAI: modify_parameters
@@ -127,22 +127,39 @@ heatmap(input, analyzer)
 # We just implemented our own version of the ``γ``-rule in 2 lines of code.
 # The heatmap perfectly matches the previous one!
 
-# For more granular control over weights and biases, [`modify_weight`](@ref)
-# and [`modify_bias`](@ref) can be used.
+# For more granular control over weights and biases,
+# [`modify_weight`](@ref ExplainableAI.modify_weight)
+# and [`modify_bias`](@ref ExplainableAI.modify_bias) can be used.
 # If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
-# ExplainableAI provides a lower-level variant of [`modify_parameters`](@ref)
-# called [`modify_layer`](@ref). This function is expected to take a layer
+# ExplainableAI provides a lower-level variant of
+# [`modify_parameters`](@ref ExplainableAI.modify_parameters)
+# called [`modify_layer`](@ref ExplainableAI.modify_layer). This function is expected to take a layer
 # and return a new, modified layer.
-# To add compatibility checks between rule and layer types, extend [`is_compatible`](@ref).
+# To add compatibility checks between rule and layer types, extend
+# [`is_compatible`](@ref ExplainableAI.is_compatible).
 
 #md # !!! warning "Extending modify_layer"
 #md #
-#md #     Use of the function `modify_layer` will overwrite functionality of
-#md #     `modify_parameters`, `modify_weight` and `modify_bias`
-#md #     for the implemented combination of rule and layer types.
-#md #     This is due to the fact that internally, `modify_weight` and `modify_bias`
-#md #     are called by the default implementation of `modify_layer`.
+#md #     Use of a custom function `modify_layer` will overwrite functionality of `modify_parameters`,
+#md #     `modify_weight` and `modify_bias` for the implemented combination of rule and layer types.
+#md #     This is due to the fact that internally, `modify_weight` and `modify_bias` are called
+#md #     by the default implementation of `modify_layer`.
 #md #     `modify_weight` and `modify_bias` in turn call `modify_parameters` by default.
+#md #
+#md #     The default call structure looks as follows:
+#md #     ```
+#md #     ┌─────────────────────────────────────────┐
+#md #     │              modify_layer               │
+#md #     └─────────┬─────────────────────┬─────────┘
+#md #               │ calls               │ calls
+#md #     ┌─────────▼─────────┐ ┌─────────▼─────────┐
+#md #     │   modify_weight   │ │    modify_bias    │
+#md #     └─────────┬─────────┘ └─────────┬─────────┘
+#md #               │ calls               │ calls
+#md #     ┌─────────▼─────────┐ ┌─────────▼─────────┐
+#md #     │ modify_parameters │ │ modify_parameters │
+#md #     └───────────────────┘ └───────────────────┘
+#md #     ```
 #md #
 #md #     Therefore `modify_layer` should only be extended for a specific rule
 #md #     and a specific layer type.
@@ -254,6 +271,9 @@ LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 analyzer = LRP(model)
 
 # ## How it works internally
+# The best point of entry into the source code is
+# [`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
+#
 # Internally, ExplainableAI pre-allocates modified layers by dispatching `modify_layer`
 # on rule and layer types. This constructs the `state` of a LRP analyzer.
 #
@@ -268,9 +288,10 @@ analyzer = LRP(model)
 #     Rₖ .= ...
 # end
 # ```
-# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`
-# (the `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
-# in Julia to denote functions that modify their arguments).
+#
+# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`.
+# (The `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
+# in Julia to denote functions that modify their arguments.)
 #
 # The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
 # on the types of the arguments `rule` and `modified_layer`.
@@ -280,7 +301,7 @@ analyzer = LRP(model)
 # on the rule and layer type.
 
 # ### Generic rule implementation using automatic differentiation
-# The generic LRP rule–of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases–reads[^1][^2]:
+# The generic LRP rule, of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases, reads[^1][^2]:
 # ```math
 # R_{j}=\sum_{k} \frac{a_{j} \cdot \rho\left(w_{j k}\right)}{\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right)} R_{k}
 # ```
@@ -310,7 +331,7 @@ analyzer = LRP(model)
 # ### AD fallback
 # The default LRP fallback for unknown layers uses AD via [Zygote](https://github.com/FluxML/Zygote.jl).
 # For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
-# compute ``c`` from the previous equation as a VJP, pulling back ``s_{k}=R_{k}/z_{k}``:
+# compute ``c`` from the previous equation as a VJP, pulling back ``s=R/z``:
 # ```julia
 # function lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
 #    ãₖ = modify_input(rule, aₖ)
@@ -346,7 +367,7 @@ analyzer = LRP(model)
 # end
 # ```
 #
-# For maximum low-level control beyond `modify_input` and `modify_denominator,
+# For maximum low-level control beyond `modify_input` and `modify_denominator`,
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
