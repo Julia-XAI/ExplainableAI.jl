@@ -324,7 +324,7 @@ function lrp!(Rₖ, rule::ZBoxRule, modified_layers, aₖ, Rₖ₊₁)
     l = zbox_input(aₖ, rule.low)
     h = zbox_input(aₖ, rule.high)
 
-    z, back   = Zygote.pullback(modified_layers.layer, aₖ)
+    z, back = Zygote.pullback(modified_layers.layer, aₖ)
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, l)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
@@ -399,7 +399,11 @@ function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     cᵅ⁻ = only(backᵅ⁻(sᵅ))
     cᵝ⁺ = only(backᵝ⁺(sᵝ))
     cᵝ⁻ = only(backᵝ⁻(sᵝ))
-    @. Rₖ = rule.α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - rule.β * (aₖ⁺ * cᵝ⁺ + aₖ⁻ * cᵝ⁻)
+
+    T = eltype(aₖ)
+    α = convert(T, rule.α)
+    β = convert(T, rule.β)
+    @. Rₖ = α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - β * (aₖ⁺ * cᵝ⁺ + aₖ⁻ * cᵝ⁻)
 end
 
 """
