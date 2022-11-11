@@ -12,7 +12,8 @@ function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
     ãₖ = modify_input(rule, aₖ)
     z, back = Zygote.pullback(modified_layer, ãₖ)
     s = Rₖ₊₁ ./ modify_denominator(rule, z)
-    Rₖ .= ãₖ .* only(back(s))
+    c = only(back(s))
+    Rₖ .= ãₖ .* c
 end
 
 #####################################
@@ -328,7 +329,10 @@ function lrp!(Rₖ, rule::ZBoxRule, modified_layers, aₖ, Rₖ₊₁)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
     s = Rₖ₊₁ ./ modify_denominator(rule, z - z⁺ - z⁻)
-    Rₖ .= aₖ .* only(back(s)) .- l .* only(back⁺(s)) .- h .* only(back⁻(s))
+    c = only(back(s))
+    c⁺ = only(back⁺(s))
+    c⁻ = only(back⁻(s))
+    @. Rₖ = aₖ * c - l * c⁺ - h * c⁻
 end
 
 zbox_input(in::AbstractArray{T}, c::Real) where {T} = fill(convert(T, c), size(in))
@@ -383,6 +387,7 @@ end
 function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
+
     zᵅ⁺, backᵅ⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
     zᵅ⁻, backᵅ⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
     zᵝ⁺, backᵝ⁺ = Zygote.pullback(modified_layers.layerᵝ⁺, aₖ⁺)
@@ -390,9 +395,11 @@ function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
 
     sᵅ = Rₖ₊₁ ./ modify_denominator(rule, zᵅ⁺ + zᵅ⁻)
     sᵝ = Rₖ₊₁ ./ modify_denominator(rule, zᵝ⁺ + zᵝ⁻)
-    Rₖ .=
-        rule.α .* (aₖ⁺ .* only(backᵅ⁺(sᵅ)) .+ aₖ⁻ .* only(backᵅ⁻(sᵅ))) .-
-        rule.β .* (aₖ⁺ .* only(backᵝ⁺(sᵝ)) .+ aₖ⁻ .* only(backᵝ⁻(sᵝ)))
+    cᵅ⁺ = only(backᵅ⁺(sᵅ))
+    cᵅ⁻ = only(backᵅ⁻(sᵅ))
+    cᵝ⁺ = only(backᵝ⁺(sᵝ))
+    cᵝ⁻ = only(backᵝ⁻(sᵝ))
+    @. Rₖ = rule.α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - rule.β * (aₖ⁺ * cᵝ⁺ + aₖ⁻ * cᵝ⁻)
 end
 
 """
@@ -424,11 +431,14 @@ end
 function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
+
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, aₖ⁺)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, aₖ⁻)
 
     s = Rₖ₊₁ ./ modify_denominator(rule, z⁺ + z⁻)
-    Rₖ .= aₖ⁺ .* only(back⁺(s)) + aₖ⁻ .* only(back⁻(s))
+    c⁺ = only(back⁺(s))
+    c⁻ = only(back⁻(s))
+    @. Rₖ = aₖ⁺ * c⁺ + aₖ⁻ * c⁻
 end
 
 ###########################
