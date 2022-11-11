@@ -26,11 +26,31 @@ end
 # To implement a new rule, extend the following functions for your rule type:
 # - modify_input
 # - modify_denominator
+# - modify_parameters OR (modify_weight and modify_bias) OR modify_layer
 # - is_compatible
-# - One of the following sets of functions to modify layers. The latter override the former:
-#   - modify_parameters
-#   - modify_weight and modify_bias
-#   - modify_layer
+
+const LRP_LAYER_MODIFICATION_DIAGRAM = """
+Use of a custom function `modify_layer` will overwrite functionality of `modify_parameters`,
+`modify_weight` and `modify_bias` for the implemented combination of rule and layer types.
+This is due to the fact that internally, `modify_weight` and `modify_bias` are called
+by the default implementation of `modify_layer`.
+`modify_weight` and `modify_bias` in turn call `modify_parameters` by default.
+
+The default call structure looks as follows:
+```
+┌─────────────────────────────────────────┐
+│              modify_layer               │
+└─────────┬─────────────────────┬─────────┘
+          │ calls               │ calls
+┌─────────▼─────────┐ ┌─────────▼─────────┐
+│   modify_weight   │ │    modify_bias    │
+└─────────┬─────────┘ └─────────┬─────────┘
+          │ calls               │ calls
+┌─────────▼─────────┐ ┌─────────▼─────────┐
+│ modify_parameters │ │ modify_parameters │
+└───────────────────┘ └───────────────────┘
+```
+"""
 
 """
     modify_input(rule, input)
@@ -50,9 +70,6 @@ modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9)
     is_compatible(rule, layer)
 
 Check compatibility of a LRP-Rule with layer type.
-
-## Note
-Custom `is_compatible` functions have to return Boolean values.
 """
 is_compatible(rule, layer) = has_weight_and_bias(layer)
 
@@ -66,26 +83,15 @@ function Base.showerror(io::IO, e::LRPCompatibilityError)
 end
 
 """
-    modify_layer(rule, layer)
+    modify_parameters(rule, W)
+    modify_parameters(rule, b)
 
-Create a copy of `layer` with modified parameters by calling `modify_bias`
-and `modify_weight`, which in turn call `modify_parameters`.
+Modify parameters before computing the relevance.
 
 ## Note
-When implementing a custom `modify_layer` function, `modify_parameters`, `modify_weight`
-and `modify_bias` will not be called.
+$LRP_LAYER_MODIFICATION_DIAGRAM
 """
-function modify_layer(rule, layer)
-    !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
-    !has_weight_and_bias(layer) && return layer # skip all
-
-    w = modify_weight(rule, layer.weight)
-    if layer.bias !== false
-        b = modify_bias(rule, layer.bias)
-        return copy_layer(layer, w, b)
-    end
-    return copy_layer(layer, w, layer.bias)
-end
+modify_parameters(rule, param) = param
 
 """
     modify_weight(rule, W)
@@ -93,8 +99,7 @@ end
 Modify layer weights before computing the relevance.
 
 ## Note
-When implementing a custom `modify_weight` function, `modify_parameters` will only be called
-on the bias.
+$LRP_LAYER_MODIFICATION_DIAGRAM
 """
 modify_weight(rule, W) = modify_parameters(rule, W)
 
@@ -104,18 +109,29 @@ modify_weight(rule, W) = modify_parameters(rule, W)
 Modify layer bias before computing the relevance.
 
 ## Note
-When implementing a custom `modify_bias` function, `modify_parameters` will only be called
-on the layer weights.
+$LRP_LAYER_MODIFICATION_DIAGRAM
 """
 modify_bias(rule, b) = modify_parameters(rule, b)
 
 """
-    modify_parameters(rule, W)
-    modify_parameters(rule, b)
+    modify_layer(rule, layer)
 
-Modify parameters before computing the relevance.
+Modify layer before computing the relevance.
+
+## Note
+$LRP_LAYER_MODIFICATION_DIAGRAM
 """
-modify_parameters(rule, param) = param
+function modify_layer(rule, layer)
+    !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
+    !has_weight_and_bias(layer) && return layer
+
+    w = modify_weight(rule, layer.weight)
+    if layer.bias !== false
+        b = modify_bias(rule, layer.bias)
+        return copy_layer(layer, w, b)
+    end
+    return copy_layer(layer, w, layer.bias)
+end
 
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)

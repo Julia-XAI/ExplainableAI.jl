@@ -36,15 +36,19 @@ PassRule
 ```
 
 ## Custom rules 
-These utilities can be used to define custom rules without writing boilerplate code:
+These utilities can be used to define custom rules without writing boilerplate code.
+To extend these functions, explicitly `import` them: 
 ```@docs
-modify_input
-modify_denominator
-modify_parameters
-modify_weight
-modify_bias
-modify_layer
-is_compatible
+ExplainableAI.modify_input
+ExplainableAI.modify_denominator
+ExplainableAI.modify_parameters
+ExplainableAI.modify_weight
+ExplainableAI.modify_bias
+ExplainableAI.modify_layer
+ExplainableAI.is_compatible
+```
+Compatibility settings:
+```@docs
 LRP_CONFIG.supports_layer
 LRP_CONFIG.supports_activation
 ```
