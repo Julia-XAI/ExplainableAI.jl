@@ -83,8 +83,7 @@ function Base.showerror(io::IO, e::LRPCompatibilityError)
 end
 
 """
-    modify_parameters(rule, W)
-    modify_parameters(rule, b)
+    modify_parameters(rule, parameter)
 
 Modify parameters before computing the relevance.
 
@@ -94,17 +93,17 @@ $LRP_LAYER_MODIFICATION_DIAGRAM
 modify_parameters(rule, param) = param
 
 """
-    modify_weight(rule, W)
+    modify_weight(rule, weight)
 
 Modify layer weights before computing the relevance.
 
 ## Note
 $LRP_LAYER_MODIFICATION_DIAGRAM
 """
-modify_weight(rule, W) = modify_parameters(rule, W)
+modify_weight(rule, w) = modify_parameters(rule, w)
 
 """
-    modify_bias(rule, b)
+    modify_bias(rule, bias)
 
 Modify layer bias before computing the relevance.
 
@@ -137,10 +136,10 @@ end
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
 
-modify_weight(::Val{:keep_positive_zero_bias}, W) = keep_positive(W)
+modify_weight(::Val{:keep_positive_zero_bias}, w) = keep_positive(w)
 modify_bias(::Val{:keep_positive_zero_bias}, b) = zero(b)
 
-modify_weight(::Val{:keep_negative_zero_bias}, W) = keep_negative(W)
+modify_weight(::Val{:keep_negative_zero_bias}, w) = keep_negative(w)
 modify_bias(::Val{:keep_negative_zero_bias}, b) = zero(b)
 
 #############
@@ -167,7 +166,7 @@ struct ZeroRule <: AbstractLRPRule end
 is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
-    EpsilonRule([ϵ=1.0f-6])
+    EpsilonRule([epsilon=1.0f-6])
 
 LRP-``ϵ`` rule. Commonly used on middle layers.
 
@@ -178,20 +177,20 @@ R_j^k = \\sum_i\\frac{w_{ij}a_j^k}{\\epsilon +\\sum_{l}w_{il}a_l^k+b_i} R_i^{k+1
 ```
 
 # Optional arguments
-- `ϵ`: Optional stabilization parameter, defaults to `1f-6`.
+- `epsilon`: Optional stabilization parameter, defaults to `1f-6`.
 
 # References
 - $REF_BACH_LRP
 """
 struct EpsilonRule{T} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(ϵ=1.0f-6) = new{Float32}(ϵ)
+    EpsilonRule(epsilon=1.0f-6) = new{Float32}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """
-    GammaRule([γ=0.25])
+    GammaRule([gamma=0.25])
 
 LRP-``γ`` rule. Commonly used on lower layers.
 
@@ -210,7 +209,7 @@ R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
 """
 struct GammaRule{T} <: AbstractLRPRule
     γ::T
-    GammaRule(γ=0.25f0) = new{Float32}(γ)
+    GammaRule(gamma=0.25f0) = new{Float32}(gamma)
 end
 function modify_parameters(r::GammaRule, param::AbstractArray{T}) where {T}
     γ = convert(T, r.γ)
@@ -338,10 +337,10 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
 end
 
 """
-    AlphaBetaRule([α=2.0], [β=1.0])
+    AlphaBetaRule([alpha=2.0], [beta=1.0])
 
 LRP-``αβ`` rule. Weights positive and negative contributions according to the
-parameters `α` and `β` respectively. The difference `α-β` must be equal to one.
+parameters `alpha` and `beta` respectively. The difference ``α-β`` must be equal to one.
 Commonly used on lower layers.
 
 # Definition
@@ -354,8 +353,8 @@ R_j^k = \\sum_i\\left(
 ```
 
 # Optional arguments
-- `α`: Multiplier for the positive output term, defaults to `2.0`.
-- `β`: Multiplier for the negative output term, defaults to `1.0`.
+- `alpha`: Multiplier for the positive output term, defaults to `2.0`.
+- `beta`: Multiplier for the negative output term, defaults to `1.0`.
 
 # References
 - $REF_BACH_LRP
