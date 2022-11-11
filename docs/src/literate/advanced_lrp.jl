@@ -271,6 +271,9 @@ LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 analyzer = LRP(model)
 
 # ## How it works internally
+# The best point of entry into the source code is
+# [`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
+#
 # Internally, ExplainableAI pre-allocates modified layers by dispatching `modify_layer`
 # on rule and layer types. This constructs the `state` of a LRP analyzer.
 #
@@ -285,9 +288,10 @@ analyzer = LRP(model)
 #     Rₖ .= ...
 # end
 # ```
-# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`
-# (the `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
-# in Julia to denote functions that modify their arguments).
+#
+# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`.
+# (The `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
+# in Julia to denote functions that modify their arguments.)
 #
 # The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
 # on the types of the arguments `rule` and `modified_layer`.
@@ -297,7 +301,7 @@ analyzer = LRP(model)
 # on the rule and layer type.
 
 # ### Generic rule implementation using automatic differentiation
-# The generic LRP rule–of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases–reads[^1][^2]:
+# The generic LRP rule, of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases, reads[^1][^2]:
 # ```math
 # R_{j}=\sum_{k} \frac{a_{j} \cdot \rho\left(w_{j k}\right)}{\epsilon+\sum_{0, j} a_{j} \cdot \rho\left(w_{j k}\right)} R_{k}
 # ```
@@ -327,7 +331,7 @@ analyzer = LRP(model)
 # ### AD fallback
 # The default LRP fallback for unknown layers uses AD via [Zygote](https://github.com/FluxML/Zygote.jl).
 # For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
-# compute ``c`` from the previous equation as a VJP, pulling back ``s_{k}=R_{k}/z_{k}``:
+# compute ``c`` from the previous equation as a VJP, pulling back ``s=R/z``:
 # ```julia
 # function lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
 #    ãₖ = modify_input(rule, aₖ)
@@ -363,7 +367,7 @@ analyzer = LRP(model)
 # end
 # ```
 #
-# For maximum low-level control beyond `modify_input` and `modify_denominator,
+# For maximum low-level control beyond `modify_input` and `modify_denominator`,
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
