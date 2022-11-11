@@ -129,20 +129,37 @@ heatmap(input, analyzer)
 
 # For more granular control over weights and biases,
 # [`modify_weight`](@ref ExplainableAI.modify_weight)
+# and [`modify_bias`](@ref ExplainableAI.modify_bias) can be used.
 # If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
 # ExplainableAI provides a lower-level variant of
 # [`modify_parameters`](@ref ExplainableAI.modify_parameters)
+# called [`modify_layer`](@ref ExplainableAI.modify_layer). This function is expected to take a layer
 # and return a new, modified layer.
 # To add compatibility checks between rule and layer types, extend
+# [`is_compatible`](@ref ExplainableAI.is_compatible).
 
 #md # !!! warning "Extending modify_layer"
 #md #
-#md #     Use of the function `modify_layer` will overwrite functionality of
-#md #     `modify_parameters`, `modify_weight` and `modify_bias`
-#md #     for the implemented combination of rule and layer types.
-#md #     This is due to the fact that internally, `modify_weight` and `modify_bias`
-#md #     are called by the default implementation of `modify_layer`.
+#md #     Use of a custom function `modify_layer` will overwrite functionality of `modify_parameters`,
+#md #     `modify_weight` and `modify_bias` for the implemented combination of rule and layer types.
+#md #     This is due to the fact that internally, `modify_weight` and `modify_bias` are called
+#md #     by the default implementation of `modify_layer`.
 #md #     `modify_weight` and `modify_bias` in turn call `modify_parameters` by default.
+#md #
+#md #     The default call structure looks as follows:
+#md #     ```
+#md #     ┌─────────────────────────────────────────┐
+#md #     │              modify_layer               │
+#md #     └─────────┬─────────────────────┬─────────┘
+#md #               │ calls               │ calls
+#md #     ┌─────────▼─────────┐ ┌─────────▼─────────┐
+#md #     │   modify_weight   │ │    modify_bias    │
+#md #     └─────────┬─────────┘ └─────────┬─────────┘
+#md #               │ calls               │ calls
+#md #     ┌─────────▼─────────┐ ┌─────────▼─────────┐
+#md #     │ modify_parameters │ │ modify_parameters │
+#md #     └───────────────────┘ └───────────────────┘
+#md #     ```
 #md #
 #md #     Therefore `modify_layer` should only be extended for a specific rule
 #md #     and a specific layer type.
