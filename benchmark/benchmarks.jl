@@ -2,7 +2,7 @@ using BenchmarkTools
 using LoopVectorization
 using Flux
 using ExplainableAI
-import ExplainableAI: lrp!, modify_layer!, get_layer_resetter
+using ExplainableAI: lrp!, modify_layer
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
@@ -18,6 +18,7 @@ algs = Dict(
     "Gradient"            => Gradient,
     "InputTimesGradient"  => InputTimesGradient,
     "LRP"                 => LRP,
+    "LREpsilonPlusFlat"   => model -> LRP(model, EpsilonPlusFlat()),
     "SmoothGrad"          => model -> SmoothGrad(model, 5),
     "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
@@ -63,8 +64,13 @@ for (layername, (layer, aₖ)) in layers
     Rₖ = similar(aₖ)
     Rₖ₊₁ = layer(aₖ)
     for (rulename, rule) in rules
-        SUITE["Layer"][layername][rulename] = @benchmarkable lrp!(
-            $(Rₖ), $(rule), $(layer), $(aₖ), $(Rₖ₊₁)
+        SUITE["Layer"][layername][rulename] = BenchmarkGroup(["modify layer", "apply rule"])
+        SUITE["Layer"][layername][rulename]["modify layer"] = @benchmarkable modify_layer(
+            $(rule), $(layer)
+        )
+        modified_layer = modify_layer(rule, layer)
+        SUITE["Layer"][layername][rulename]["apply rule"] = @benchmarkable lrp!(
+            $(Rₖ), $(rule), $(modified_layer), $(aₖ), $(Rₖ₊₁)
         )
     end
 end
