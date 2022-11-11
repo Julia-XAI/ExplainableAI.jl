@@ -127,11 +127,9 @@ function modify_layer(rule, layer)
     !has_weight_and_bias(layer) && return layer
 
     w = modify_weight(rule, layer.weight)
-    if layer.bias !== false
-        b = modify_bias(rule, layer.bias)
-        return copy_layer(layer, w, b)
-    end
-    return copy_layer(layer, w, layer.bias)
+    layer.bias == false && (return copy_layer(layer, w, false))
+    b = modify_bias(rule, layer.bias)
+    return copy_layer(layer, w, b)
 end
 
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
