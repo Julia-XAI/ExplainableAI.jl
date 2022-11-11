@@ -6,6 +6,7 @@ const REF_BACH_LRP = "S. Bach et al., *On Pixel-Wise Explanations for Non-Linear
 const REF_LAPUSCHKIN_CLEVER_HANS = "S. Lapuschkin et al., *Unmasking Clever Hans predictors and assessing what machines really learn*"
 const REF_MONTAVON_DTD = "G. Montavon et al., *Explaining Nonlinear Classification Decisions with Deep Taylor Decomposition*"
 const REF_MONTAVON_OVERVIEW = "G. Montavon et al., *Layer-Wise Relevance Propagation: An Overview*"
+const REF_ANDEOL_DOMAIN_INVARIANT = "L. Andéol et al., *Learning Domain Invariant Representations by Joint Wasserstein Distance Minimization*"
 
 # Generic LRP rule. Used by all rules without custom implementations.
 function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
@@ -185,7 +186,7 @@ modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """
-    GammaRule([gamma=0.25])
+    GammaRule([gamma=$(LRP_GAMMA_DEFAULT)])
 
 LRP-``γ`` rule. Commonly used on lower layers.
 
@@ -202,13 +203,24 @@ R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
 # References
 - $REF_MONTAVON_OVERVIEW
 """
+const LRP_GAMMA_DEFAULT = 0.25f0
 struct GammaRule{T<:Real} <: AbstractLRPRule
     γ::T
-    GammaRule(gamma=0.25f0) = new{eltype(gamma)}(gamma)
+    GammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
 end
-function modify_parameters(r::GammaRule, param::AbstractArray{T}) where {T}
-    γ = convert(T, r.γ)
-    return @. param + γ * relu(param)
+function modify_parameters(r::GammaRule, param::AbstractArray)
+    γ = convert(eltype(param), r.γ)
+    return @. param + γ * keep_positive(param)
+end
+
+# Internally used for GeneralizedGammaRule:
+struct NegativeGammaRule{T<:Real} <: AbstractLRPRule
+    γ::T
+    NegativeGammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
+end
+function modify_parameters(r::NegativeGammaRule, param::AbstractArray)
+    γ = convert(eltype(param), r.γ)
+    return @. param + γ * keep_negative(param)
 end
 
 """
@@ -437,6 +449,59 @@ function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
     c⁺ = only(back⁺(s))
     c⁻ = only(back⁻(s))
     @. Rₖ = aₖ⁺ * c⁺ + aₖ⁻ * c⁻
+end
+
+"""
+    GeneralizedGammaRule([gamma=$(LRP_GAMMA_DEFAULT)])
+
+Generalized LRP-``γ`` rule. Can be used on layers with `leakyrelu` activation functions.
+
+# Definition
+Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
+```math
+R_j^k =\\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^+ +(w_{ij}+\\gamma w_{ij}^-)a_j^-}{\\sum_l (w_{il}+\\gamma w_{il}^+)a_j^+ +(w_{il}+\\gamma w_{il}^-)a_j^- +b_i}\\cdot I(z_k>0)\\cdot R_k
+      +\\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^-)a_j^+ +(w_{ij}+\\gamma w_{ij}^+)a_j^-}{\\sum_l (w_{il}+\\gamma w_{il}^-)a_j^+ +(w_{il}+\\gamma w_{il}^+)a_j^- +b_i}\\cdot I(z_k<0)\\cdot R_k
+# Optional arguments
+- `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
+
+# References
+- $REF_ANDEOL_DOMAIN_INVARIANT
+"""
+struct GeneralizedGammaRule{T<:Real} <: AbstractLRPRule
+    γ::T
+    GeneralizedGammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
+end
+function modify_layer(rule::GeneralizedGammaRule, layer)
+    # ˡ/ʳ: LHS/RHS of the generalized Gamma-rule equation
+    rule⁺ = GammaRule(rule.γ)
+    rule⁻ = NegativeGammaRule(rule.γ)
+    return (
+        layer   = modify_layer(Val(:no_modification), layer),
+        layerˡ⁺ = modify_layer(rule⁺, layer),
+        layerˡ⁻ = modify_layer(rule⁻, layer; keep_bias=false),
+        layerʳ⁻ = modify_layer(rule⁻, layer),
+        layerʳ⁺ = modify_layer(rule⁺, layer; keep_bias=false),
+    )
+end
+
+function lrp!(Rₖ, rule::GeneralizedGammaRule, modified_layers, aₖ, Rₖ₊₁)
+    aₖ⁺ = keep_positive(aₖ)
+    aₖ⁻ = keep_negative(aₖ)
+
+    zˡ⁺, back⁺ = Zygote.pullback(modified_layers.layerˡ⁺, aₖ⁺)
+    zˡ⁻, back⁻ = Zygote.pullback(modified_layers.layerˡ⁻, aₖ⁻)
+    # No need to linearize again: Wˡ⁺ = Wʳ⁺ and Wˡ⁻ = Wʳ⁻
+    zʳ⁺ = modified_layers.layerʳ⁺(aₖ⁻)
+    zʳ⁻ = modified_layers.layerʳ⁻(aₖ⁺)
+    z   = modified_layers.layer(aₖ)
+
+    sˡ = masked_copy(Rₖ₊₁, z .> 0) ./ modify_denominator(rule, zˡ⁺ + zˡ⁻)
+    sʳ = masked_copy(Rₖ₊₁, z .< 0) ./ modify_denominator(rule, zʳ⁺ + zʳ⁻)
+    cˡ⁺ = only(back⁺(sˡ))
+    cˡ⁻ = only(back⁻(sˡ))
+    cʳ⁺ = only(back⁺(sʳ))
+    cʳ⁻ = only(back⁻(sʳ))
+    @. Rₖ = aₖ⁺ * (cˡ⁺ + cʳ⁻) + aₖ⁻ * (cˡ⁻ + cʳ⁺)
 end
 
 ###########################

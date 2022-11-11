@@ -1,7 +1,7 @@
 using Flux
 using Flux: flatten
 using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax, activation
-using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index
+using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index, masked_copy
 using Random
 
 pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
@@ -31,9 +31,9 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 @test_throws ArgumentError check_output_softmax(Chain(abs, sqrt, relu, softmax))
 
 # strip_softmax
-d_softmax = Dense(2, 2, softmax; init=pseudorand)
+d_softmax  = Dense(2, 2, softmax; init=pseudorand)
 d_softmax2 = Dense(2, 2, softmax; init=pseudorand)
-d_relu = Dense(2, 2, relu; init=pseudorand)
+d_relu     = Dense(2, 2, relu; init=pseudorand)
 d_identity = Dense(2, 2; init=pseudorand)
 # flatten to remove softmax
 m = strip_softmax(Chain(Chain(abs), sqrt, Chain(Chain(softmax))))
@@ -68,3 +68,9 @@ I2 = @inferred drop_batch_index(I1)
 I1 = CartesianIndex(5, 3, 2, 6)
 I2 = @inferred drop_batch_index(I1)
 @test I2 == CartesianIndex(5, 3, 2)
+
+# masked_copy
+A    = [4  9  9; 9  6  9; 1  7  8]
+mask = Matrix{Bool}([0  1  1; 0  1  0; 1  1  1])
+mc   = @inferred masked_copy(A, mask)
+@test mc == [0  9  9; 0  6  0; 1  7  8]

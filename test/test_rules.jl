@@ -7,15 +7,20 @@ using LinearAlgebra: I
 using ReferenceTests
 using Random
 
+# Fixed pseudo-random numbers
+T = Float32
+pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
+
 const RULES = Dict(
-    "ZeroRule"      => ZeroRule(),
-    "EpsilonRule"   => EpsilonRule(),
-    "GammaRule"     => GammaRule(),
-    "ZBoxRule"      => ZBoxRule(0.0f0, 1.0f0),
-    "AlphaBetaRule" => AlphaBetaRule(2.0f0, 1.0f0),
-    "WSquareRule"   => WSquareRule(),
-    "FlatRule"      => FlatRule(),
-    "ZPlusRule"     => ZPlusRule(),
+    "ZeroRule"             => ZeroRule(),
+    "EpsilonRule"          => EpsilonRule(),
+    "GammaRule"            => GammaRule(),
+    "ZBoxRule"             => ZBoxRule(0.0f0, 1.0f0),
+    "AlphaBetaRule"        => AlphaBetaRule(2.0f0, 1.0f0),
+    "WSquareRule"          => WSquareRule(),
+    "FlatRule"             => FlatRule(),
+    "ZPlusRule"            => ZPlusRule(),
+    "GeneralizedGammaRule" => GeneralizedGammaRule(),
 )
 
 ## Hand-written tests
@@ -77,10 +82,6 @@ end
     @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α1β0
 end
-
-# Fixed pseudo-random numbers
-T = Float32
-pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
 
 ## Test individual rules
 @testset "modify_parameters" begin
