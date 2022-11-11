@@ -1,7 +1,6 @@
 using LoopVectorization
 using ExplainableAI
-using ExplainableAI: lrp!, has_weight_and_bias
-using ExplainableAI: modify_input, modify_denominator, is_compatible
+using ExplainableAI: lrp!, modify_input, modify_denominator, is_compatible
 using ExplainableAI: modify_parameters, modify_weight, modify_bias, modify_layer
 using Flux
 using LinearAlgebra: I
@@ -18,8 +17,6 @@ const RULES = Dict(
     "FlatRule"      => FlatRule(),
     "ZPlusRule"     => ZPlusRule(),
 )
-
-isa_constant_param_rule(rule) = isa(rule, Union{ZeroRule,EpsilonRule})
 
 ## Hand-written tests
 @testset "ZeroRule analytic" begin
@@ -119,6 +116,19 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
     @test b ≈ [-1.0, 1.42]
 end
 
+function run_rule_tests(rule, layer, rulename, layername, aₖ)
+    if is_compatible(rule, layer)
+        Rₖ₊₁ = layer(aₖ)
+        Rₖ = similar(aₖ)
+        modified_layer = modify_layer(rule, layer)
+        lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+        @test typeof(Rₖ) == typeof(aₖ)
+        @test size(Rₖ) == size(aₖ)
+        @test_reference "references/rules/$rulename/$layername.jld2" Dict("R" => Rₖ) by =
+            (r, a) -> isapprox(r["R"], a["R"]; atol=1e-5, rtol=0.02)
+    end
+end
+
 ## Test Dense layer
 # Define Dense test input
 din = 20 # input dimension
@@ -135,68 +145,7 @@ layers = Dict(
         @testset "$rulename" begin
             for (layername, layer) in layers
                 @testset "$layername" begin
-                    Rₖ₊₁ = layer(aₖ_dense)
-                    Rₖ = similar(aₖ_dense)
-                    modified_layer = modify_layer(rule, layer)
-                    @inferred lrp!(Rₖ, rule, modified_layer, aₖ_dense, Rₖ₊₁)
-
-                    @test typeof(Rₖ) == typeof(aₖ_dense)
-                    @test size(Rₖ) == size(aₖ_dense)
-
-                    if rulename == "Dense_identity"
-                        # First `dout` dimensions should propagate
-                        # activations as relevances, rest should be ≈ 0.
-                        @test Rₖ[1:dout] ≈ aₖ_dense[1:dout]
-                        @test all(Rₖ[dout:end] .< 1e-8)
-                    end
-
-                    @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                        "R" => Rₖ
-                    ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
-                end
-            end
-        end
-    end
-end
-
-## Test PoolingLayers
-insize = (6, 6, 2, batchsize)
-aₖ = pseudorandn(insize)
-
-equalpairs = Dict( # these pairs of layers are all equal
-    "AdaptiveMaxPool"  => (AdaptiveMaxPool((3, 3)), MaxPool((2, 2); pad=0)),
-    "GlobalMaxPool"    => (GlobalMaxPool(), MaxPool((6, 6); pad=0)),
-    "AdaptiveMeanPool" => (AdaptiveMeanPool((3, 3)), MeanPool((2, 2); pad=0)),
-    "GlobalMeanPool"   => (GlobalMeanPool(), MeanPool((6, 6); pad=0)),
-)
-
-@testset "PoolingLayers" begin
-    for (rulename, rule) in RULES
-        @testset "$rulename" begin
-            for (layername, (l1, l2)) in equalpairs
-                if is_compatible(rule, l1) && is_compatible(rule, l2)
-                    @testset "$layername" begin
-                        ml1 = modify_layer(rule, l1)
-                        ml2 = modify_layer(rule, l2)
-
-                        Rₖ₊₁ = l1(aₖ)
-                        @test Rₖ₊₁ == l2(aₖ)
-                        Rₖ1 = similar(aₖ)
-                        Rₖ2 = similar(aₖ)
-
-                        if isa_constant_param_rule(rule)
-                            @inferred lrp!(Rₖ1, rule, ml1, aₖ, Rₖ₊₁)
-                            @inferred lrp!(Rₖ2, rule, ml2, aₖ, Rₖ₊₁)
-                            @test Rₖ1 == Rₖ2
-                            @test typeof(Rₖ1) == typeof(aₖ)
-                            @test size(Rₖ1) == size(aₖ)
-                            @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                                "R" => Rₖ1
-                            ) by = (r, a) -> isapprox(r["R"], a["R"]; rtol=0.02)
-                        else
-                            @test_throws ArgumentError lrp!(Rₖ1, rule, l1, aₖ, Rₖ₊₁)
-                        end
-                    end
+                    run_rule_tests(rule, layer, rulename, layername, aₖ_dense)
                 end
             end
         end
@@ -204,40 +153,30 @@ equalpairs = Dict( # these pairs of layers are all equal
 end
 
 ## Test ConvLayers and others
-cin = 2
-cout = 4
+cin, cout = 2, 4
+insize = (6, 6, 2, batchsize)
+aₖ = pseudorandn(insize)
 layers = Dict(
-    "Conv"          => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "Conv_relu"     => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
-    "ConvTranspose" => ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "CrossCor"      => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "MaxPool"       => MaxPool((3, 3)),
-    "MeanPool"      => MaxPool((3, 3)),
-    "flatten"       => Flux.flatten,
-    "Dropout"       => Dropout(0.2),
-    "AlphaDropout"  => AlphaDropout(0.2),
+    "Conv"             => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "Conv_relu"        => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
+    "ConvTranspose"    => ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "CrossCor"         => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "MaxPool"          => MaxPool((3, 3)),
+    "MeanPool"         => MaxPool((3, 3)),
+    "AdaptiveMaxPool"  => AdaptiveMaxPool((3, 3)),
+    "GlobalMaxPool"    => GlobalMaxPool(),
+    "AdaptiveMeanPool" => AdaptiveMeanPool((3, 3)),
+    "GlobalMeanPool"   => GlobalMeanPool(),
+    "flatten"          => Flux.flatten,
+    "Dropout"          => Dropout(0.2),
+    "AlphaDropout"     => AlphaDropout(0.2),
 )
 @testset "Other Layers" begin
     for (rulename, rule) in RULES
         @testset "$rulename" begin
             for (layername, layer) in layers
-                if is_compatible(rule, layer)
-                    @testset "$layername" begin
-                        Rₖ₊₁ = layer(aₖ)
-                        Rₖ = similar(aₖ)
-                        modified_layer = modify_layer(rule, layer)
-
-                        if has_weight_and_bias(layer) || isa_constant_param_rule(rule)
-                            @inferred lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
-                            @test typeof(Rₖ) == typeof(aₖ)
-                            @test size(Rₖ) == size(aₖ)
-                            @test_reference "references/rules/$rulename/$layername.jld2" Dict(
-                                "R" => Rₖ
-                            ) by = (r, a) -> isapprox(r["R"], a["R"]; atol=1e-5, rtol=0.02)
-                        else
-                            @test_throws ArgumentError lrp!(Rₖ, rule, layer, aₖ, Rₖ₊₁)
-                        end
-                    end
+                @testset "$layername" begin
+                    run_rule_tests(rule, layer, rulename, layername, aₖ)
                 end
             end
         end
