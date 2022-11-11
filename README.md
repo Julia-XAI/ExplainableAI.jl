@@ -23,8 +23,8 @@ Let's use LRP to explain why an image of a castle gets classified as such using 
 ```julia
 using ExplainableAI
 using Flux
-using Metalhead
-using FileIO, HTTP
+using Metalhead                         # pre-trained vision models
+using HTTP, FileIO, ImageMagick         # load image from URL
 
 # Load model
 model = VGG(16, pretrain=true).layers
