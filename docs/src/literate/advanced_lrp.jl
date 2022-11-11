@@ -102,8 +102,8 @@ analyzer = LRP(model, composite)
 # The rule has to be of type `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# It is then possible to dispatch on the utility functions [`modify_input`](@ref),
-# [`modify_parameters`](@ref) and [`modify_denominator`](@ref) with the rule type
+# It is then possible to dispatch on the utility functions [`modify_input`](@ref ExplainableAI.modify_input),
+# [`modify_parameters`](@ref ExplainableAI.modify_parameters) and [`modify_denominator`](@ref ExplainableAI.modify_denominator) with the rule type
 # `MyCustomLRPRule` to define custom rules without writing any boilerplate code.
 # To extend internal functions, import them explicitly:
 import ExplainableAI: modify_parameters
@@ -127,13 +127,13 @@ heatmap(input, analyzer)
 # We just implemented our own version of the ``γ``-rule in 2 lines of code.
 # The heatmap perfectly matches the previous one!
 
-# For more granular control over weights and biases, [`modify_weight`](@ref)
-# and [`modify_bias`](@ref) can be used.
+# For more granular control over weights and biases,
+# [`modify_weight`](@ref ExplainableAI.modify_weight)
 # If the layer doesn't use weights `layer.weight` and biases `layer.bias`,
-# ExplainableAI provides a lower-level variant of [`modify_parameters`](@ref)
-# called [`modify_layer`](@ref). This function is expected to take a layer
+# ExplainableAI provides a lower-level variant of
+# [`modify_parameters`](@ref ExplainableAI.modify_parameters)
 # and return a new, modified layer.
-# To add compatibility checks between rule and layer types, extend [`is_compatible`](@ref).
+# To add compatibility checks between rule and layer types, extend
 
 #md # !!! warning "Extending modify_layer"
 #md #
