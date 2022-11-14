@@ -24,17 +24,15 @@ algs = Dict(
 )
 
 # Define benchmark
-contruct_analyzer(alg, model) = alg(model) # for use with @benchmarkable macro
+_alg(alg, model) = alg(model) # for use with @benchmarkable macro
 
 SUITE = BenchmarkGroup()
-SUITE["VGG"] = BenchmarkGroup([k for k in keys(algs)])
+SUITE["VGG11"] = BenchmarkGroup([k for k in keys(algs)])
 for (name, alg) in algs
-    SUITE["VGG"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
-    SUITE["VGG"][name]["construct analyzer"] = @benchmarkable contruct_analyzer(
-        $(alg), $(model)
-    )
     analyzer = alg(model)
-    SUITE["VGG"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
+    SUITE["VGG11"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
+    SUITE["VGG11"][name]["construct analyzer"] = @benchmarkable _alg($(alg), $(model))
+    SUITE["VGG11"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
 end
 
 # generate input for conv layers
@@ -57,19 +55,23 @@ rules = Dict(
     "ZPlusRule"     => ZPlusRule(),
     "ZBoxRule"      => ZBoxRule(zero(T), oneunit(T)),
 )
+layernames = String.(keys(layers))
+rulenames  = String.(keys(rules))
 
-SUITE["Layer"] = BenchmarkGroup([k for k in keys(layers)])
-for (layername, (layer, aₖ)) in layers
-    SUITE["Layer"][layername] = BenchmarkGroup([k for k in keys(rules)])
+SUITE["modify layer"] = BenchmarkGroup(rulenames)
+SUITE["apply rule"]   = BenchmarkGroup(rulenames)
+for rname in rulenames
+    SUITE["modify layer"][rname] = BenchmarkGroup(layernames)
+    SUITE["apply rule"][rname]  = BenchmarkGroup(layernames)
+end
+
+for (lname, (layer, aₖ)) in layers
     Rₖ = similar(aₖ)
     Rₖ₊₁ = layer(aₖ)
-    for (rulename, rule) in rules
-        SUITE["Layer"][layername][rulename] = BenchmarkGroup(["modify layer", "apply rule"])
-        SUITE["Layer"][layername][rulename]["modify layer"] = @benchmarkable modify_layer(
-            $(rule), $(layer)
-        )
+    for (rname, rule) in rules
         modified_layer = modify_layer(rule, layer)
-        SUITE["Layer"][layername][rulename]["apply rule"] = @benchmarkable lrp!(
+        SUITE["modify layer"][rname][lname] = @benchmarkable modify_layer($(rule), $(layer))
+        SUITE["apply rule"][rname][lname] = @benchmarkable lrp!(
             $(Rₖ), $(rule), $(modified_layer), $(aₖ), $(Rₖ₊₁)
         )
     end
