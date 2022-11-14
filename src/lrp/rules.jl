@@ -181,9 +181,9 @@ R_j^k = \\sum_i\\frac{w_{ij}a_j^k}{\\epsilon +\\sum_{l}w_{il}a_l^k+b_i} R_i^{k+1
 # References
 - $REF_BACH_LRP
 """
-struct EpsilonRule{T} <: AbstractLRPRule
+struct EpsilonRule{T<:Real} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(epsilon=1.0f-6) = new{Float32}(epsilon)
+    EpsilonRule(epsilon=1.0f-6) = new{eltype(epsilon)}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
@@ -206,9 +206,9 @@ R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
 # References
 - $REF_MONTAVON_OVERVIEW
 """
-struct GammaRule{T} <: AbstractLRPRule
+struct GammaRule{T<:Real} <: AbstractLRPRule
     γ::T
-    GammaRule(gamma=0.25f0) = new{Float32}(gamma)
+    GammaRule(gamma=0.25f0) = new{eltype(gamma)}(gamma)
 end
 function modify_parameters(r::GammaRule, param::AbstractArray{T}) where {T}
     γ = convert(T, r.γ)
@@ -362,7 +362,7 @@ R_j^k = \\sum_i\\left(
 - $REF_BACH_LRP
 - $REF_MONTAVON_OVERVIEW
 """
-struct AlphaBetaRule{T} <: AbstractLRPRule
+struct AlphaBetaRule{T<:Real} <: AbstractLRPRule
     α::T
     β::T
     function AlphaBetaRule(alpha=2.0f0, beta=1.0f0)
