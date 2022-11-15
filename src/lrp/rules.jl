@@ -376,8 +376,8 @@ function modify_layer(::AlphaBetaRule, layer)
     return (
         layerᵅ⁺ = modify_layer(Val(:keep_positive), layer),
         layerᵅ⁻ = modify_layer(Val(:keep_negative_zero_bias), layer),
-        layerᵝ⁺ = modify_layer(Val(:keep_negative), layer),
-        layerᵝ⁻ = modify_layer(Val(:keep_positive_zero_bias), layer),
+        layerᵝ⁻ = modify_layer(Val(:keep_negative), layer),
+        layerᵝ⁺ = modify_layer(Val(:keep_positive_zero_bias), layer),
     )
 end
 
@@ -385,22 +385,23 @@ function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
-    zᵅ⁺, backᵅ⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
-    zᵅ⁻, backᵅ⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
-    zᵝ⁺, backᵝ⁺ = Zygote.pullback(modified_layers.layerᵝ⁺, aₖ⁺)
-    zᵝ⁻, backᵝ⁻ = Zygote.pullback(modified_layers.layerᵝ⁻, aₖ⁻)
+    zᵅ⁺, back⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
+    zᵅ⁻, back⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
+    # No need to linearize again: Wᵝ⁺ = Wᵅ⁺ and Wᵝ⁻ = Wᵅ⁻
+    zᵝ⁺ = modified_layers.layerᵝ⁺(aₖ⁻)
+    zᵝ⁻ = modified_layers.layerᵝ⁻(aₖ⁺)
 
     sᵅ = Rₖ₊₁ ./ modify_denominator(rule, zᵅ⁺ + zᵅ⁻)
     sᵝ = Rₖ₊₁ ./ modify_denominator(rule, zᵝ⁺ + zᵝ⁻)
-    cᵅ⁺ = only(backᵅ⁺(sᵅ))
-    cᵅ⁻ = only(backᵅ⁻(sᵅ))
-    cᵝ⁺ = only(backᵝ⁺(sᵝ))
-    cᵝ⁻ = only(backᵝ⁻(sᵝ))
+    cᵅ⁺ = only(back⁺(sᵅ))
+    cᵅ⁻ = only(back⁻(sᵅ))
+    cᵝ⁺ = only(back⁺(sᵝ))
+    cᵝ⁻ = only(back⁻(sᵝ))
 
     T = eltype(aₖ)
     α = convert(T, rule.α)
     β = convert(T, rule.β)
-    @. Rₖ = α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - β * (aₖ⁺ * cᵝ⁺ + aₖ⁻ * cᵝ⁻)
+    @. Rₖ = α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - β * (aₖ⁺ * cᵝ⁻ + aₖ⁻ * cᵝ⁺)
 end
 
 """
