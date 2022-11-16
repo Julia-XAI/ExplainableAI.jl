@@ -135,6 +135,7 @@ end
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
+modify_parameters(::Val{:no_modification}, p) = p
 
 #############
 # LRP Rules #
@@ -306,7 +307,7 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 function modify_layer(::ZBoxRule, layer)
     return (
-        layer  = layer,
+        layer  = modify_layer(Val(:no_modification), layer),
         layer⁺ = modify_layer(Val(:keep_positive), layer),
         layer⁻ = modify_layer(Val(:keep_negative), layer),
     )
