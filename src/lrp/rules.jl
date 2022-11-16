@@ -185,6 +185,7 @@ end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
+const LRP_GAMMA_DEFAULT = 0.25f0
 """
     GammaRule([gamma=$(LRP_GAMMA_DEFAULT)])
 
@@ -194,16 +195,15 @@ LRP-``γ`` rule. Commonly used on lower layers.
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
 R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
-    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_l^k+b_i} R_i^{k+1}
+    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_l^k+(b_i+\\gamma b_i^+)} R_i^{k+1}
 ```
 
 # Optional arguments
-- `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
+- `γ`: Optional multiplier for added positive weights, defaults to `$(LRP_GAMMA_DEFAULT)`.
 
 # References
 - $REF_MONTAVON_OVERVIEW
 """
-const LRP_GAMMA_DEFAULT = 0.25f0
 struct GammaRule{T<:Real} <: AbstractLRPRule
     γ::T
     GammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
@@ -459,10 +459,18 @@ Generalized LRP-``γ`` rule. Can be used on layers with `leakyrelu` activation f
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k =\\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^+ +(w_{ij}+\\gamma w_{ij}^-)a_j^-}{\\sum_l (w_{il}+\\gamma w_{il}^+)a_j^+ +(w_{il}+\\gamma w_{il}^-)a_j^- +b_i}\\cdot I(z_k>0)\\cdot R_k
-      +\\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^-)a_j^+ +(w_{ij}+\\gamma w_{ij}^+)a_j^-}{\\sum_l (w_{il}+\\gamma w_{il}^-)a_j^+ +(w_{il}+\\gamma w_{il}^+)a_j^- +b_i}\\cdot I(z_k<0)\\cdot R_k
+R_j^k = \\sum_i\\frac
+    {(w_{ij}+\\gamma w_{ij}^+)a_j^+ +(w_{ij}+\\gamma w_{ij}^-)a_j^-}
+    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_j^+ +(w_{il}+\\gamma w_{il}^-)a_j^- +(b_i+\\gamma b_i^+)}
+I(z_k>0) \\cdot R^{k+1}_i
++\\sum_i\\frac
+    {(w_{ij}+\\gamma w_{ij}^-)a_j^+ +(w_{ij}+\\gamma w_{ij}^+)a_j^-}
+    {\\sum_l(w_{il}+\\gamma w_{il}^-)a_j^+ +(w_{il}+\\gamma w_{il}^+)a_j^- +(b_i+\\gamma b_i^-)}
+I(z_k<0) \\cdot R^{k+1}_i
+```
+
 # Optional arguments
-- `γ`: Optional multiplier for added positive weights, defaults to `0.25`.
+- `γ`: Optional multiplier for added positive weights, defaults to `$(LRP_GAMMA_DEFAULT)`.
 
 # References
 - $REF_ANDEOL_DOMAIN_INVARIANT
