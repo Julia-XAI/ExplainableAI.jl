@@ -121,11 +121,12 @@ Modify layer before computing the relevance.
 ## Note
 $LRP_LAYER_MODIFICATION_DIAGRAM
 """
-function modify_layer(rule, layer)
+function modify_layer(rule, layer; keep_bias=true)
     !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
     !has_weight_and_bias(layer) && return layer
 
     w = modify_weight(rule, layer.weight)
+    !keep_bias && (return copy_layer(layer, w, zero(layer.bias)))
     layer.bias == false && (return copy_layer(layer, w, false))
     b = modify_bias(rule, layer.bias)
     return copy_layer(layer, w, b)
@@ -134,12 +135,6 @@ end
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
-
-modify_weight(::Val{:keep_positive_zero_bias}, w) = keep_positive(w)
-modify_bias(::Val{:keep_positive_zero_bias}, b) = zero(b)
-
-modify_weight(::Val{:keep_negative_zero_bias}, w) = keep_negative(w)
-modify_bias(::Val{:keep_negative_zero_bias}, b) = zero(b)
 
 #############
 # LRP Rules #
@@ -375,9 +370,9 @@ end
 function modify_layer(::AlphaBetaRule, layer)
     return (
         layerᵅ⁺ = modify_layer(Val(:keep_positive), layer),
-        layerᵅ⁻ = modify_layer(Val(:keep_negative_zero_bias), layer),
+        layerᵅ⁻ = modify_layer(Val(:keep_negative), layer; keep_bias=false),
         layerᵝ⁻ = modify_layer(Val(:keep_negative), layer),
-        layerᵝ⁺ = modify_layer(Val(:keep_positive_zero_bias), layer),
+        layerᵝ⁺ = modify_layer(Val(:keep_positive), layer; keep_bias=false),
     )
 end
 
@@ -426,7 +421,7 @@ struct ZPlusRule <: AbstractLRPRule end
 function modify_layer(::ZPlusRule, layer)
     return (
         layer⁺ = modify_layer(Val(:keep_positive), layer),
-        layer⁻ = modify_layer(Val(:keep_negative_zero_bias), layer),
+        layer⁻ = modify_layer(Val(:keep_negative), layer; keep_bias=false),
     )
 end
 

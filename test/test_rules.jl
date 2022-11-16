@@ -98,7 +98,7 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
     @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
     @test modified_layer.bias ≈ [0.0, 1.0]
 
-    modified_layer = modify_layer(Val(:keep_positive_zero_bias), layer)
+    modified_layer = modify_layer(Val(:keep_positive), layer; keep_bias=false)
     @test modified_layer.weight ≈ [1.0 0.0; 2.0 0.0]
     @test modified_layer.bias ≈ [0.0, 0.0]
 
@@ -106,7 +106,7 @@ pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
     @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
     @test modified_layer.bias ≈ [-1.0, 0.0]
 
-    modified_layer = modify_layer(Val(:keep_negative_zero_bias), layer)
+    modified_layer = modify_layer(Val(:keep_negative), layer; keep_bias=false)
     @test modified_layer.weight ≈ [0.0 -1.0; 0.0 0.0]
     @test modified_layer.bias ≈ [0.0, 0.0]
 
