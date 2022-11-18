@@ -133,6 +133,13 @@ function modify_layer(rule, layer; keep_bias=true)
     return copy_layer(layer, w, b)
 end
 
+function get_modified_layers(rules, layers)
+    return map(zip(rules, layers)) do (r, l)
+        !is_compatible(r, l) && throw(LRPCompatibilityError(r, l))
+        modify_layer(r, l)
+    end
+end
+
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
