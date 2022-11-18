@@ -46,8 +46,8 @@ export LRP
 # LRP rules
 export AbstractLRPRule
 export LRP_CONFIG
-export ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule, PassRule
-export ZBoxRule, ZPlusRule, AlphaBetaRule
+export ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule
+export PassRule, ZBoxRule, ZPlusRule, AlphaBetaRule, GeneralizedGammaRule
 
 # LRP composites
 export Composite, AbstractCompositePrimitive

@@ -33,6 +33,7 @@ AlphaBetaRule
 ZPlusRule
 ZBoxRule
 PassRule
+GeneralizedGammaRule
 ```
 
 ## Custom rules 

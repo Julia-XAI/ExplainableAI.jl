@@ -2,20 +2,26 @@ using LoopVectorization
 using ExplainableAI
 using ExplainableAI: lrp!, modify_input, modify_denominator, is_compatible
 using ExplainableAI: modify_parameters, modify_weight, modify_bias, modify_layer
+using ExplainableAI: stabilize_denom
 using Flux
 using LinearAlgebra: I
 using ReferenceTests
 using Random
 
+# Fixed pseudo-random numbers
+T = Float32
+pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
+
 const RULES = Dict(
-    "ZeroRule"      => ZeroRule(),
-    "EpsilonRule"   => EpsilonRule(),
-    "GammaRule"     => GammaRule(),
-    "ZBoxRule"      => ZBoxRule(0.0f0, 1.0f0),
-    "AlphaBetaRule" => AlphaBetaRule(2.0f0, 1.0f0),
-    "WSquareRule"   => WSquareRule(),
-    "FlatRule"      => FlatRule(),
-    "ZPlusRule"     => ZPlusRule(),
+    "ZeroRule"             => ZeroRule(),
+    "EpsilonRule"          => EpsilonRule(),
+    "GammaRule"            => GammaRule(),
+    "ZBoxRule"             => ZBoxRule(0.0f0, 1.0f0),
+    "AlphaBetaRule"        => AlphaBetaRule(2.0f0, 1.0f0),
+    "WSquareRule"          => WSquareRule(),
+    "FlatRule"             => FlatRule(),
+    "ZPlusRule"            => ZPlusRule(),
+    "GeneralizedGammaRule" => GeneralizedGammaRule(),
 )
 
 ## Hand-written tests
@@ -78,9 +84,45 @@ end
     @test R̂ₖ ≈ Rₖ_α1β0
 end
 
-# Fixed pseudo-random numbers
-T = Float32
-pseudorandn(dims...) = randn(MersenneTwister(123), T, dims...)
+@testset "GeneralizedGammaRule analytic" begin
+    a = [-1.0, 1.0]
+    a⁺ = [0.0, 1.0]
+    a⁻ = [-1.0, 0.0]
+    W = [1.0 -4.0; 2.0 0.0]
+    b = [-2.0, 3.0]
+    layer = Dense(W, b, leakyrelu) # leakyrelu defaults to a=0.01
+    Rₖ₊₁ = [-0.07; 1.0]
+    Rₖ₊₁⁺ = [0.0; 1.0]
+    Rₖ₊₁⁻ = [-0.07; 0.0]
+    @test Rₖ₊₁ == layer(a)
+
+    W⁺ = [1.25 -4.0; 2.5 0.0] # W + γW⁺
+    b⁺ = [-2.0, 3.75]         # b + γb⁺
+    W⁻ = [1.0 -5.0; 2.0 0.0]  # W + γW⁻
+    b⁻ = [-2.5, 3.0]          # b + γb⁻
+    sˡ = Rₖ₊₁⁺ ./ stabilize_denom(W⁺ * a⁺ + W⁻ * a⁻ + b⁺, 1.0e-9)
+    sʳ = Rₖ₊₁⁻ ./ stabilize_denom(W⁺ * a⁻ + W⁻ * a⁺ + b⁻, 1.0e-9)
+    Rₖ =
+        a⁺ .* (transpose(W⁺) * sˡ + transpose(W⁻) * sʳ) +
+        a⁻ .* (transpose(W⁻) * sˡ + transpose(W⁺) * sʳ)
+
+    rule = GeneralizedGammaRule(0.25)
+    ml = modify_layer(rule, layer)
+    @test ml.layerˡ⁺.weight == W⁺
+    @test ml.layerˡ⁻.weight == W⁻
+    @test ml.layerʳ⁻.weight == W⁻
+    @test ml.layerʳ⁺.weight == W⁺
+    @test ml.layer.weight == W
+    @test ml.layerˡ⁺.bias == b⁺
+    @test ml.layerʳ⁻.bias == b⁻
+    @test ml.layer.bias == b
+    @test iszero(ml.layerˡ⁻.bias)
+    @test iszero(ml.layerʳ⁺.bias)
+
+    R̂ₖ = similar(Rₖ)
+    lrp!(R̂ₖ, rule, ml, a, Rₖ₊₁)
+    @test R̂ₖ ≈ Rₖ
+end
 
 ## Test individual rules
 @testset "modify_parameters" begin

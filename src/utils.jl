@@ -75,15 +75,43 @@ julia> ones_like(x)
 ones_like(x::AbstractArray) = ones(eltype(x), size(x))
 ones_like(x::Number) = oneunit(x)
 
-function keep_positive!(x::AbstractArray{T}) where {T}
-    z = zero(T)
-    x[x .< 0] .= z
-    return x
+keep_positive(x::Number) = ifelse(x < 0, zero(x), x) # equivalent to relu
+keep_negative(x::Number) = ifelse(x > 0, zero(x), x)
+keep_positive(xs::AbstractArray) = keep_positive.(xs)
+keep_negative(xs::AbstractArray) = keep_negative.(xs)
+
+"""
+    masked_copy(A, mask)
+
+Return a copy of A on which `mask` was applied.
+
+## Example
+```julia-repl
+julia> A = rand(3, 3)
+3×3 Matrix{Float64}:
+ 0.110985  0.276119   0.660383
+ 0.170582  0.0315757  0.278012
+ 0.972022  0.18339    0.347059
+
+julia> mask = rand(Bool, 3, 3)
+3×3 Matrix{Bool}:
+ 1  1  1
+ 0  0  1
+ 0  1  1
+
+julia> B = masked_copy(A, mask)
+3×3 Matrix{Float64}:
+ 0.110985  0.276119  0.660383
+ 0.0       0.0       0.278012
+ 0.0       0.18339   0.347059
+```
+"""
+function masked_copy(A::AbstractArray, mask::AbstractArray)
+    size(A) != size(mask) && error("Size of array and mask need to match.")
+    out = similar(A)
+    z = zero(eltype(A))
+    @inbounds for i in CartesianIndices(A)
+        out[i] = ifelse(mask[i], A[i], z)
+    end
+    return out
 end
-function keep_negative!(x::AbstractArray{T}) where {T}
-    z = zero(T)
-    x[x .> 0] .= z
-    return x
-end
-keep_positive(x) = keep_positive!(deepcopy(x))
-keep_negative(x) = keep_negative!(deepcopy(x))
