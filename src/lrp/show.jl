@@ -1,6 +1,6 @@
 const COLOR_COMMENT = :light_black
 const COLOR_RULE    = :yellow
-const COLOR_TYPE    = :blue
+const COLOR_TYPE    = :light_blue
 const COLOR_RANGE   = :green
 
 typename(x) = string(nameof(typeof(x)))
