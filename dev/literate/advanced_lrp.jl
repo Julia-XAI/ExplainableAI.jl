@@ -274,10 +274,8 @@ analyzer = LRP(model)
 # The best point of entry into the source code is
 # [`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
 #
-# Internally, ExplainableAI pre-allocates modified layers by dispatching `modify_layer`
-# on rule and layer types. This constructs the `state` of a LRP analyzer.
-#
-# Calling `analyze` on a LRP-model then applies a forward-pass of the model,
+# Calling `analyze` on a LRP-analyzer pre-allocates modified layers by dispatching
+# `modify_layer` on rule and layer types. It then applies a forward-pass of the model,
 # keeping track of the activations `aₖ` for each layer `k`.
 # The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
 # in a backward-pass over the model layers and previous activations.
