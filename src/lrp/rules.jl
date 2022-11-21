@@ -1,4 +1,4 @@
-# https://adrhill.github.io/ExplainableAI.jl/stable/generated/advanced_lrp/#How-it-works-internally
+# https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#How-it-works-internally
 abstract type AbstractLRPRule end
 
 # Bibliography
