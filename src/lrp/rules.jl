@@ -8,6 +8,13 @@ const REF_MONTAVON_DTD = "G. Montavon et al., *Explaining Nonlinear Classificati
 const REF_MONTAVON_OVERVIEW = "G. Montavon et al., *Layer-Wise Relevance Propagation: An Overview*"
 const REF_ANDEOL_DOMAIN_INVARIANT = "L. Andéol et al., *Learning Domain Invariant Representations by Joint Wasserstein Distance Minimization*"
 
+# Default parameters
+const LRP_DEFAULT_GAMMA = 0.25f0
+const LRP_DEFAULT_EPSILON = 1.0f-6
+const LRP_DEFAULT_STABILIZER = 1.0f-9
+const LRP_DEFAULT_ALPHA = 2.0f0
+const LRP_DEFAULT_BETA = 1.0f0
+
 # Generic LRP rule. Used by all rules without custom implementations.
 function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
     ãₖ = modify_input(rule, aₖ)
@@ -66,7 +73,7 @@ modify_input(rule, input) = input
 
 Modify denominator ``z`` for numerical stability on the forward pass.
 """
-modify_denominator(rule, d) = stabilize_denom(d, 1.0f-9)
+modify_denominator(rule, d) = stabilize_denom(d, LRP_DEFAULT_STABILIZER)
 
 """
     is_compatible(rule, layer)
@@ -169,7 +176,7 @@ struct ZeroRule <: AbstractLRPRule end
 is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
-    EpsilonRule([epsilon=1.0f-6])
+    EpsilonRule([epsilon=$(LRP_DEFAULT_EPSILON)])
 
 LRP-``ϵ`` rule. Commonly used on middle layers.
 
@@ -180,21 +187,20 @@ R_j^k = \\sum_i\\frac{w_{ij}a_j^k}{\\epsilon +\\sum_{l}w_{il}a_l^k+b_i} R_i^{k+1
 ```
 
 # Optional arguments
-- `epsilon`: Optional stabilization parameter, defaults to `1f-6`.
+- `epsilon`: Optional stabilization parameter, defaults to `$(LRP_DEFAULT_EPSILON)`.
 
 # References
 - $REF_BACH_LRP
 """
 struct EpsilonRule{T<:Real} <: AbstractLRPRule
     ϵ::T
-    EpsilonRule(epsilon=1.0f-6) = new{eltype(epsilon)}(epsilon)
+    EpsilonRule(epsilon=LRP_DEFAULT_EPSILON) = new{eltype(epsilon)}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
-const LRP_GAMMA_DEFAULT = 0.25f0
 """
-    GammaRule([gamma=$(LRP_GAMMA_DEFAULT)])
+    GammaRule([gamma=$(LRP_DEFAULT_GAMMA)])
 
 LRP-``γ`` rule. Commonly used on lower layers.
 
@@ -206,14 +212,14 @@ R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
 ```
 
 # Optional arguments
-- `γ`: Optional multiplier for added positive weights, defaults to `$(LRP_GAMMA_DEFAULT)`.
+- `gamma`: Optional multiplier for added positive weights, defaults to `$(LRP_DEFAULT_GAMMA)`.
 
 # References
 - $REF_MONTAVON_OVERVIEW
 """
 struct GammaRule{T<:Real} <: AbstractLRPRule
     γ::T
-    GammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
+    GammaRule(gamma=LRP_DEFAULT_GAMMA) = new{eltype(gamma)}(gamma)
 end
 function modify_parameters(r::GammaRule, param::AbstractArray)
     γ = convert(eltype(param), r.γ)
@@ -223,7 +229,7 @@ end
 # Internally used for GeneralizedGammaRule:
 struct NegativeGammaRule{T<:Real} <: AbstractLRPRule
     γ::T
-    NegativeGammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
+    NegativeGammaRule(gamma=LRP_DEFAULT_GAMMA) = new{eltype(gamma)}(gamma)
 end
 function modify_parameters(r::NegativeGammaRule, param::AbstractArray)
     γ = convert(eltype(param), r.γ)
@@ -354,7 +360,7 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
 end
 
 """
-    AlphaBetaRule([alpha=2.0], [beta=1.0])
+    AlphaBetaRule([alpha=$(LRP_DEFAULT_ALPHA)], [beta=$(LRP_DEFAULT_BETA)])
 
 LRP-``αβ`` rule. Weights positive and negative contributions according to the
 parameters `alpha` and `beta` respectively. The difference ``α-β`` must be equal to one.
@@ -370,8 +376,8 @@ R_j^k = \\sum_i\\left(
 ```
 
 # Optional arguments
-- `alpha`: Multiplier for the positive output term, defaults to `2.0`.
-- `beta`: Multiplier for the negative output term, defaults to `1.0`.
+- `alpha`: Multiplier for the positive output term, defaults to `$(LRP_DEFAULT_ALPHA)`.
+- `beta`: Multiplier for the negative output term, defaults to `$(LRP_DEFAULT_BETA)`.
 
 # References
 - $REF_BACH_LRP
@@ -380,7 +386,7 @@ R_j^k = \\sum_i\\left(
 struct AlphaBetaRule{T<:Real} <: AbstractLRPRule
     α::T
     β::T
-    function AlphaBetaRule(alpha=2.0f0, beta=1.0f0)
+    function AlphaBetaRule(alpha=LRP_DEFAULT_ALPHA, beta=LRP_DEFAULT_BETA)
         alpha < 0 && throw(ArgumentError("Parameter `alpha` must be ≥0."))
         beta < 0 && throw(ArgumentError("Parameter `beta` must be ≥0."))
         !isone(alpha - beta) && throw(ArgumentError("`alpha - beta` must be equal one."))
@@ -459,7 +465,7 @@ function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
 end
 
 """
-    GeneralizedGammaRule([gamma=$(LRP_GAMMA_DEFAULT)])
+    GeneralizedGammaRule([gamma=$(LRP_DEFAULT_GAMMA)])
 
 Generalized LRP-``γ`` rule. Can be used on layers with `leakyrelu` activation functions.
 
@@ -477,14 +483,14 @@ I(z_k<0) \\cdot R^{k+1}_i
 ```
 
 # Optional arguments
-- `γ`: Optional multiplier for added positive weights, defaults to `$(LRP_GAMMA_DEFAULT)`.
+- `gamma`: Optional multiplier for added positive weights, defaults to `$(LRP_DEFAULT_GAMMA)`.
 
 # References
 - $REF_ANDEOL_DOMAIN_INVARIANT
 """
 struct GeneralizedGammaRule{T<:Real} <: AbstractLRPRule
     γ::T
-    GeneralizedGammaRule(gamma=LRP_GAMMA_DEFAULT) = new{eltype(gamma)}(gamma)
+    GeneralizedGammaRule(gamma=LRP_DEFAULT_GAMMA) = new{eltype(gamma)}(gamma)
 end
 function modify_layer(rule::GeneralizedGammaRule, layer)
     # ˡ/ʳ: LHS/RHS of the generalized Gamma-rule equation
