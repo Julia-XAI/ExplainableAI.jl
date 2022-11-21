@@ -4,7 +4,7 @@ abstract type AbstractXAIMethod end
 
 const BATCHDIM_MISSING = ArgumentError(
     """The input is a 1D vector and therefore missing the required batch dimension.
-    Call analyze with the keyword argument add_batch_dim=false."""
+    Call `analyze` with the keyword argument `add_batch_dim=false`."""
 )
 
 """
