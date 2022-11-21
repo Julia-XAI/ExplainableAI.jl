@@ -1,6 +1,6 @@
 const COLOR_COMMENT = :light_black
 const COLOR_RULE    = :yellow
-const COLOR_TYPE    = :blue
+const COLOR_TYPE    = :light_blue
 const COLOR_RANGE   = :green
 
 typename(x) = string(nameof(typeof(x)))
@@ -10,13 +10,12 @@ typename(x) = string(nameof(typeof(x)))
 ################
 
 _print_layer(io::IO, l) = string(sprint(show, l; context=io))
-function Base.show(io::IO, m::MIME"text/plain", analyzer::LRP)
-    layer_names = [_print_layer(io, l) for l in analyzer.model]
-    rs = rules(analyzer)
+function Base.show(io::IO, m::MIME"text/plain", lrp::LRP)
+    layer_names = [_print_layer(io, layer) for layer in lrp.model]
     npad = maximum(length.(layer_names)) + 1 # padding to align rules with rpad
 
     println(io, "LRP", "(")
-    for (r, l) in zip(rs, layer_names)
+    for (r, l) in zip(lrp.rules, layer_names)
         print(io, "  ", rpad(l, npad), " => ")
         printstyled(io, r; color=COLOR_RULE)
         println(io, ",")
