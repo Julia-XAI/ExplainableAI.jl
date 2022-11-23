@@ -36,6 +36,12 @@ function _check_activation(::Val{:LRP}, layer)
 end
 _check_activation(::Val{:LRP}, c::Chain) = all(_check_activation(Val(:LRP), l) for l in c)
 
+# Utils for printing model check summary
+_print_name(layer) = "$layer"
+_print_name(layer::Parallel) = "Parallel(...)"
+_print_activation(layer) = hasproperty(layer, :σ) ? "$(layer.σ)" : "—"
+_print_activation(layer::Parallel) = "—"
+
 """
     check_model(method::Symbol, model; verbose=true)
 
@@ -46,90 +52,96 @@ Currently, model checks are only implemented for LRP, using the symbol `:LRP`.
 julia> check_model(:LRP, model)
 """
 check_model(method::Symbol, model; kwargs...) = check_model(Val(method), model; kwargs...)
-function check_model(::Val{:LRP}, c::Chain; verbose=true)
-    layer_checks = collect(_check_layer.(Val(:LRP), c.layers))
-    activation_checks = collect(_check_activation.(Val(:LRP), c.layers))
-    passed_layer_checks = all(layer_checks)
-    passed_activation_checks = all(activation_checks)
+function check_model(::Val{:LRP}, model::Chain; verbose=true)
+    layer_checks = collect(_check_layer.(Val(:LRP), model.layers))
+    activ_checks = collect(_check_activation.(Val(:LRP), model.layers))
+    layer_checks_passed = all(layer_checks)
+    activ_checks_passed = all(activ_checks)
 
-    passed_layer_checks && passed_activation_checks && return true
+    layer_names = [_print_name(l) for l in model]
+    activ_names = [_print_activation(l) for l in model]
+    tab = _summary_table(model, layer_names, layer_checks, activ_names, activ_checks)
 
-    layer_names = [_print_name(l) for l in c]
-    activation_names = [_print_activation(l) for l in c]
-
-    verbose && _show_check_summary(
-        c, layer_names, layer_checks, activation_names, activation_checks
-    )
-    if !passed_layer_checks
-        verbose && display(
-            Markdown.parse(
-                """# Layers failed model check
-                Found unknown layers `$(join(unique(layer_names[.!layer_checks]), ", "))`
-                that are not supported by ExplainableAI's LRP implementation yet.
-
-                If you think the missing layer should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
-
-                These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument `skip_checks=true`.
-
-                ## Using custom layers
-                If you implemented custom layers, register them via
-                ```julia
-                LRP_CONFIG.supports_layer(::MyLayer) = true               # for structs
-                LRP_CONFIG.supports_layer(::typeof(mylayer)) = true  # for functions
-                ```
-                The default fallback for this layer will use Automatic Differentiation according to "Layer-Wise Relevance Propagation: An Overview".
-                """,
-            ),
-        )
-        throw(ArgumentError("Unknown layers found in model"))
+    if !layer_checks_passed
+        if verbose
+            tprint(tab)
+            tprint(_layer_check_summary(layer_names, layer_checks))
+        end
+        error("Unknown layers found in model")
     end
-    if !passed_activation_checks
-        verbose && display(
-            Markdown.parse(
-                """ # Activations failed model check
-                Found layers with unknown  or unsupported activation functions
-                `$(join(unique(activation_names[.!activation_checks]), ", "))`.
-                LRP assumes that the model is a "deep rectifier network" that only contains ReLU-like activation functions.
-
-                If you think the missing activation function should be supported by default, please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
-
-                These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument `skip_checks=true`.
-
-                ## Using custom activation functions
-                If you use custom ReLU-like activation functions, register them via
-                ```julia
-                LRP_CONFIG.supports_activation(::typeof(myfunction)) = true  # for functions
-                LRP_CONFIG.supports_activation(::MyActivation) = true        # for structs
-                ```
-                """,
-            ),
-        )
-        throw(ArgumentError("Unknown or unsupported activation functions found in model"))
+    if !activ_checks_passed
+        if verbose
+            tprint(tab)
+            tprint(_activ_check_summary(activ_names, activ_checks))
+        end
+        error("Unknown or unsupported activation functions found in model")
     end
+    return true # no error
 end
 
-# Utils for printing model check summary using PrettyTable.jl
-_print_name(layer) = "$layer"
-_print_name(layer::Parallel) = "Parallel(...)"
-_print_activation(layer) = hasproperty(layer, :σ) ? "$(layer.σ)" : "—"
-_print_activation(layer::Parallel) = "—"
+function _layer_check_summary(layer_names, layer_checks)
+    return Markdown.parse(
+        """
+        # Layers failed model check
+        Found unknown layers `$(join(unique(layer_names[.!layer_checks]), ", "))`
+        that are not supported by ExplainableAI's LRP implementation yet.
 
-function _show_check_summary(
-    c::Chain, layer_names, layer_checks, activation_names, activation_checks
-)
-    hl_pass = Highlighter((data, i, j) -> j in (3, 5) && data[i, j]; foreground=:green)
-    hl_fail = Highlighter((data, i, j) -> j in (3, 5) && !data[i, j]; foreground=:red)
+        If you think the missing layer should be supported by default,
+        please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
+
+        These model checks can be skipped at your own risk
+        by setting the LRP-analyzer keyword argument `skip_checks=true`.
+
+        ## Using custom layers
+        If you implemented custom layers, register them via
+        ```julia
+        LRP_CONFIG.supports_layer(::MyLayer) = true         # for structs
+        LRP_CONFIG.supports_layer(::typeof(mylayer)) = true # for functions
+        ```
+        The default fallback for this layer will use Automatic Differentiation
+        according to $REF_MONTAVON_OVERVIEW.\\
+        """,
+    )
+end
+
+function _activ_check_summary(activ_names, activ_checks)
+    return Markdown.parse(
+        """
+        # Activations failed model check
+        Found layers with unknown  or unsupported activation functions
+        `$(join(unique(activ_names[.!activ_checks]), ", "))`.
+        LRP assumes that the model is a "deep rectifier network"
+        that only contains ReLU-like activation functions.
+
+        If you think the missing activation function should be supported by default,
+        please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
+
+        These model checks can be skipped at your own risk
+        by setting the LRP-analyzer keyword argument `skip_checks=true`.
+
+        ## Using custom activation functions
+        If you use custom ReLU-like activation functions, register them via
+        ```julia
+        LRP_CONFIG.supports_activation(::typeof(myfunction)) = true  # for functions
+        LRP_CONFIG.supports_activation(::MyActivation) = true        # for structs
+        ```
+        """,
+    )
+end
+
+function _summary_table(model::Chain, layer_names, layer_checks, activ_names, activ_checks)
     data = hcat(
-        collect(1:length(c)),
+        collect(1:length(model)),
         layer_names,
         collect(layer_checks),
-        activation_names,
-        collect(activation_checks),
+        activ_names,
+        collect(activ_checks),
     )
-    pretty_table(
+
+    return Table(
         data;
         header=["", "Layer", "Layer supported", "Activation", "Act. supported"],
-        alignment=[:r, :l, :r, :c, :r],
-        highlighters=(hl_pass, hl_fail),
+        box=:ROUNDED,
+        header_justify=[:right, :left, :right, :center, :right],
     )
 end

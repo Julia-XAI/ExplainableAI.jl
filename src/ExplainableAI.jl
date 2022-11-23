@@ -15,7 +15,9 @@ using ColorSchemes
 
 # Model checks:
 using Markdown
-using PrettyTables
+using Term: tprint, Panel
+using Term.Tables: Table
+using Term.TermMarkdown: parse_md
 
 include("compat.jl")
 include("neuron_selection.jl")
