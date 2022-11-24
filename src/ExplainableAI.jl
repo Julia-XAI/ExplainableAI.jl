@@ -20,6 +20,7 @@ using Term.Tables: Table
 using Term.TermMarkdown: parse_md
 
 include("compat.jl")
+include("bibliography.jl")
 include("neuron_selection.jl")
 include("analyze_api.jl")
 include("flux_types.jl")
