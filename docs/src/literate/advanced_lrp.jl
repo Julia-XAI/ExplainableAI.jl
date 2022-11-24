@@ -179,27 +179,53 @@ mylayer([1, 2, 3])
 # Let's append this layer to our model:
 model = Chain(model..., MyDoublingLayer())
 
-# Creating an LRP analyzer, e.g. `LRP(model)`, will throw an `ArgumentError`
+# Creating an LRP analyzer, e.g. `LRP(model)`, will throw an error
 # and print a summary of the model check in the REPL:
 # ```julia-repl
-# ┌───┬───────────────────────┬─────────────────┬────────────┬────────────────┐
-# │   │ Layer                 │ Layer supported │ Activation │ Act. supported │
-# ├───┼───────────────────────┼─────────────────┼────────────┼────────────────┤
-# │ 1 │ flatten               │            true │     —      │           true │
-# │ 2 │ Dense(784, 100, relu) │            true │    relu    │           true │
-# │ 3 │ Dense(100, 10)        │            true │  identity  │           true │
-# │ 4 │ MyDoublingLayer()     │           false │     —      │           true │
-# └───┴───────────────────────┴─────────────────┴────────────┴────────────────┘
-#   Layers failed model check
-#   ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
-#
-#   Found unknown layers MyDoublingLayer() that are not supported by ExplainableAI's LRP implementation yet.
-#
-#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
-#
-#   These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument skip_checks=true.
-#
-#   [...]
+# julia> analyzer = LRP(model)
+# ╔════ FAILED MODEL CHECK ══════════════════════════════════════════════════════════════════════════╗
+# ║  Found unknown layers or activation functions that are not supported by ExplainableAI's LRP      ║
+# ║  implementation yet:                                                                             ║
+# ║  ╭─────┬───────────────────────────────┬───────────────────┬────────────┬──────────────────╮     ║
+# ║  │     │ Layer                         │ Layer supported   │ Act.       │ Act. supported   │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  1  │  Conv((5, 5), 1 => 6, relu)   │       true        │    relu    │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  2  │        MaxPool((2, 2))        │       true        │     —      │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  3  │  Conv((5, 5), 6 => 16, relu)  │       true        │    relu    │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  4  │        MaxPool((2, 2))        │       true        │     —      │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  5  │            flatten            │       true        │     —      │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  6  │    Dense(256 => 120, relu)    │       true        │    relu    │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  7  │    Dense(120 => 84, relu)     │       true        │    relu    │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  8  │        Dense(84 => 10)        │       true        │  identity  │       true       │     ║
+# ║  ├─────┼───────────────────────────────┼───────────────────┼────────────┼──────────────────┤     ║
+# ║  │  9  │       MyDoublingLayer()       │       false       │     —      │       true       │     ║
+# ║  ╰─────┴───────────────────────────────┴───────────────────┴────────────┴──────────────────╯     ║
+# ║  LRP assumes that the model is a deep rectifier network that only contains ReLU-like             ║
+# ║  activation functions.                                                                           ║
+# ║                                                                                                  ║
+# ║  If you think the missing layer should be supported by default, please open an issue:            ║
+# ║  https://github.com/adrhill/ExplainableAI.jl/issues                                              ║
+# ║                                                                                                  ║
+# ║  ╭──── Using custom layers ───────────────────────────────────────────────────────────────────╮  ║
+# ║  │  If you implemented custom layers, register them via                                       │  ║
+# ║  │  ┌──────────────────────────────────────────────────────────────────────────────────────┐  │  ║
+# ║  │  │  LRP_CONFIG.supports_layer(::MyLayer) = true         # for structs                   │  │  ║
+# ║  │  │  LRP_CONFIG.supports_layer(::typeof(mylayer)) = true # for functions                 │  │  ║
+# ║  │  └──────────────────────────────────────────────────────────────────────────── julia ───┘  │  ║
+# ║  │  The default fallback for this layer will use Automatic Differentiation according to G.    │  ║
+# ║  │  Montavon et al., *Layer-Wise Relevance Propagation: An Overview*.                         │  ║
+# ║  ╰────────────────────────────────────────────────────────────────────────────────────────────╯  ║
+# ║  Model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument       ║
+# ║  skip_checks=true.                                                                               ║
+# ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+# ERROR: Unknown layers or unsupported activation functions found in model
 # ```
 
 # LRP should only be used on deep rectifier networks and ExplainableAI doesn't
@@ -244,24 +270,36 @@ model = Chain(Flux.flatten, Dense(784, 100, myrelu), Dense(100, 10))
 # Once again, creating an LRP analyzer for this model will throw an `ArgumentError`
 # and display the following model check summary:
 # ```julia-repl
-# julia> analyzer = LRP(model3)
-# ┌───┬─────────────────────────┬─────────────────┬────────────┬────────────────┐
-# │   │ Layer                   │ Layer supported │ Activation │ Act. supported │
-# ├───┼─────────────────────────┼─────────────────┼────────────┼────────────────┤
-# │ 1 │ flatten                 │            true │     —      │           true │
-# │ 2 │ Dense(784, 100, myrelu) │            true │   myrelu   │          false │
-# │ 3 │ Dense(100, 10)          │            true │  identity  │           true │
-# └───┴─────────────────────────┴─────────────────┴────────────┴────────────────┘
-#   Activations failed model check
-#   ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
-#
-#   Found layers with unknown or unsupported activation functions myrelu. LRP assumes that the model is a "deep rectifier network" that only contains ReLU-like activation functions.
-#
-#   If you think the missing activation function should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
-#
-#   These model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument skip_checks=true.
-#
-#   [...]
+# julia> analyzer = LRP(model)
+# ╔════ FAILED MODEL CHECK ══════════════════════════════════════════════════════════════════════════╗
+# ║  Found unknown layers or activation functions that are not supported by ExplainableAI's LRP      ║
+# ║  implementation yet:                                                                             ║
+# ║  ╭─────┬─────────────────────────────┬───────────────────┬────────────┬──────────────────╮       ║
+# ║  │     │ Layer                       │ Layer supported   │ Act.       │ Act. supported   │       ║
+# ║  ├─────┼─────────────────────────────┼───────────────────┼────────────┼──────────────────┤       ║
+# ║  │  1  │           flatten           │       true        │     —      │       true       │       ║
+# ║  ├─────┼─────────────────────────────┼───────────────────┼────────────┼──────────────────┤       ║
+# ║  │  2  │  Dense(784 => 100, myrelu)  │       true        │   myrelu   │      false       │       ║
+# ║  ├─────┼─────────────────────────────┼───────────────────┼────────────┼──────────────────┤       ║
+# ║  │  3  │      Dense(100 => 10)       │       true        │  identity  │       true       │       ║
+# ║  ╰─────┴─────────────────────────────┴───────────────────┴────────────┴──────────────────╯       ║
+# ║  LRP assumes that the model is a deep rectifier network that only contains ReLU-like             ║
+# ║  activation functions.                                                                           ║
+# ║                                                                                                  ║
+# ║  If you think the missing layer should be supported by default, please open an issue:            ║
+# ║  https://github.com/adrhill/ExplainableAI.jl/issues                                              ║
+# ║                                                                                                  ║
+# ║  ╭──── Using custom activation functions ─────────────────────────────────────────────────────╮  ║
+# ║  │  If you use custom ReLU-like activation functions, register them via                       │  ║
+# ║  │  ┌──────────────────────────────────────────────────────────────────────────────────────┐  │  ║
+# ║  │  │  LRP_CONFIG.supports_activation(::typeof(myfunction)) = true # for functions         │  │  ║
+# ║  │  │  LRP_CONFIG.supports_activation(::MyActivation) = true       # for structs           │  │  ║
+# ║  │  └──────────────────────────────────────────────────────────────────────────── julia ───┘  │  ║
+# ║  ╰────────────────────────────────────────────────────────────────────────────────────────────╯  ║
+# ║  Model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument       ║
+# ║  skip_checks=true.                                                                               ║
+# ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
+# ERROR: Unknown layers or unsupported activation functions found in model
 # ```
 
 # Registation works by defining the function [`LRP_CONFIG.supports_activation`](@ref) as `true`:
