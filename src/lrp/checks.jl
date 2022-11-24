@@ -97,13 +97,13 @@ function _print_model_check(model, layer_checks, activ_checks)
     return nothing
 end
 
-_STR_CHECK_FAILED = """Found unknown layers or activation functions that are {bold red}not supported{/bold red} by ExplainableAI's LRP implementation yet:"""
-_STR_OPEN_ISSUE = """LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
+const _STR_CHECK_FAILED = """Found unknown layers or activation functions that are {bold red}not supported{/bold red} by ExplainableAI's LRP implementation yet:"""
+const _STR_OPEN_ISSUE = """LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
 
     {green}If you think the missing layer should be supported by default, {bold}please open an issue{/bold}:{/green}
     https://github.com/adrhill/ExplainableAI.jl/issues
     """
-_STR_SKIP_CHECK = """Model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument {blue}skip_checks=true{/blue}."""
+const _STR_SKIP_CHECK = """Model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument {blue}skip_checks=true{/blue}."""
 
 function _summary_table(model::Chain, layer_names, layer_checks, activ_names, activ_checks)
     data = hcat(
