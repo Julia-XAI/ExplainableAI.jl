@@ -14,10 +14,7 @@ using ImageTransformations: imresize
 using ColorSchemes
 
 # Model checks:
-using Markdown
-using Term: tprint, Panel
-using Term.Tables: Table
-using Term.TermMarkdown: parse_md
+using Term: Panel, Table, RenderableText, tprint, console_width, highlight_syntax
 
 include("compat.jl")
 include("bibliography.jl")

@@ -55,79 +55,55 @@ check_model(method::Symbol, model; kwargs...) = check_model(Val(method), model; 
 function check_model(::Val{:LRP}, model::Chain; verbose=true)
     layer_checks = collect(_check_layer.(Val(:LRP), model.layers))
     activ_checks = collect(_check_activation.(Val(:LRP), model.layers))
-    layer_checks_passed = all(layer_checks)
-    activ_checks_passed = all(activ_checks)
-
-    layer_names = [_print_name(l) for l in model]
-    activ_names = [_print_activation(l) for l in model]
-    tab = _summary_table(model, layer_names, layer_checks, activ_names, activ_checks)
-
-    if !layer_checks_passed
-        if verbose
-            tprint(tab)
-            tprint(_layer_check_summary(layer_names, layer_checks))
-        end
-        error("Unknown layers found in model")
-    end
-    if !activ_checks_passed
-        if verbose
-            tprint(tab)
-            tprint(_activ_check_summary(activ_names, activ_checks))
-        end
-        error("Unknown or unsupported activation functions found in model")
+    if !all(layer_checks) || !all(activ_checks)
+        verbose && _print_model_check(model, layer_checks, activ_checks)
+        error("Unknown layers or unsupported activation functions found in model")
     end
     return true # no error
 end
 
-function _layer_check_summary(layer_names, layer_checks)
-    return Markdown.parse(
-        """
-        # Layers failed model check
-        Found unknown layers `$(join(unique(layer_names[.!layer_checks]), ", "))`
-        that are not supported by ExplainableAI's LRP implementation yet.
+#####################################
+# Print check summary using Term.jl #
+#####################################
 
-        If you think the missing layer should be supported by default,
-        please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
+const TERM_DW = 6 # difference in width between nested panels
 
-        These model checks can be skipped at your own risk
-        by setting the LRP-analyzer keyword argument `skip_checks=true`.
+function _print_model_check(model, layer_checks, activ_checks)
+    layer_names = [_print_name(l) for l in model]
+    activ_names = [_print_activation(l) for l in model]
+    tab = _summary_table(model, layer_names, layer_checks, activ_names, activ_checks)
 
-        ## Using custom layers
-        If you implemented custom layers, register them via
-        ```julia
-        LRP_CONFIG.supports_layer(::MyLayer) = true         # for structs
-        LRP_CONFIG.supports_layer(::typeof(mylayer)) = true # for functions
-        ```
-        The default fallback for this layer will use Automatic Differentiation
-        according to $REF_MONTAVON_OVERVIEW.\\
-        """,
+    w = min(100, console_width())
+    w_in = w - TERM_DW
+
+    note(title, content) = Panel(content; title=title, style="green", width=w_in)
+
+    warning = RenderableText(_STR_CHECK_FAILED; width=w_in)
+    open_issue = RenderableText(_STR_OPEN_ISSUE; width=w_in)
+    how_to_skip = RenderableText(_STR_SKIP_CHECK; width=w_in)
+    content = [warning, tab, open_issue]
+    !all(layer_checks) && push!(content, _panel_custom_layer_help(w_in))
+    !all(activ_checks) && push!(content, _panel_custom_activ_help(w_in))
+    tprint(
+        Panel(
+            content...,
+            how_to_skip;
+            title="FAILED MODEL CHECK",
+            style="red",
+            box=:DOUBLE,
+            width=w,
+        ),
     )
+    return nothing
 end
 
-function _activ_check_summary(activ_names, activ_checks)
-    return Markdown.parse(
-        """
-        # Activations failed model check
-        Found layers with unknown  or unsupported activation functions
-        `$(join(unique(activ_names[.!activ_checks]), ", "))`.
-        LRP assumes that the model is a "deep rectifier network"
-        that only contains ReLU-like activation functions.
+_STR_CHECK_FAILED = """Found unknown layers or activation functions that are {bold red}not supported{/bold red} by ExplainableAI's LRP implementation yet:"""
+_STR_OPEN_ISSUE = """LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
 
-        If you think the missing activation function should be supported by default,
-        please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues).
-
-        These model checks can be skipped at your own risk
-        by setting the LRP-analyzer keyword argument `skip_checks=true`.
-
-        ## Using custom activation functions
-        If you use custom ReLU-like activation functions, register them via
-        ```julia
-        LRP_CONFIG.supports_activation(::typeof(myfunction)) = true  # for functions
-        LRP_CONFIG.supports_activation(::MyActivation) = true        # for structs
-        ```
-        """,
-    )
-end
+    {green}If you think the missing layer should be supported by default, {bold}please open an issue{/bold}:{/green}
+    https://github.com/adrhill/ExplainableAI.jl/issues
+    """
+_STR_SKIP_CHECK = """Model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument {blue}skip_checks=true{/blue}."""
 
 function _summary_table(model::Chain, layer_names, layer_checks, activ_names, activ_checks)
     data = hcat(
@@ -137,11 +113,62 @@ function _summary_table(model::Chain, layer_names, layer_checks, activ_names, ac
         activ_names,
         collect(activ_checks),
     )
-
     return Table(
         data;
-        header=["", "Layer", "Layer supported", "Activation", "Act. supported"],
+        header=["", "Layer", "Layer supported", "Act.", "Act. supported"],
         box=:ROUNDED,
-        header_justify=[:right, :left, :right, :center, :right],
+        header_justify=[:right, :left, :left, :left, :left],
+    )
+end
+
+# adapted from Term.jl's parse_md for Markdown.Code content
+function code_panel(code, width)
+    syntax = highlight_syntax(code)
+    return Panel(
+        syntax;
+        width=width,
+        style="white dim on_#262626",
+        box=:SQUARE,
+        subtitle="julia",
+        background="on_#262626",
+        subtitle_justify=:right,
+    )
+end
+
+function _panel_custom_layer_help(width)
+    w_in = width - TERM_DW
+    return Panel(
+        RenderableText("If you implemented custom layers, register them via"; width=w_in),
+        code_panel(
+            """
+            LRP_CONFIG.supports_layer(::MyLayer) = true         # for structs
+            LRP_CONFIG.supports_layer(::typeof(mylayer)) = true # for functions""",
+            w_in,
+        ),
+        RenderableText(
+            "The default fallback for this layer will use Automatic Differentiation according to $(REF_MONTAVON_OVERVIEW).";
+            width=w_in,
+        );
+        title="Using custom layers",
+        style="green",
+        width=width,
+    )
+end
+function _panel_custom_activ_help(width)
+    w_in = width - TERM_DW
+    return Panel(
+        RenderableText(
+            "If you use custom ReLU-like activation functions, register them via";
+            width=w_in,
+        ),
+        code_panel(
+            """
+            LRP_CONFIG.supports_activation(::typeof(myfunction)) = true # for functions
+            LRP_CONFIG.supports_activation(::MyActivation) = true       # for structs""",
+            w_in,
+        );
+        title="Using custom activation functions",
+        style="green",
+        width=width,
     )
 end
