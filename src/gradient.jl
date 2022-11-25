@@ -59,7 +59,7 @@ This is done by averaging sensitivity maps of a `Gradient` analyzer over random 
 in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
 
 # References
-[1] Smilkov et al., SmoothGrad: removing noise by adding noise
+- $REF_SMILKOV_SMOOTHGRAD
 """
 SmoothGrad(model, n=50, args...) = NoiseAugmentation(Gradient(model), n, args...)
 
@@ -70,6 +70,6 @@ SmoothGrad(model, n=50, args...) = NoiseAugmentation(Gradient(model), n, args...
 Analyze model by using the Integrated Gradients method.
 
 # References
-[1] Sundararajan et al., Axiomatic Attribution for Deep Networks
+- $REF_SUNDARARAJAN_AXIOMATIC
 """
 IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)

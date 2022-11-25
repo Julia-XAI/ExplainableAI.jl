@@ -18,6 +18,7 @@ using Markdown
 using PrettyTables
 
 include("compat.jl")
+include("bibliography.jl")
 include("neuron_selection.jl")
 include("analyze_api.jl")
 include("flux_types.jl")
