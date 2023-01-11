@@ -1,6 +1,7 @@
 module ExplainableAI
 
 using Base.Iterators
+using MacroTools: @forward
 using LinearAlgebra
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG

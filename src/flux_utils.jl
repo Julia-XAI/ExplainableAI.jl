@@ -1,5 +1,59 @@
+# To support LRP on Flux Chains containing both `Chain` and `Parallel` layers,
+# we need flexible, distinguishable, general purpose "containers".
+# Two Tuple wrapper types are introduced: `ChainTuple` and `ParallelTuple`:
+struct ChainTuple{T<:Tuple}
+    vals::T
+end
+struct ParallelTuple{T<:Tuple}
+    vals::T
+end
+
+ChainTuple(xs...) = ChainTuple(xs)
+ParallelTuple(xs...) = ParallelTuple(xs)
+
+# Foward Base functions to wrapped Tuple `vals`:
+@forward ChainTuple.vals Base.getindex,
+Base.length, Base.first, Base.last, Base.iterate, Base.lastindex, Base.keys,
+Base.firstindex
+@forward ParallelTuple.vals Base.getindex,
+Base.length, Base.first, Base.last, Base.iterate, Base.lastindex, Base.keys,
+Base.firstindex
+
 """
-activation(layer)
+    collect_activations(model, input)
+
+Collect all hidden layer activations of a Flux model.
+The model can contain other `Chain` and `Parallel` layers.
+"""
+collect_activations(model, input) = (input, _collect_acts(model, input)...)
+
+# Split head and tail
+_head_tail(head, tail...) = head, tail
+_head_tail(head, tail) = head, tail
+_head_tail() = ()
+_head_tail(xs::Tuple) = _head_tail(xs...)
+_head_tail(xs::AbstractVector) = _head_tail(xs...)
+
+_collect_acts(layers, x) = _collect_acts(_head_tail(layers)..., x)
+_collect_acts(::Tuple{}, x) = ()
+
+function _collect_acts(head, tail, x)
+    ret, out = _collect_acts_head(head, x)
+    coll_tail = _collect_acts(tail, out)
+    isa(coll_tail, Tuple) && return (ret, coll_tail...) # don't splat Chain-/ParallelTuple
+    return (ret, coll_tail)
+end
+function _collect_acts_head(layer, x)
+    y = layer(x)
+    return y, y # ret, out
+end
+function _collect_acts_head(c::Chain, x)
+    t = ChainTuple(_collect_acts(c.layers, x)...)
+    return t, last(t) # ret, out
+end
+
+"""
+    activation(layer)
 
 Return activation function of the layer.
 In case the layer is unknown or no activation function is found, `nothing` is returned.
