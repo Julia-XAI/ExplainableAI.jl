@@ -9,6 +9,10 @@ using ReferenceTests
         @info "Running tests on utilities..."
         include("test_utils.jl")
     end
+    @testset "Flux utilities" begin
+        @info "Running tests on chainmap..."
+        include("test_chainmap.jl")
+    end
     @testset "Neuron selection" begin
         @info "Running tests on neuron selection..."
         include("test_neuron_selection.jl")

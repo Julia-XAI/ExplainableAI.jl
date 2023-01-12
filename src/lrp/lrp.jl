@@ -14,14 +14,14 @@ or by passing a composite, see [`Composite`](@ref) for an example.
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 """
-struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
+struct LRP{R<:ChainTuple} <: AbstractXAIMethod
     model::Chain
     rules::R
 
     # Construct LRP analyzer by assigning a rule to each layer
     function LRP(
         model::Chain,
-        rules::AbstractVector{<:AbstractLRPRule};
+        rules::ChainTuple;
         is_flat=false,
         skip_checks=false,
         verbose=true,
@@ -34,6 +34,8 @@ struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
         return new{typeof(rules)}(model, rules)
     end
 end
+# Rules can be passed as vectors and will be turned to ChainTuple
+LRP(model, rules::AbstractVector; kwargs...) = LRP(model, ChainTuple(rules...); kwargs...)
 
 # Construct vector of rules by applying composite
 function LRP(model::Chain, composite::Composite; is_flat=false, kwargs...)
@@ -42,7 +44,7 @@ function LRP(model::Chain, composite::Composite; is_flat=false, kwargs...)
     return LRP(model, rules; is_flat=true, kwargs...)
 end
 
-# Convenience constructor: use ZeroRule everywhere
+# Convenience constructor without rules: use ZeroRule everywhere
 LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 
 # The call to the LRP analyzer.
