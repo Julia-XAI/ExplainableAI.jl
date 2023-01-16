@@ -134,3 +134,49 @@ head_tail(h, t) = h, t
 head_tail() = ()
 head_tail(xs::Tuple) = head_tail(xs...)
 head_tail(xs::AbstractVector) = head_tail(xs...)
+head_tail(xs::Chain) = head_tail(xs...)
+
+"""
+    collect_activations(model, x)
+
+Accumulates all hidden-layer and ouput activations of a Flux model,
+returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
+
+## Keyword arguments
+- `collect_input`: Prepend the input `x` to the activations. Defaults to `true`.
+"""
+function collect_activations(model, x; collect_input=true)
+    acts = _acts(model, x)
+    collect_input && return x, acts
+    return acts
+end
+
+# Split layer-tuples and Chains into head and tail
+_acts(layers::Tuple, x) = _acts(head_tail(layers)..., x)
+_acts(c::Chain, x) = ChainTuple(_acts(c.layers, x))
+# Parallel layers apply the functions above to each "branch"
+_acts(p::Parallel, x) = ParallelTuple(nothing, [_acts(l, x) for l in p.layers]...)
+# Special case: empty input tuple at the end of the recursion
+_acts(::Tuple{}, x) = ()
+# If none of the previous dispatches applied, we assume the layer is callable
+_acts(layer, x) = layer(x)
+
+function _acts(head, tail, x)
+    aₕ = _acts(head, x)
+    out = _output_activation(head, aₕ)
+    aₜ = _acts(tail, out)
+
+    # Splat regular tuples but not Chain-/ParallelTuple and arrays
+    isa(aₜ, Tuple{}) && return aₕ
+    isa(aₜ, Tuple) && return (aₕ, aₜ...)
+    return (aₕ, aₜ)
+end
+
+_output_activation(layer, as) = __output_act(as)
+function _output_activation(p::Parallel, as::ParallelTuple)
+    outs = [_output_activation(l, a) for (l, a) in zip(p.layers, as.vals)]
+    return p.connection(outs...)
+end
+
+__output_act(a) = a
+__output_act(as::ChainTuple) = last(as)
