@@ -152,7 +152,7 @@ function collect_activations(model, x; collect_input=true)
 end
 
 # Split layer-tuples and Chains into head and tail
-_acts(layers::Tuple, x) = _acts(head_tail(layers)..., x)
+_acts(layers::Union{Tuple, AbstractVector}, x) = _acts(head_tail(layers)..., x)
 _acts(c::Chain, x) = ChainTuple(_acts(c.layers, x))
 # Parallel layers apply the functions above to each "branch"
 _acts(p::Parallel, x) = ParallelTuple(nothing, [_acts(l, x) for l in p.layers]...)
@@ -177,6 +177,5 @@ function _output_activation(p::Parallel, as::ParallelTuple)
     outs = [_output_activation(l, a) for (l, a) in zip(p.layers, as.vals)]
     return p.connection(outs...)
 end
-
 __output_act(a) = a
 __output_act(as::ChainTuple) = last(as)
