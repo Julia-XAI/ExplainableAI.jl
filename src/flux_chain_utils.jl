@@ -82,26 +82,26 @@ _show_tuple(io::IO, layer, indent::Int) = println(io, " "^indent, layer, ",")
 
 """
     chainmap(f, model)
-    chainmap(f, model, [f_parallel])
+    chainmap(f, f_parallel, model)
 
 `map` for Flux `Chains`. Applies the function `f` to all layers in a Flux model,
 returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
 
 ## Optional arguments
-A second function `f_parallel(p::Parallel)` can be passed, which takes a `Parallel` layer
-`p` as input and sets the `connection` field of the constructed `ParallelTuple`.
+A second function `f_parallel(p::Parallel) = connection` can be passed,
+which takes a `Parallel` layer `p` as input and sets the `connection` field
+of the constructed `ParallelTuple`.
 If no function is specified, `connection` will be set to `nothing`.
 """
-chainmap(f, layer) = chainmap(f, layer, _default_f_parallel)
-_default_f_parallel = Returns(nothing)
+chainmap(f, layer) = chainmap(f, Returns(nothing), layer)
 
-chainmap(f, layer, fp) = f(layer)
-chainmap(f, c::Chain, fp) = ChainTuple(chainmap.(f, c.layers, (fp,))...)
-chainmap(f, p::Parallel, fp) = ParallelTuple(fp(p), chainmap.(f, p.layers, (fp,))...)
+chainmap(f, fp, c::Chain) = ChainTuple(chainmap.(f, fp, c.layers)...)
+chainmap(f, fp, p::Parallel) = ParallelTuple(fp(p), chainmap.(f, fp, p.layers)...)
+chainmap(f, fp, layer) = f(layer)
 
 # chainmap can be re-applied on results:
-chainmap(f, c::ChainTuple, fp) = ChainTuple(chainmap.(f, c.vals, (fp,))...)
-chainmap(f, p::ParallelTuple, fp) = ChainTuple(chainmap.(f, p.vals, (fp,))...)
+chainmap(f, fp, c::ChainTuple) = ChainTuple(chainmap.(f, fp, c.vals)...)
+chainmap(f, fp, p::ParallelTuple) = ChainTuple(chainmap.(f, fp, p.vals)...)
 
 """
     heat_tail(xs)
@@ -152,7 +152,7 @@ function collect_activations(model, x; collect_input=true)
 end
 
 # Split layer-tuples and Chains into head and tail
-_acts(layers::Union{Tuple, AbstractVector}, x) = _acts(head_tail(layers)..., x)
+_acts(layers::Union{Tuple,AbstractVector}, x) = _acts(head_tail(layers)..., x)
 _acts(c::Chain, x) = ChainTuple(_acts(c.layers, x))
 # Parallel layers apply the functions above to each "branch"
 _acts(p::Parallel, x) = ParallelTuple(nothing, [_acts(l, x) for l in p.layers]...)
@@ -179,3 +179,52 @@ function _output_activation(p::Parallel, as::ParallelTuple)
 end
 __output_act(a) = a
 __output_act(as::ChainTuple) = last(as)
+
+"""
+    last_element(model)
+    last_element(chain_tuple)
+
+Returns last layer of a Flux `Chain` or `ChainTuple`.
+"""
+last_element(c::Union{Chain,ChainTuple}) = last_element(c[end])
+last_element(layer) = layer
+
+"""
+  check_output_softmax(model)
+
+Check whether model has softmax activation on output.
+Return the model if it doesn't, throw error otherwise.
+"""
+function check_output_softmax(model::Chain)
+    if has_output_softmax(model)
+        throw(ArgumentError("""Model contains softmax activation function on output.
+        Call `strip_softmax` on your model."""))
+    end
+    return model
+end
+
+has_output_softmax(model::Chain) = has_output_softmax(last_element(model))
+has_output_softmax(x) = is_softmax(x) || is_softmax(activation_fn(x))
+is_softmax(x) = x isa SoftmaxActivation
+
+"""
+    strip_softmax(model)
+    strip_softmax(layer)
+
+Remove softmax activation on layer or model if it exists.
+"""
+strip_softmax(l) = copy_layer(l, l.weight, l.bias; σ=identity)
+strip_softmax(::SoftmaxActivation) = identity
+
+function strip_softmax(model::Chain)
+    output_layer = last_element(model)
+    !has_output_softmax(output_layer) && return model
+
+    function _strip_softmax(layer)
+        layer != output_layer && return layer
+        return strip_softmax(layer)
+    end
+    _strip_softmax(c::Chain) = Chain(_strip_softmax.(c.layers)...)
+    _strip_softmax(p::Parallel) = p # p.connection can't be softmax
+    return _strip_softmax(model)
+end
