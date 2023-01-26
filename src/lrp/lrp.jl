@@ -19,14 +19,7 @@ struct LRP{R<:ChainTuple} <: AbstractXAIMethod
     rules::R
 
     # Construct LRP analyzer by assigning a rule to each layer
-    function LRP(
-        model::Chain,
-        rules::ChainTuple;
-        is_flat=false,
-        skip_checks=false,
-        verbose=true,
-    )
-        !is_flat && (model = flatten_model(model))
+    function LRP(model::Chain, rules::ChainTuple; skip_checks=false, verbose=true)
         if !skip_checks
             check_output_softmax(model)
             check_model(Val(:LRP), model; verbose=verbose)
@@ -38,8 +31,7 @@ end
 LRP(model, rules::AbstractVector; kwargs...) = LRP(model, ChainTuple(rules...); kwargs...)
 
 # Construct vector of rules by applying composite
-function LRP(model::Chain, composite::Composite; is_flat=false, kwargs...)
-    !is_flat && (model = flatten_model(model))
+function LRP(model::Chain, composite::Composite; kwargs...)
     rules = composite(model)
     return LRP(model, rules; is_flat=true, kwargs...)
 end

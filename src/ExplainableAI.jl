@@ -67,6 +67,6 @@ export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 export heatmap
 
 # utils
-export strip_softmax, flatten_model, check_model, flatten_chain, canonize
+export strip_softmax, check_model, canonize
 export preprocess_imagenet
 end # module

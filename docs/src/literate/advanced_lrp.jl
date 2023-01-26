@@ -40,13 +40,6 @@ analyzer = LRP(model, rules)
 #
 heatmap(input, analyzer)
 
-# Since some Flux Chains contain other Flux Chains, ExplainableAI provides
-# a utility function called [`flatten_model`](@ref).
-#
-#md # !!! warning "Flattening models"
-#md #     Not all models can be flattened, e.g. those using
-#md #     `Parallel` and `SkipConnection` layers.
-
 # ### Custom composites
 # Instead of manually defining a list of rules, we can also use a [`Composite`](@ref).
 # A composite contructs a list of LRP-rules by sequentially applying

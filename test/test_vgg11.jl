@@ -23,8 +23,8 @@ img = pseudorand(Float32, input_size)
 # We run the reference test on the randomly intialized weights
 # so we don't have to download ~550 MB on every CI run.
 include("./vgg11.jl")
-vgg11 = VGG11(; pretrain=false)
-model = flatten_model(strip_softmax(vgg11.layers))
+model = VGG11(; pretrain=false)
+model = strip_softmax(model.layers)
 
 function test_vgg11(name, method; kwargs...)
     @testset "$name" begin
