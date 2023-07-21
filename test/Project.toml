@@ -12,8 +12,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Distributions = "0.25"
-Flux = "0.13"
-ImageCore = "0.8, 0.9"
+Flux = "0.13, 0.14"
+ImageCore = "0.9, 0.10"
 JLD2 = "0.4"
 LoopVectorization = "0.12"
 ReferenceTests = "0.10.1"
