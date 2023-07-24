@@ -24,7 +24,7 @@ Returns fused model and `true` if layers were fused, unmodified model and `false
 function try_fusing(model, i)
     l1 = model[i]
     l2 = model[i + 1]
-    if l1 isa Union{Dense,Conv} && l2 isa BatchNorm && activation(l1) == identity
+    if l1 isa Union{Dense,Conv} && l2 isa BatchNorm && activation_fn(l1) == identity
         if i == length(model) - 1
             model = Chain(model[1:(i - 1)]..., fuse_batchnorm(l1, l2))
         end

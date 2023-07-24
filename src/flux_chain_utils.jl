@@ -82,26 +82,26 @@ _show_tuple(io::IO, layer, indent::Int) = println(io, " "^indent, layer, ",")
 
 """
     chainmap(f, model)
-    chainmap(f, f_parallel, model)
+    chainmap(f, g, model)
 
 `map` for Flux `Chains`. Applies the function `f` to all layers in a Flux model,
 returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
 
 ## Optional arguments
-A second function `f_parallel(p::Parallel) = connection` can be passed,
+A second function `g(p::Parallel) = connection` can be passed,
 which takes a `Parallel` layer `p` as input and sets the `connection` field
 of the constructed `ParallelTuple`.
 If no function is specified, `connection` will be set to `nothing`.
 """
 chainmap(f, layer) = chainmap(f, Returns(nothing), layer)
 
-chainmap(f, fp, c::Chain) = ChainTuple(chainmap.(f, fp, c.layers)...)
-chainmap(f, fp, p::Parallel) = ParallelTuple(fp(p), chainmap.(f, fp, p.layers)...)
-chainmap(f, fp, layer) = f(layer)
+chainmap(f, g, c::Chain) = ChainTuple(chainmap.(f, g, c.layers)...)
+chainmap(f, g, p::Parallel) = ParallelTuple(g(p), chainmap.(f, g, p.layers)...)
+chainmap(f, _g, layer) = f(layer)
 
 # chainmap can be re-applied on results:
-chainmap(f, fp, c::ChainTuple) = ChainTuple(chainmap.(f, fp, c.vals)...)
-chainmap(f, fp, p::ParallelTuple) = ChainTuple(chainmap.(f, fp, p.vals)...)
+chainmap(f, g, c::ChainTuple) = ChainTuple(chainmap.(f, g, c.vals)...)
+chainmap(f, g, p::ParallelTuple) = ChainTuple(chainmap.(f, g, p.vals)...)
 
 """
     heat_tail(xs)
