@@ -2,108 +2,83 @@
 # we need a flexible, general purpose container, e.g. Tuple.
 # We opt to use `ChainTuple` and `ParallelTuple` instead of `Chain` and `Parallel`
 # to avoid type piracy.
-"""
-    ChainTuple(xs)
+for S in (:ChainTuple, :ParallelTuple)
+    name = string(S)
 
-Thin wrapper around `Tuple` for use with Flux.jl models.
+    @eval begin
+        """
+            $($name)(xs)
 
-Together with [`ParallelTuple`](@ref), this can be used to store data `xs`
-while preserving the structure of a Flux model without risking type piracy.
+        Thin wrapper around `Tuple` for use with Flux.jl models.
 
-See also [`ParallelTuple`](@ref), [`chainmap`](@ref).
-"""
-struct ChainTuple{T<:Tuple}
-    vals::T
-end
-ChainTuple(xs...) = ChainTuple(xs)
+        Combining [`ChainTuple`](@ref) and [`ParallelTuple`](@ref),
+        data `xs` can be stored while preserving the structure of a Flux model
+        without risking type piracy.
+        """
+        struct ($S){T<:Tuple}
+            vals::T
+        end
+        ($S)(xs...) = ($S)(xs)
 
-@forward ChainTuple.vals Base.getindex,
-Base.length,
-Base.first,
-Base.last,
-Base.iterate,
-Base.lastindex,
-Base.keys,
-Base.firstindex,
-Base.:(==)
+        @forward $S.vals Base.getindex,
+        Base.length,
+        Base.first,
+        Base.last,
+        Base.iterate,
+        Base.lastindex,
+        Base.keys,
+        Base.firstindex,
+        Base.:(==)
 
-Base.:(==)(a::ChainTuple, b::ChainTuple) = a.vals == b.vals
+        # Containers are equivalent if fields are equivalent
+        Base.:(==)(a::$S, b::$S) = a.vals == b.vals
 
-"""
-    ParallelTuple(connection, xs)
+        # Print vals
+        Base.show(io::IO, m::MIME"text/plain", t::$S) = print_vals(io, t)
 
-Thin wrapper around `Tuple` for use with Flux.jl models.
-
-Together with [`ChainTuple`](@ref), this can be used to store data `xs`
-while preserving the structure of a Flux model without risking type piracy.
-
-See also [`ChainTuple`](@ref), [`chainmap`](@ref).
-"""
-struct ParallelTuple{C,T<:Tuple}
-    connection::C
-    vals::T
-end
-ParallelTuple(connection, xs...) = ParallelTuple(connection, xs)
-
-@forward ParallelTuple.vals Base.getindex,
-Base.length,
-Base.first,
-Base.last,
-Base.iterate,
-Base.lastindex,
-Base.keys,
-Base.firstindex,
-Base.:(==)
-
-function Base.:(==)(a::ParallelTuple, b::ParallelTuple)
-    return a.connection == b.connection && a.vals == b.vals
-end
-
-Base.show(io::IO, m::MIME"text/plain", t::ChainTuple) = _show_tuple(io, t, 0)
-Base.show(io::IO, m::MIME"text/plain", t::ParallelTuple) = _show_tuple(io, t, 0)
-
-function _show_tuple(io::IO, ct::ChainTuple, indent::Int)
-    println(io, " "^indent, "ChainTuple(")
-    for x in ct
-        _show_tuple(io, x, indent + 2)
+        function print_vals(io::IO, t::$S, indent::Int=0)
+            println(io, " "^indent, "$($name)(")
+            for x in t
+                print_vals(io, x, indent + 2)
+            end
+            println(io, " "^indent, ")", ifelse(indent != 0, ",", ""))
+        end
     end
-    println(io, " "^indent, ")", ifelse(indent != 0, ",", ""))
 end
-function _show_tuple(io::IO, pt::ParallelTuple, indent::Int)
-    println(io, " "^indent, "ParallelTuple(")
-    print(io, " "^(indent + 2), pt.connection, ", ")
-    printstyled(io, "# connection \n"; color=:light_black)
-    for x in pt
-        _show_tuple(io, x, indent + 2)
-    end
-    println(io, " "^indent, ")", ifelse(indent != 0, ",", ""))
-end
-_show_tuple(io::IO, layer, indent::Int) = println(io, " "^indent, layer, ",")
+print_vals(io::IO, x, indent::Int=0) = println(io, " "^indent, x, ",")
 
 """
     chainmap(f, model)
-    chainmap(f, g, model)
 
 `map` for Flux `Chains`. Applies the function `f` to all layers in a Flux model,
 returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
-
-## Optional arguments
-A second function `g(p::Parallel) = connection` can be passed,
-which takes a `Parallel` layer `p` as input and sets the `connection` field
-of the constructed `ParallelTuple`.
-If no function is specified, `connection` will be set to `nothing`.
 """
-chainmap(f, layer) = chainmap(f, Returns(nothing), layer)
+function chainmap(f, x)
+    if isleaf(x)
+        return f(x)
+    else
+        T = constructor(x)
+        vals = chainmap.(f, children(x))
+        return T(vals...)
+    end
+end
 
-chainmap(f, g, c::Chain) = ChainTuple(chainmap.(f, g, c.layers)...)
-chainmap(f, g, p::Parallel) = ParallelTuple(g(p), chainmap.(f, g, p.layers)...)
-chainmap(f, _g, layer) = f(layer)
+# Implementation is strongly inspired by StructWalk.jl's postwalk
+isleaf(c::Chain) = false
+isleaf(p::Parallel) = false
+isleaf(c::ChainTuple) = false
+isleaf(p::ParallelTuple) = false
+isleaf(x) = true
 
-# chainmap can be re-applied on results:
-chainmap(f, g, c::ChainTuple) = ChainTuple(chainmap.(f, g, c.vals)...)
-chainmap(f, g, p::ParallelTuple) = ChainTuple(chainmap.(f, g, p.vals)...)
+constructor(::Chain) = ChainTuple
+constructor(::ChainTuple) = ChainTuple
+constructor(::Parallel) = ParallelTuple
+constructor(::ParallelTuple) = ParallelTuple
 
-"""
+children(c::Chain) = c.layers
+children(p::Parallel) = p.layers
+children(c::ChainTuple) = c.vals
+children(p::ParallelTuple) = p.vals
     heat_tail(xs)
 
 Split input into head and tail.

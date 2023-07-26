@@ -44,20 +44,14 @@ h4p1 = d4(2 * h21 + h331) # output of Chain c6
 @test head_tail(c7) == (d1, (Parallel(+, d2, d2, Chain(d3, d3)), d4))
 
 # Test chainmap
-connection_is_plus(p::Parallel) = p.connection == +
-
 @test chainmap(activation_fn, c1) == ChainTuple(relu)
 @test chainmap(activation_fn, c2) == ChainTuple(relu, selu)
 @test chainmap(activation_fn, c3) == ChainTuple(ChainTuple(relu, relu), selu)
 @test chainmap(activation_fn, c4) == ChainTuple(relu, ChainTuple(selu, selu))
 @test chainmap(activation_fn, c5) == ChainTuple(relu, ChainTuple(selu, selu), gelu)
-@test chainmap(activation_fn, c6) == ChainTuple(ParallelTuple(nothing, relu, relu))
-@test chainmap(activation_fn, connection_is_plus, c6) ==
-    ChainTuple(ParallelTuple(true, relu, relu))
+@test chainmap(activation_fn, c6) == ChainTuple(ParallelTuple(relu, relu))
 @test chainmap(activation_fn, c7) ==
-    ChainTuple(relu, ParallelTuple(nothing, selu, selu, ChainTuple(gelu, gelu)), celu)
-@test chainmap(activation_fn, connection_is_plus, c7) ==
-    ChainTuple(relu, ParallelTuple(true, selu, selu, ChainTuple(gelu, gelu)), celu)
+    ChainTuple(relu, ParallelTuple(selu, selu, ChainTuple(gelu, gelu)), celu)
 
 # Test collect_activations
 coll(model) = collect_activations(model, x; collect_input=false)
@@ -66,6 +60,5 @@ coll(model) = collect_activations(model, x; collect_input=false)
 @test coll(c3) == ChainTuple(ChainTuple(h1, h11), h211)
 @test coll(c4) == ChainTuple(h1, ChainTuple(h21, h221))
 @test coll(c5) == ChainTuple(h1, ChainTuple(h21, h221), h3221)
-@test coll(c6) == ChainTuple(ParallelTuple(nothing, h1, h1))
-@test coll(c7) ==
-    ChainTuple(h1, ParallelTuple(nothing, h21, h21, ChainTuple(h31, h331)), h4p1)
+@test coll(c6) == ChainTuple(ParallelTuple(h1, h1))
+@test coll(c7) == ChainTuple(h1, ParallelTuple(h21, h21, ChainTuple(h31, h331)), h4p1)
