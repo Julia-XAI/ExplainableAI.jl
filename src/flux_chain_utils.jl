@@ -1,8 +1,14 @@
-# To support `map` on Flux Chains containing both `Chain` and `Parallel` layers,
-# we need a flexible, general purpose container, e.g. Tuple.
-# We opt to use `ChainTuple` and `ParallelTuple` instead of `Chain` and `Parallel`
+#============================#
+# ChainTuple & ParallelTuple #
+#============================#
+
+# To support map and zip on Flux Chains containing both `Chain` and `Parallel` layers,
+# we need a flexible, general purpose container, e.g. a Tuple.
+# We opt to introduce `ChainTuple` and `ParallelTuple` instead of `Chain` and `Parallel`
 # to avoid type piracy.
+
 for S in (:ChainTuple, :ParallelTuple)
+
     name = string(S)
 
     @eval begin
@@ -47,23 +53,13 @@ for S in (:ChainTuple, :ParallelTuple)
 end
 print_vals(io::IO, x, indent::Int=0) = println(io, " "^indent, x, ",")
 
-"""
-    chainmap(f, model)
+#=====================#
+# chainmap & chainzip #
+#=====================#
 
-`map` for Flux `Chains`. Applies the function `f` to all layers in a Flux model,
-returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
-"""
-function chainmap(f, x)
-    if isleaf(x)
-        return f(x)
-    else
-        T = constructor(x)
-        vals = chainmap.(f, children(x))
-        return T(vals...)
-    end
-end
+# The following implementation of map and zip on Chains and Parallel layers
+# are strongly inspired by StructWalk.jl's postwalk function.
 
-# Implementation is strongly inspired by StructWalk.jl's postwalk
 isleaf(c::Chain) = false
 isleaf(p::Parallel) = false
 isleaf(c::ChainTuple) = false
@@ -79,82 +75,54 @@ children(c::Chain) = c.layers
 children(p::Parallel) = p.layers
 children(c::ChainTuple) = c.vals
 children(p::ParallelTuple) = p.vals
-    heat_tail(xs)
-
-Split input into head and tail.
-
-## Examples
-```julia-repl
-julia> head_tail(1, 2, 3, 4)
-(1, (2, 3, 4))
-
-julia> head_tail((1, 2, 3, 4))
-(1, (2, 3, 4))
-
-julia> head_tail([1, 2, 3, 4])
-(1, (2, 3, 4))
-
-julia> head_tail(1, (2, 3), 4)
-(1, ((2, 3), 4))
-
-julia> head_tail(1)
-(1, ())
-
-julia> head_tail()
-()
-```
-"""
-head_tail(h, t...) = h, t
-head_tail(h, t) = h, t
-head_tail() = ()
-head_tail(xs::Tuple) = head_tail(xs...)
-head_tail(xs::AbstractVector) = head_tail(xs...)
-head_tail(xs::Chain) = head_tail(xs...)
 
 """
-    collect_activations(model, x)
+    chainmap(f, x)
 
-Accumulates all hidden-layer and ouput activations of a Flux model,
-returning a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
+`map` for Flux models. Applies the function `f` to nested structures of `Chain`s
+and `Parallel` layers.
+Returns a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
 
-## Keyword arguments
-- `collect_input`: Prepend the input `x` to the activations. Defaults to `true`.
+Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.
+
+See also [`chainzip`](@ref).
 """
-function collect_activations(model, x; collect_input=true)
-    acts = _acts(model, x)
-    collect_input && return x, acts
-    return acts
+function chainmap(f, x)
+    if isleaf(x)
+        return f(x)
+    else
+        T = constructor(x)
+        vals = chainmap.(f, children(x))
+        return T(vals...)
+    end
 end
 
-# Split layer-tuples and Chains into head and tail
-_acts(layers::Union{Tuple,AbstractVector}, x) = _acts(head_tail(layers)..., x)
-_acts(c::Chain, x) = ChainTuple(_acts(c.layers, x))
-# Parallel layers apply the functions above to each "branch"
-_acts(p::Parallel, x) = ParallelTuple(nothing, [_acts(l, x) for l in p.layers]...)
-# Special case: empty input tuple at the end of the recursion
-_acts(::Tuple{}, x) = ()
-# If none of the previous dispatches applied, we assume the layer is callable
-_acts(layer, x) = layer(x)
+"""
+    chainzip(f, a, b)
 
-function _acts(head, tail, x)
-    aₕ = _acts(head, x)
-    out = _output_activation(head, aₕ)
-    aₜ = _acts(tail, out)
+`zip` for Flux models. Applies the function `f` to nested structures of `Chain`s
+and `Parallel` layers. Assumes that `a` and `b` have the same structure.
+Returns a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
 
-    # Splat regular tuples but not Chain-/ParallelTuple and arrays
-    isa(aₜ, Tuple{}) && return aₕ
-    isa(aₜ, Tuple) && return (aₕ, aₜ...)
-    return (aₕ, aₜ)
+Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.
+
+See also [`chainmap`](@ref).
+"""
+function chainzip(f, a, b)
+    if isleaf(a) && isleaf(b)
+        return f(a, b)
+    else
+        T = constructor(a)
+        # Assume that a and b are zippable if constructors match:
+        T != constructor(b) && error("Cannot chainzip $a and $b.")
+        vals = chainzip.(f, children(a), children(b))
+        return T(vals...)
+    end
 end
 
-_output_activation(layer, as) = __output_act(as)
-function _output_activation(p::Parallel, as::ParallelTuple)
-    outs = [_output_activation(l, a) for (l, a) in zip(p.layers, as.vals)]
-    return p.connection(outs...)
-end
-__output_act(a) = a
-__output_act(as::ChainTuple) = last(as)
-
+#====================#
+# Strip output layer #
+#====================#
 """
     last_element(model)
     last_element(chain_tuple)
