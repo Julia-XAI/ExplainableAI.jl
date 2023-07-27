@@ -25,6 +25,18 @@ abstract type AbstractCompositePrimitive end
 abstract type AbstractRulePrimitive <: AbstractCompositePrimitive end
 
 """
+    GlobalRule(rule)
+
+Composite primitive that applies LRP-rule `rule` to all layers in the model.
+
+See [`Composite`](@ref) for an example.
+"""
+struct GlobalRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
+    rule::R
+end
+(r::GlobalRule)(_model) = _l -> r.rule
+
+"""
     LayerRule(n, rule)
 
 Composite primitive that applies LRP-rule `rule` to the `n`-th layer in the model.
@@ -35,19 +47,10 @@ struct LayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     n::Int
     rule::R
 end
-(r::LayerRule)(rules, _layers) = (rules[r.n] = r.rule)
-
-"""
-    GlobalRule(rule)
-
-Composite primitive that applies LRP-rule `rule` to all layers in the model.
-
-See [`Composite`](@ref) for an example.
-"""
-struct GlobalRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
-    rule::R
+function (r::LayerRule)(_model)
+    ids = id_list(model[r.n])
+    return l -> objectid(l) in ids ? r.rule : nothing
 end
-(r::GlobalRule)(rules, _layers) = fill!(rules, r.rule)
 
 """
     RangeRule(range, rule)
@@ -61,10 +64,9 @@ struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
     range::T
     rule::R
 end
-function (r::RangeRule)(rules, _layers)
-    for i in r.range
-        rules[i] = r.rule
-    end
+function (r::RangeRule)(model)
+    ids = id_list(model[range])
+    return l -> objectid(l) in ids ? r.rule : nothing
 end
 
 """
@@ -77,7 +79,7 @@ See [`Composite`](@ref) for an example.
 struct FirstLayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
-(r::FirstLayerRule)(rules, _layers) = (rules[1] = r.rule)
+(r::FirstLayerRule)(m) = l -> objectid(l) == objectid(first_element(m)) ? r.rule : nothing
 
 """
     LastLayerRule(rule)
@@ -89,13 +91,22 @@ See [`Composite`](@ref) for an example.
 struct LastLayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
-(r::LastLayerRule)(rules, _layers) = (rules[end] = r.rule)
+(r::LastLayerRule)(m) = l -> objectid(l) == objectid(last_element(m)) ? r.rule : nothing
 
 ######################
 # TypeRule primitives #
 ######################
 abstract type AbstractTypeRulePrimitive <: AbstractCompositePrimitive end
 const TypeRulePair = Pair{<:Type,<:AbstractLRPRule}
+
+function get_type_rule(layer, map)
+    for (T, rule) in map
+        if layer isa T
+            return rule
+        end
+    end
+    return nothing
+end
 
 """
     GlobalTypeRule(map)
@@ -108,9 +119,7 @@ See [`Composite`](@ref) for an example.
 struct GlobalTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
     map::T
 end
-function (r::GlobalTypeRule)(rules, layers)
-    return _range_rule_map!(rules, layers, r.map, 1:length(layers))
-end
+(r::GlobalTypeRule)(_model) = l -> get_type_rule(l, r.map)
 
 """
     RangeTypeRule(range, map)
@@ -125,7 +134,10 @@ struct RangeTypeRule{R<:AbstractRange,T<:AbstractVector{<:TypeRulePair}} <:
     range::R
     map::T
 end
-(r::RangeTypeRule)(rules, layers) = _range_rule_map!(rules, layers, r.map, r.range)
+function (r::RangeTypeRule)(model)
+    ids = id_list(model[range])
+    return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
+end
 
 """
     FirstNTypeRule(n, map)
@@ -139,8 +151,10 @@ struct FirstNTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrim
     n::Int
     map::T
 end
-(r::FirstNTypeRule)(rules, layers) = _range_rule_map!(rules, layers, r.map, 1:(r.n))
-
+function (r::FirstNTypeRule)(model)
+    ids = id_list(model[1:r.n])
+    return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
+end
 """
     LastNTypeRule(n, map)
 
@@ -153,9 +167,9 @@ struct LastNTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimi
     n::Int
     map::T
 end
-function (r::LastNTypeRule)(rules, layers)
-    l = length(layers)
-    return _range_rule_map!(rules, layers, r.map, (l - r.n):l)
+function (r::LastNTypeRule)(model)
+    ids = id_list(model[end-r.n:end])
+    return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
 end
 
 """
@@ -169,8 +183,9 @@ See [`Composite`](@ref) for an example.
 struct FirstLayerTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
     map::T
 end
-(r::FirstLayerTypeRule)(rules, layers) = _layer_rule_map!(rules, first(layers), r.map, 1)
-
+function (r::FirstLayerTypeRule)(m)
+    return l -> objectid(l) == objectid(first_element(m)) ? get_type_rule(l, r.map) : nothing
+end
 """
     LastLayerTypeRule(map)
 
@@ -182,8 +197,8 @@ See [`Composite`](@ref) for an example.
 struct LastLayerTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
     map::T
 end
-function (r::LastLayerTypeRule)(rules, layers)
-    return _layer_rule_map!(rules, last(layers), r.map, length(layers))
+function (r::LastLayerTypeRule)(m)
+    return l -> objectid(l) == objectid(last_element(m)) ? get_type_rule(l, r.map) : nothing
 end
 # Convenience constructors
 GlobalTypeRule(ps::Vararg{TypeRulePair})     = GlobalTypeRule([ps...])
@@ -192,20 +207,6 @@ FirstLayerTypeRule(ps::Vararg{TypeRulePair}) = FirstLayerTypeRule([ps...])
 LastLayerTypeRule(ps::Vararg{TypeRulePair})  = LastLayerTypeRule([ps...])
 FirstNTypeRule(n, ps::Vararg{TypeRulePair})  = FirstNTypeRule(n, [ps...])
 LastNTypeRule(n, ps::Vararg{TypeRulePair})   = LastNTypeRule(n, [ps...])
-
-function _layer_rule_map!(rules, layer, map, index)
-    for (Type, rule) in map
-        if isa(layer, Type)
-            rules[index] = rule
-        end
-    end
-end
-function _range_rule_map!(rules, layers, map, range)
-    for (i, l) in enumerate(layers)
-        i in range || continue
-        _layer_rule_map!(rules, l, map, i)
-    end
-end
 
 """
     Composite([default_rule=LRPZero()], primitives...)

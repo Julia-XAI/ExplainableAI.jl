@@ -120,6 +120,29 @@ function chainzip(f, a, b)
     end
 end
 
+"""
+    id_list(model)
+
+Return list of `objectid`s of all layers in the model.
+"""
+function id_list(model::Chain)
+    ids = chainmap(objectid, model)
+    idlist = UInt64[]
+    push_id!(idlist, ids)
+    return idlist
+end
+
+function push_id!(idlist, x)
+    if isleaf(x)
+        push!(idlist, x)
+    else
+        for y in children(x)
+            push_id!(idlist, y)
+        end
+    end
+end
+
+
 #===============#
 # Flatten model #
 #===============#
@@ -140,6 +163,14 @@ end
 #=========================#
 # Strip output activation #
 #=========================#
+"""
+    first_element(model)
+
+Returns last layer of a Flux `Chain` or `ChainTuple`.
+"""
+first_element(c::Union{Chain,ChainTuple}) = first_element(c[1])
+first_element(layer) = layer
+
 """
     last_element(model)
 
