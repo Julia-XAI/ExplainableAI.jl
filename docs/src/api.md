@@ -91,6 +91,7 @@ EpsilonAlpha2Beta1Flat
 # Utilities
 ```@docs
 strip_softmax
+flatten_model
 canonize
 ```
 

@@ -120,12 +120,28 @@ function chainzip(f, a, b)
     end
 end
 
-#====================#
-# Strip output layer #
-#====================#
+#===============#
+# Flatten model #
+#===============#
+"""
+     flatten_model(c)
+
+ Flatten a Flux chain containing Flux chains.
+ """
+ flatten_model(c::Chain) = Chain(mapreduce(_flatten_model, vcat, c.layers)...)
+ _flatten_model(c::Chain) =  mapreduce(_flatten_model, vcat, c.layers)
+
+ flatten_model(x) = x
+ _flatten_model(x) = x
+
+ flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
+ _flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
+
+#=========================#
+# Strip output activation #
+#=========================#
 """
     last_element(model)
-    last_element(chain_tuple)
 
 Returns last layer of a Flux `Chain` or `ChainTuple`.
 """
