@@ -8,7 +8,6 @@
 # to avoid type piracy.
 
 for S in (:ChainTuple, :ParallelTuple)
-
     name = string(S)
 
     @eval begin
@@ -142,7 +141,6 @@ function push_id!(idlist, x)
     end
 end
 
-
 #===============#
 # Flatten model #
 #===============#
@@ -151,14 +149,14 @@ end
 
  Flatten a Flux chain containing Flux chains.
  """
- flatten_model(c::Chain) = Chain(mapreduce(_flatten_model, vcat, c.layers)...)
- _flatten_model(c::Chain) =  mapreduce(_flatten_model, vcat, c.layers)
+flatten_model(c::Chain) = Chain(mapreduce(_flatten_model, vcat, c.layers)...)
+_flatten_model(c::Chain) = mapreduce(_flatten_model, vcat, c.layers)
 
- flatten_model(x) = x
- _flatten_model(x) = x
+flatten_model(x) = x
+_flatten_model(x) = x
 
- flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
- _flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
+flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
+_flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
 
 #=========================#
 # Strip output activation #

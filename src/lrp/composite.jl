@@ -7,10 +7,20 @@ Composite(prims...) = Composite(prims)
 
 const COMPOSITE_DEFAULT_RULE = ZeroRule()
 function (c::Composite)(model)
-    rules = Vector{AbstractLRPRule}(repeat([COMPOSITE_DEFAULT_RULE], length(model.layers)))
-    for p in c.primitives
-        p(rules, model.layers) # in-place modifies rules
+    # Build lambda-functions from each primitive
+    fs = [p(model) for p in c.primitives]
+
+    # The last rule returned from the composite is used:
+    function match_rule(layer)
+        for f in reverse(fs)
+            rule = f(layer)
+            !isnothing(rule) && return rule
+        end
+        return COMPOSITE_DEFAULT_RULE # else if no rule was found, return default rule
     end
+
+    # Contruct a ChainTuple of rules by mapping `match_rule` over model
+    rules = chainmap(match_rule, model)
     return rules
 end
 
@@ -152,7 +162,7 @@ struct FirstNTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrim
     map::T
 end
 function (r::FirstNTypeRule)(model)
-    ids = id_list(model[1:r.n])
+    ids = id_list(model[1:(r.n)])
     return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
 end
 """
@@ -168,7 +178,7 @@ struct LastNTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimi
     map::T
 end
 function (r::LastNTypeRule)(model)
-    ids = id_list(model[end-r.n:end])
+    ids = id_list(model[(end - r.n):end])
     return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
 end
 
@@ -184,7 +194,8 @@ struct FirstLayerTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRule
     map::T
 end
 function (r::FirstLayerTypeRule)(m)
-    return l -> objectid(l) == objectid(first_element(m)) ? get_type_rule(l, r.map) : nothing
+    return l ->
+        objectid(l) == objectid(first_element(m)) ? get_type_rule(l, r.map) : nothing
 end
 """
     LastLayerTypeRule(map)
