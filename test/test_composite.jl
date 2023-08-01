@@ -6,7 +6,7 @@ using Flux
 # so we don't have to download ~550 MB on every CI run.
 include("./vgg11.jl")
 model = VGG11(; pretrain=false)
-model = strip_softmax(model.layers)
+model = strip_softmax(flatten_model(model.layers))
 
 # Test default composites
 const DEFAULT_COMPOSITES = Dict(

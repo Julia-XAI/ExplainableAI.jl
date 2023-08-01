@@ -121,10 +121,11 @@ end
 
 """
     id_list(model)
+    id_list(layer)
 
 Return list of `objectid`s of all layers in the model.
 """
-function id_list(model::Chain)
+function id_list(model)
     ids = chainmap(objectid, model)
     idlist = UInt64[]
     push_id!(idlist, ids)

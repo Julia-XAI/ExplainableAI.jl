@@ -57,7 +57,7 @@ struct LayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
     n::Int
     rule::R
 end
-function (r::LayerRule)(_model)
+function (r::LayerRule)(model)
     ids = id_list(model[r.n])
     return l -> objectid(l) in ids ? r.rule : nothing
 end
@@ -75,7 +75,7 @@ struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
     rule::R
 end
 function (r::RangeRule)(model)
-    ids = id_list(model[range])
+    ids = id_list(model[r.range])
     return l -> objectid(l) in ids ? r.rule : nothing
 end
 
@@ -129,8 +129,9 @@ See [`Composite`](@ref) for an example.
 struct GlobalTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
     map::T
 end
-(r::GlobalTypeRule)(_model) = l -> get_type_rule(l, r.map)
-
+function (r::GlobalTypeRule)(_model)
+    return l -> get_type_rule(l, r.map)
+end
 """
     RangeTypeRule(range, map)
 
@@ -145,7 +146,7 @@ struct RangeTypeRule{R<:AbstractRange,T<:AbstractVector{<:TypeRulePair}} <:
     map::T
 end
 function (r::RangeTypeRule)(model)
-    ids = id_list(model[range])
+    ids = id_list(model[r.range])
     return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing
 end
 
