@@ -121,6 +121,44 @@ function chainzip(f, xs...)
 end
 
 """
+    chainkeys(model)
+
+Sequentially enumerate all layers in a Flux model.
+Nested `Chain` and `Parallel` layers will result in tuples of indices.
+
+# Example:
+```julia-repl
+julia> d = Dense(2, 2);
+
+julia> model = Chain(d, Parallel(+, d, d, Chain(d, d)), d);
+
+julia> chainkeys(model)
+ChainTuple(
+  (1,),
+  ParallelTuple(
+    (2, 1),
+    (2, 2),
+    ChainTuple(
+      (2, 3, 1),
+      (2, 3, 2),
+    ),
+  ),
+  (3,),
+)
+```
+"""
+chainkeys(model) = chainkeys(model, tuple())
+function chainkeys(x, key)
+    if isleaf(x)
+        return key
+    else
+        T = constructor(x)
+        keys = map(i -> (key..., i), 1:length(children(x)))
+        return T(chainkeys.(children(x), keys)...)
+    end
+end
+
+"""
     id_list(model)
     id_list(layer)
 
