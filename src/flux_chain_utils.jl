@@ -107,14 +107,15 @@ Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.
 
 See also [`chainmap`](@ref).
 """
-function chainzip(f, a, b)
-    if isleaf(a) && isleaf(b)
-        return f(a, b)
+function chainzip(f, xs...)
+    if all(isleaf, xs)
+        return f(xs...)
     else
-        T = constructor(a)
-        # Assume that a and b are zippable if constructors match:
-        T != constructor(b) && error("Cannot chainzip $a and $b.")
-        vals = chainzip.(f, children(a), children(b))
+        constructors = constructor.(xs)
+        T = first(constructors)
+        # Assume that arguments xs are zippable if constructors match:
+        all(c -> c == T, constructors) || error("Cannot chainzip arguments $xs.")
+        vals = chainzip.(f, children.(xs)...)
         return T(vals...)
     end
 end
