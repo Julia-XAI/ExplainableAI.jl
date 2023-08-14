@@ -5,8 +5,17 @@ end
 Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims...))
 Composite(prims...) = Composite(prims)
 
+(c::Composite)(model) = lrp_rules(model, c)
+
 const COMPOSITE_DEFAULT_RULE = ZeroRule()
-function (c::Composite)(model)
+
+# TODO: document new lrp_rules function, add to Changelog
+"""
+    lrp_rules(model, composite)
+
+Apply a composite to obtain LRP-rules for a given Flux model.
+"""
+function lrp_rules(model, c::Composite)
     # Build lambda-functions from each primitive
     fs = [p(model) for p in c.primitives]
 
