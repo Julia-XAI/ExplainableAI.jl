@@ -43,6 +43,10 @@ abstract type AbstractCompositePrimitive end
 ###################
 abstract type AbstractRulePrimitive <: AbstractCompositePrimitive end
 
+# TODO: rename primitives to avoid confusion with LRP rules
+# TODO: add LambdaRule
+# TODO: add LambdaTypeRule
+
 """
     GlobalRule(rule)
 
@@ -154,6 +158,9 @@ struct RangeTypeRule{R<:AbstractRange,T<:AbstractVector{<:TypeRulePair}} <:
     range::R
     map::T
 end
+# TODO fix problem: objectids are not unique across layers.
+# E.g. MaxPool layers of equal size have the same objectid.
+# TODO: map of index to layer?
 function (r::RangeTypeRule)(model)
     ids = id_list(model[r.range])
     return l -> objectid(l) in ids ? get_type_rule(l, r.map) : nothing

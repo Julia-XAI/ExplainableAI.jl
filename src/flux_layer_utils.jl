@@ -11,7 +11,7 @@ activation_fn(l::CrossCor)      = l.σ
 activation_fn(l::ConvTranspose) = l.σ
 activation_fn(l::BatchNorm)     = l.λ
 
-function has_activation_fn(layer)
+function has_activation_fn(layer) # TODO: remove in favor of activation_fn
     hasproperty(layer, :σ) && return true
     hasproperty(layer, :λ) && return true
     return !isnothing(activation_fn(layer))

@@ -71,5 +71,6 @@ struct Explanation{A,O,I,L}
     output::O
     neuron_selection::I
     analyzer::Symbol
+    # TODO: turn into field extras of type Union{Nothing, Dict}
     layerwise_relevances::L
 end

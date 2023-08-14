@@ -27,19 +27,16 @@ struct LRP{R<:ChainTuple} <: AbstractXAIMethod
         return new{typeof(rules)}(model, rules)
     end
 end
-# Rules can be passed as vectors and will be turned to ChainTuple
+# Rules can be passed as vector and will be turned to ChainTuple
 LRP(model, rules::AbstractVector; kwargs...) = LRP(model, ChainTuple(rules...); kwargs...)
-
-# Construct vector of rules by applying composite
-function LRP(model::Chain, composite::Composite; kwargs...)
-    rules = composite(model)
-    return LRP(model, rules; is_flat=true, kwargs...)
-end
 
 # Convenience constructor without rules: use ZeroRule everywhere
 LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 
-# The call to the LRP analyzer.
+# Construct Chain-/ParallelTuple of rules by applying composite
+LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
+
+# Call to the LRP analyzer
 function (lrp::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
