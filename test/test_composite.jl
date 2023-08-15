@@ -62,7 +62,7 @@ analyzer1 = LRP(model_flat, composite1)
 )
 @test_reference "references/show/lrp1.txt" repr("text/plain", analyzer1)
 
-model = Chain(
+model2 = Chain(
     Conv((5, 5), 1 => 6, relu),
     MaxPool((2, 2)),
     Conv((5, 5), 6 => 16, relu),
@@ -80,7 +80,7 @@ composite2 = Composite(
 )
 @test_reference "references/show/composite2.txt" repr("text/plain", composite2)
 
-analyzer2 = LRP(model, composite2)
+analyzer2 = LRP(model2, composite2)
 @test analyzer2.rules == ChainTuple(
     AlphaBetaRule(2.0f0, 1.0f0),
     ZeroRule(),
@@ -105,7 +105,6 @@ composite3 = Composite(
 )
 
 analyzer3 = LRP(model, composite3)
-@show analyzer3.rules
 @test analyzer3.rules == ChainTuple(
     ChainTuple(
         FlatRule(),
