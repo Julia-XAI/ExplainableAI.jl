@@ -10,12 +10,11 @@ typename(x) = string(nameof(typeof(x)))
 #==============#
 
 layer_name(io::IO, l) = string(sprint(show, l; context=io))
-function get_print_rule_padding(names::ChainTuple)
+function get_print_rule_padding(names::Union{ChainTuple, ParallelTuple})
     children = filter(isleaf, names.vals)
     isempty(children) && return 0
     return maximum(length.(children))
 end
-
 function Base.show(io::IO, m::MIME"text/plain", lrp::LRP)
     layer_names = chainmap(Base.Fix1(layer_name, io), lrp.model)
     npad = get_print_rule_padding(layer_names)

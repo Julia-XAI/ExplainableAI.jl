@@ -26,7 +26,9 @@ const SoftmaxActivation = Union{typeof(softmax),typeof(softmax!)}
 
 # Layers & activation functions supported by LRP
 """Union type for layers that are allowed by default in "deep rectifier networks"."""
-const LRPSupportedLayer = Union{Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer}
+const LRPSupportedLayer = Union{
+    Chain,Parallel,Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer
+}
 
 """Union type for activation functions that are allowed by default in "deep rectifier networks"."""
 const LRPSupportedActivation = Union{typeof(identity),ReluLikeActivation}

@@ -1,6 +1,9 @@
 module LRP_CONFIG
 using ExplainableAI
 using ExplainableAI: LRPSupportedLayer, LRPSupportedActivation
+
+# TODO: refactor
+
 """
     LRP_CONFIG.supports_layer(layer)
 
