@@ -15,7 +15,7 @@ LRP(
   Flux.flatten                           => PassRule(),
   Dense(25088 => 4096, relu)             => EpsilonRule{Float32}(1.0f-6),
   Dropout(0.5)                           => PassRule(),
-  Dense(4096 => 4096, relu)              => EpsilonRule{Float32}(1.0f-7),
+  Dense(4096 => 4096, relu)              => EpsilonRule{Float32}(1.0f-6),
   Dropout(0.5)                           => ZeroRule(),
   Dense(4096 => 1000)                    => PassRule(),
 )

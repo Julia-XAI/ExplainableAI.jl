@@ -1,4 +1,4 @@
-using ExplainableAI: ChainTuple, ParallelTuple, chainmap
+using ExplainableAI: ChainTuple, ParallelTuple, chainmap, chainkeys
 using ExplainableAI: activation_fn
 using Flux
 

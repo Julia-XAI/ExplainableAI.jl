@@ -34,6 +34,7 @@ for S in (:ChainTuple, :ParallelTuple)
         Base.keys,
         Base.firstindex,
         Base.:(==)
+        Base.similar
 
         # Containers are equivalent if fields are equivalent
         Base.:(==)(a::$S, b::$S) = a.vals == b.vals
@@ -42,13 +43,13 @@ for S in (:ChainTuple, :ParallelTuple)
         Base.show(io::IO, m::MIME"text/plain", t::$S) = print_vals(io, t)
 
         function print_vals(io::IO, t::$S, indent::Int=0)
-            println(io, " "^indent, "$($name)(")
+            println(io, " "^indent, $name, "(")
             for x in t
                 print_vals(io, x, indent + 2)
             end
             println(io, " "^indent, ")", ifelse(indent != 0, ",", ""))
         end
-    end
+    end # eval
 end
 print_vals(io::IO, x, indent::Int=0) = println(io, " "^indent, x, ",")
 
@@ -97,10 +98,11 @@ function chainmap(f, x)
 end
 
 """
-    chainzip(f, a, b)
+    chainzip(f, x, y)
+    chainzip(f, xs...)
 
 `zip` for Flux models. Applies the function `f` to nested structures of `Chain`s
-and `Parallel` layers. Assumes that `a` and `b` have the same structure.
+and `Parallel` layers. Assumes that arguments have the same structure.
 Returns a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
 
 Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.

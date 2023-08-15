@@ -78,7 +78,6 @@ heatmap(input, analyzer)
 # * [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
 # * [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
 # * [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
-# * [`LastNTypeRule`](@ref) for a `TypeRule` on the last `n` layers
 #
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.
