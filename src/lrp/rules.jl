@@ -9,13 +9,18 @@ const LRP_DEFAULT_ALPHA = 2.0f0
 const LRP_DEFAULT_BETA = 1.0f0
 
 # Generic LRP rule. Used by all rules without custom implementations.
-function lrp!(Rₖ, rule::AbstractLRPRule, modified_layer, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::AbstractLRPRule, layer, modified_layer, aₖ, Rₖ₊₁)
+    # Use `modified_layer` if available, otherwise `layer`
+    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
+
     ãₖ = modify_input(rule, aₖ)
-    z, back = Zygote.pullback(modified_layer, ãₖ)
+    z, back = Zygote.pullback(layer, ãₖ)
     s = Rₖ₊₁ ./ modify_denominator(rule, z)
     c = only(back(s))
     Rₖ .= ãₖ .* c
 end
+
+# TODO: document new `layer` argument as breaking change
 
 #####################################
 # Functions used to implement rules #
@@ -161,6 +166,7 @@ R_j^k = \\sum_i \\frac{w_{ij}a_j^k}{\\sum_l w_{il}a_l^k+b_i} R_i^{k+1}
 - $REF_BACH_LRP
 """
 struct ZeroRule <: AbstractLRPRule end
+modify_layer(::ZeroRule, layer) = nothing # no modified layer needed
 is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
@@ -185,6 +191,8 @@ struct EpsilonRule{T<:Real} <: AbstractLRPRule
     EpsilonRule(epsilon=LRP_DEFAULT_EPSILON) = new{eltype(epsilon)}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
+
+modify_layer(::EpsilonRule, layer) = nothing # no modified layer needed
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """
@@ -286,14 +294,17 @@ R_j^k = R_j^{k+1}
 ```
 """
 struct PassRule <: AbstractLRPRule end
-function lrp!(Rₖ, ::PassRule, layer, aₖ, Rₖ₊₁)
+lrp!(Rₖ, ::PassRule, _layer, _modified_layer, aₖ, Rₖ₊₁) = reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
+
+modify_layer(::PassRule, layer) = nothing # no modified layer needed
+is_compatible(::PassRule, layer) = true
+
+function reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
     if size(aₖ) == size(Rₖ₊₁)
         Rₖ .= Rₖ₊₁
     end
     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
 end
-# No extra checks as reshaping operation will throw an error if layer isn't compatible:
-is_compatible(::PassRule, layer) = true
 
 """
     ZBoxRule(low, high)
@@ -320,17 +331,16 @@ struct ZBoxRule{T} <: AbstractLRPRule
 end
 function modify_layer(::ZBoxRule, layer)
     return (
-        layer  = modify_layer(Val(:no_modification), layer),
         layer⁺ = modify_layer(Val(:keep_positive), layer),
         layer⁻ = modify_layer(Val(:keep_negative), layer),
     )
 end
 
-function lrp!(Rₖ, rule::ZBoxRule, modified_layers, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::ZBoxRule, layer, modified_layers, aₖ, Rₖ₊₁)
     l = zbox_input(aₖ, rule.low)
     h = zbox_input(aₖ, rule.high)
 
-    z, back = Zygote.pullback(modified_layers.layer, aₖ)
+    z, back = Zygote.pullback(layer, aₖ)
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, l)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
@@ -390,7 +400,7 @@ function modify_layer(::AlphaBetaRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::AlphaBetaRule, modified_layers, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::AlphaBetaRule, _layer, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
@@ -439,7 +449,7 @@ function modify_layer(::ZPlusRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::ZPlusRule, modified_layers, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::ZPlusRule, _layer, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
@@ -485,7 +495,6 @@ function modify_layer(rule::GeneralizedGammaRule, layer)
     rule⁺ = GammaRule(rule.γ)
     rule⁻ = NegativeGammaRule(rule.γ)
     return (
-        layer   = modify_layer(Val(:no_modification), layer),
         layerˡ⁺ = modify_layer(rule⁺, layer),
         layerˡ⁻ = modify_layer(rule⁻, layer; keep_bias=false),
         layerʳ⁻ = modify_layer(rule⁻, layer),
@@ -493,7 +502,7 @@ function modify_layer(rule::GeneralizedGammaRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::GeneralizedGammaRule, modified_layers, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, rule::GeneralizedGammaRule, layer, modified_layers, aₖ, Rₖ₊₁)
     aₖ⁺ = keep_positive(aₖ)
     aₖ⁻ = keep_negative(aₖ)
 
@@ -502,7 +511,7 @@ function lrp!(Rₖ, rule::GeneralizedGammaRule, modified_layers, aₖ, Rₖ₊�
     # No need to linearize again: Wˡ⁺ = Wʳ⁺ and Wˡ⁻ = Wʳ⁻
     zʳ⁺ = modified_layers.layerʳ⁺(aₖ⁻)
     zʳ⁻ = modified_layers.layerʳ⁻(aₖ⁺)
-    z   = modified_layers.layer(aₖ)
+    z   = layer(aₖ)
 
     sˡ = masked_copy(Rₖ₊₁, z .> 0) ./ modify_denominator(rule, zˡ⁺ + zˡ⁻)
     sʳ = masked_copy(Rₖ₊₁, z .< 0) ./ modify_denominator(rule, zʳ⁺ + zʳ⁻)
@@ -523,12 +532,12 @@ end
 # Rules that don't require layer information:
 for R in (ZeroRule, EpsilonRule)
     for L in (DropoutLayer, ReshapingLayer)
-        @eval function lrp!(Rₖ, ::$R, l::$L, aₖ, Rₖ₊₁)
-            return lrp!(Rₖ, PassRule(), l, aₖ, Rₖ₊₁)
+        @eval function lrp!(Rₖ, _rule::$R, _layer::$L, _modified_layer::$L, aₖ, Rₖ₊₁)
+            return reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
         end
     end
 end
-function lrp!(Rₖ, ::FlatRule, ::Dense, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, _rule::FlatRule, _layer::Dense, _modified_layer, _aₖ, Rₖ₊₁)
     n = size(Rₖ, 1) # number of input neurons connected to each output neuron
     for i in axes(Rₖ, 2) # samples in batch
         fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
@@ -537,13 +546,16 @@ end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
-    @eval function lrp!(Rₖ, rule::$R, modified_layer::Dense, aₖ, Rₖ₊₁)
+    @eval function lrp!(Rₖ, rule::$R, layer::Dense, modified_layer, aₖ, Rₖ₊₁)
+        # Use `modified_layer` if available, otherwise `layer`
+        layer = ifelse(isnothing(modified_layer), layer, modified_layer)
+
         ãₖ = modify_input(rule, aₖ)
-        z = modify_denominator(rule, modified_layer(ãₖ))
-        @tullio Rₖ[j, b] = modified_layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
+        z = modify_denominator(rule, layer(ãₖ))
+        @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
     end
 end
-function lrp!(Rₖ, ::WSquareRule, modified_layer::Dense, aₖ, Rₖ₊₁)
+function lrp!(Rₖ, ::WSquareRule, _layer::Dense, modified_layer::Dense, aₖ, Rₖ₊₁)
     den = sum(modified_layer.weight; dims=2)
     @tullio Rₖ[j, b] = modified_layer.weight[i, j] / den[i] * Rₖ₊₁[i, b]
 end

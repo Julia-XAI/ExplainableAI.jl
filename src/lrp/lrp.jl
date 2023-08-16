@@ -57,7 +57,7 @@ function (lrp::LRP)(
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
     for (i, rule) in Iterators.reverse(enumerate(lrp.rules))
         # Backward-pass applying LRP rules, inplace updating rels[i]
-        lrp!(rels[i], rule, lrp.modified_layers[i], acts[i], rels[i + 1])
+        lrp!(rels[i], rule, lrp.model[i], lrp.modified_layers[i], acts[i], rels[i + 1])
     end
 
     return Explanation(
