@@ -68,3 +68,15 @@ function (lrp::LRP)(
         ifelse(layerwise_relevances, rels, Nothing),
     )
 end
+
+function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aₖ, Rₖ₊₁)
+    acts = [aₖ, Flux.activations(layers, aₖ)...]
+    rels = similar.(acts)
+    last(rels) .= Rₖ₊₁
+
+    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
+    for (i, rule) in Iterators.reverse(enumerate(rules))
+        lrp!(rels[i], rule, layers[i], modified_layers[i], acts[i], rels[i + 1])
+    end
+    return Rₖ .= first(rels)
+end
