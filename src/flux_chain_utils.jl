@@ -74,20 +74,20 @@ print_vals(io::IO, x, indent::Int=0) = println(io, " "^indent, x, ",")
 # The following implementation of map and zip on Chains and Parallel layers
 # are strongly inspired by StructWalk.jl's postwalk function.
 
-isleaf(c::Chain) = false
-isleaf(p::Parallel) = false
-isleaf(c::ChainTuple) = false
+isleaf(c::Chain)         = false
+isleaf(p::Parallel)      = false
+isleaf(c::ChainTuple)    = false
 isleaf(p::ParallelTuple) = false
-isleaf(x) = true
+isleaf(x)                = true
 
-constructor(::Chain) = ChainTuple
-constructor(::ChainTuple) = ChainTuple
-constructor(::Parallel) = ParallelTuple
+constructor(::Chain)         = ChainTuple
+constructor(::ChainTuple)    = ChainTuple
+constructor(::Parallel)      = ParallelTuple
 constructor(::ParallelTuple) = ParallelTuple
 
-children(c::Chain) = c.layers
-children(p::Parallel) = p.layers
-children(c::ChainTuple) = c.vals
+children(c::Chain)         = c.layers
+children(p::Parallel)      = p.layers
+children(c::ChainTuple)    = c.vals
 children(p::ParallelTuple) = p.vals
 
 """

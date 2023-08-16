@@ -74,7 +74,7 @@ for (lname, (layer, aₖ)) in layers
         modified_layer = modify_layer(rule, layer)
         SUITE["modify layer"][rname][lname] = @benchmarkable modify_layer($(rule), $(layer))
         SUITE["apply rule"][rname][lname] = @benchmarkable lrp!(
-            $(Rₖ), $(rule), $(layer), $(modified_layer), $(aₖ), $(Rₖ₊₁),
+            $(Rₖ), $(rule), $(layer), $(modified_layer), $(aₖ), $(Rₖ₊₁)
         )
     end
 end
