@@ -190,14 +190,26 @@ flatten_model(x) = chainflatten(x)
 
 Flatten a Flux `Chain` containing `Chain`s. Also works with `ChainTuple`s.
 """
-chainflatten(c::Chain) = Chain(mapreduce(_chainflatten, vcat, c.layers)...)
-_chainflatten(c::Chain) = mapreduce(_chainflatten, vcat, c.layers)
-chainflatten(c::ChainTuple) = ChainTuple(mapreduce(_chainflatten, vcat, c.vals)...)
+function chainflatten(c::Chain)
+    if length(c.layers) == 1
+        return Chain(_chainflatten(c))
+    else
+        return Chain(_chainflatten(c)...)
+    end
+end
+function chainflatten(c::ChainTuple)
+    if length(c.vals) == 1
+        return ChainTuple(_chainflatten(c))
+    else
+        return ChainTuple(_chainflatten(c)...)
+    end
+end
+_chainflatten(c::Chain)      = mapreduce(_chainflatten, vcat, c.layers)
 _chainflatten(c::ChainTuple) = mapreduce(_chainflatten, vcat, c.vals)
 
-chainflatten(p::Parallel) = Parallel(p.connection, chainflatten.(p.layers))
-_chainflatten(p::Parallel) = Parallel(p.connection, chainflatten.(p.layers))
-chainflatten(p::ParallelTuple) = ParallelTuple(chainflatten.(p.vals))
+chainflatten(p::Parallel)       = _chainflatten(p)
+chainflatten(p::ParallelTuple)  = _chainflatten(p)
+_chainflatten(p::Parallel)      = Parallel(p.connection, chainflatten.(p.layers))
 _chainflatten(p::ParallelTuple) = ParallelTuple(chainflatten.(p.vals))
 
 chainflatten(x) = x
