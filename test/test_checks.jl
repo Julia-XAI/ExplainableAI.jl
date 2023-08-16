@@ -2,6 +2,8 @@ using ExplainableAI
 using Suppressor
 err = ErrorException("Unknown layer or activation function found in model")
 
+# TODO: test checks on unflattened model
+
 # Flux layers
 unknown_function(x) = x
 @test check_model(:LRP, Chain(Dense(2, 2, relu)))

@@ -14,17 +14,13 @@ const LRP_ANALYZERS = Dict(
     "LRPEpsilonAlpha2Beta1Flat" => model -> LRP(model, EpsilonAlpha2Beta1Flat()),
 )
 
-using Random
-pseudorand(T, dims...) = rand(MersenneTwister(123), T, dims...)
 input_size = (224, 224, 3, 1)
-img = pseudorand(Float32, input_size)
+img = pseudorand(input_size)
 
-# Load VGG model:
-# We run the reference test on the randomly intialized weights
-# so we don't have to download ~550 MB on every CI run.
-include("./vgg11.jl")
-model = VGG11(; pretrain=false)
-model = strip_softmax(model.layers)
+model = strip_softmax(vgg11.layers)
+Flux.testmode!(model, true)
+
+# TODO: add test comparing flattened and unflattened model
 
 function test_vgg11(name, method; kwargs...)
     @testset "$name" begin

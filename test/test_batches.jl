@@ -8,7 +8,6 @@ ins = 20
 outs = 10
 batchsize = 15
 
-pseudorand(n...) = rand(MersenneTwister(123), Float32, n...)
 model = Chain(Dense(ins, outs, relu; init=pseudorand))
 
 # Input 1 w/o batch dimension

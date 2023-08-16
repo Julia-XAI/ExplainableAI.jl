@@ -3,10 +3,16 @@ using ExplainableAI
 using Flux
 using Test
 using ReferenceTests
+using Random
 
 # TODO: Add Aqua.jl tests
 
 pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
+
+# Load VGG model:
+# Run tests on pseudo-randomly intialized weights to avoid downloading ~550 MB on every CI run.
+include("./vgg11.jl")
+vgg11 = VGG11(; pretrain=false)
 
 @testset "ExplainableAI.jl" begin
     @testset "Utilities" begin

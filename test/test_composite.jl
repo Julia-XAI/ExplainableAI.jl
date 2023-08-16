@@ -1,12 +1,10 @@
 using ExplainableAI
 using Flux
 
-# Load VGG model:
-# We run the reference test on the randomly intialized weights
-# so we don't have to download ~550 MB on every CI run.
-include("./vgg11.jl")
-model = VGG11(; pretrain=false).layers
+model = strip_softmax(vgg11.layers)
 model_flat = flatten_model(model)
+Flux.testmode!(model, true)
+Flux.testmode!(model_flat, true)
 
 # Test default composites
 const DEFAULT_COMPOSITES = Dict(
