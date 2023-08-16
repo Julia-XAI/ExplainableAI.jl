@@ -7,25 +7,39 @@
 # We opt to introduce `ChainTuple` and `ParallelTuple` instead of `Chain` and `Parallel`
 # to avoid type piracy.
 
-for S in (:ChainTuple, :ParallelTuple)
-    name = string(S)
+"""
+    ChainTuple(xs)
+
+Thin wrapper around `Tuple` for use with Flux.jl models.
+
+Combining [`ChainTuple`](@ref) and [`ParallelTuple`](@ref),
+data `xs` can be stored while preserving the structure of a Flux model
+without risking type piracy.
+"""
+struct ChainTuple{T<:Tuple}
+    vals::T
+end
+
+"""
+    ParallelTuple(xs)
+
+Thin wrapper around `Tuple` for use with Flux.jl models.
+
+Combining [`ChainTuple`](@ref) and [`ParallelTuple`](@ref),
+data `xs` can be stored while preserving the structure of a Flux model
+without risking type piracy.
+"""
+struct ParallelTuple{T<:Tuple}
+    vals::T
+end
+
+for T in (:ChainTuple, :ParallelTuple)
+    name = string(T)
 
     @eval begin
-        """
-            $($name)(xs)
+        ($T)(xs...) = ($T)(xs)
 
-        Thin wrapper around `Tuple` for use with Flux.jl models.
-
-        Combining [`ChainTuple`](@ref) and [`ParallelTuple`](@ref),
-        data `xs` can be stored while preserving the structure of a Flux model
-        without risking type piracy.
-        """
-        struct ($S){T<:Tuple}
-            vals::T
-        end
-        ($S)(xs...) = ($S)(xs)
-
-        @forward $S.vals Base.getindex,
+        @forward $T.vals Base.getindex,
         Base.length,
         Base.first,
         Base.last,
@@ -37,12 +51,12 @@ for S in (:ChainTuple, :ParallelTuple)
         Base.similar
 
         # Containers are equivalent if fields are equivalent
-        Base.:(==)(a::$S, b::$S) = a.vals == b.vals
+        Base.:(==)(a::$T, b::$T) = a.vals == b.vals
 
         # Print vals
-        Base.show(io::IO, m::MIME"text/plain", t::$S) = print_vals(io, t)
+        Base.show(io::IO, m::MIME"text/plain", t::$T) = print_vals(io, t)
 
-        function print_vals(io::IO, t::$S, indent::Int=0)
+        function print_vals(io::IO, t::$T, indent::Int=0)
             println(io, " "^indent, $name, "(")
             for x in t
                 print_vals(io, x, indent + 2)
