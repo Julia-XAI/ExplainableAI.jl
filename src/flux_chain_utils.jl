@@ -174,23 +174,34 @@ function chainkeys(x, key)
     end
 end
 
-
 #===============#
 # Flatten model #
 #===============#
+# TODO: document deprecation of flatten_model by chainflatten
 """
-     flatten_model(c)
+    flatten_model(model)
 
- Flatten a Flux chain containing Flux chains.
- """
-flatten_model(c::Chain) = Chain(mapreduce(_flatten_model, vcat, c.layers)...)
-_flatten_model(c::Chain) = mapreduce(_flatten_model, vcat, c.layers)
+Flatten a Flux `Chain` containing `Chain`s.
+"""
+flatten_model(x) = chainflatten(x)
 
-flatten_model(x) = x
-_flatten_model(x) = x
+"""
+    chainflatten(chain)
 
-flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
-_flatten_model(p::Parallel) = Parallel(p.connection, flatten_model.(p.layers))
+Flatten a Flux `Chain` containing `Chain`s. Also works with `ChainTuple`s.
+"""
+chainflatten(c::Chain) = Chain(mapreduce(_chainflatten, vcat, c.layers)...)
+_chainflatten(c::Chain) = mapreduce(_chainflatten, vcat, c.layers)
+chainflatten(c::ChainTuple) = ChainTuple(mapreduce(_chainflatten, vcat, c.vals)...)
+_chainflatten(c::ChainTuple) = mapreduce(_chainflatten, vcat, c.vals)
+
+chainflatten(p::Parallel) = Parallel(p.connection, chainflatten.(p.layers))
+_chainflatten(p::Parallel) = Parallel(p.connection, chainflatten.(p.layers))
+chainflatten(p::ParallelTuple) = ParallelTuple(chainflatten.(p.vals))
+_chainflatten(p::ParallelTuple) = ParallelTuple(chainflatten.(p.vals))
+
+chainflatten(x) = x
+_chainflatten(x) = x
 
 #=========================#
 # Strip output activation #
