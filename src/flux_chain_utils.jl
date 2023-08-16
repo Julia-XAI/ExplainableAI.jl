@@ -174,28 +174,6 @@ function chainkeys(x, key)
     end
 end
 
-"""
-    id_list(model)
-    id_list(layer)
-
-Return list of `objectid`s of all layers in the model.
-"""
-function id_list(model)
-    ids = chainmap(objectid, model)
-    idlist = UInt64[]
-    push_id!(idlist, ids)
-    return idlist
-end
-
-function push_id!(idlist, x)
-    if isleaf(x)
-        push!(idlist, x)
-    else
-        for y in children(x)
-            push_id!(idlist, y)
-        end
-    end
-end
 
 #===============#
 # Flatten model #
