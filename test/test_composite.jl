@@ -38,7 +38,7 @@ composite1 = Composite(
 )
 @test_reference "references/show/composite1.txt" repr("text/plain", composite1)
 
-analyzer1 = LRP(model_flat, composite1)
+analyzer1 = LRP(model_flat, composite1; flatten=false)
 @test analyzer1.rules == ChainTuple(
     ZBoxRule(-3.0f0, 3.0f0),
     EpsilonRule(1.0f-6),
@@ -80,7 +80,7 @@ composite2 = Composite(
 )
 @test_reference "references/show/composite2.txt" repr("text/plain", composite2)
 
-analyzer2 = LRP(model2, composite2)
+analyzer2 = LRP(model2, composite2; flatten=false)
 @test analyzer2.rules == ChainTuple(
     AlphaBetaRule(2.0f0, 1.0f0),
     ZeroRule(),
@@ -104,7 +104,7 @@ composite3 = Composite(
     LastLayerRule(EpsilonRule(1.0f-5)),
 )
 
-analyzer3 = LRP(model, composite3)
+analyzer3 = LRP(model, composite3; flatten=false)
 @test analyzer3.rules == ChainTuple(
     ChainTuple(
         FlatRule(),

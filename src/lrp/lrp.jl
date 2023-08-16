@@ -14,17 +14,23 @@ or by passing a composite, see [`Composite`](@ref) for an example.
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 """
-struct LRP{R<:ChainTuple} <: AbstractXAIMethod
-    model::Chain
+struct LRP{M<:Chain,R<:ChainTuple} <: AbstractXAIMethod
+    model::M
     rules::R
 
     # Construct LRP analyzer by assigning a rule to each layer
-    function LRP(model::Chain, rules::ChainTuple; skip_checks=false, verbose=true)
+    function LRP(
+        model::M, rules::R; skip_checks=false, flatten=true, verbose=true
+    ) where {M<:Chain,R<:ChainTuple}
+        if flatten # TODO: document kwarg `flatten`
+            model = chainflatten(model)
+            rules = chainflatten(rules)
+        end
         if !skip_checks
             check_output_softmax(model)
             check_model(Val(:LRP), model; verbose=verbose)
         end
-        return new{typeof(rules)}(model, rules)
+        return new{M,R}(model, rules)
     end
 end
 # Rules can be passed as vector and will be turned to ChainTuple
