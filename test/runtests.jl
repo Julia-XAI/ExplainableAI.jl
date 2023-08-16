@@ -4,6 +4,10 @@ using Flux
 using Test
 using ReferenceTests
 
+# TODO: Add Aqua.jl tests
+
+pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
+
 @testset "ExplainableAI.jl" begin
     @testset "Utilities" begin
         @info "Running tests on utilities..."

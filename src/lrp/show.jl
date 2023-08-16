@@ -10,7 +10,7 @@ typename(x) = string(nameof(typeof(x)))
 #==============#
 
 layer_name(io::IO, l) = string(sprint(show, l; context=io))
-function get_print_rule_padding(names::Union{ChainTuple, ParallelTuple})
+function get_print_rule_padding(names::Union{ChainTuple,ParallelTuple})
     children = filter(isleaf, names.vals)
     isempty(children) && return 0
     return maximum(length.(children))

@@ -42,6 +42,7 @@ layers with linear activation functions.
 """
 function canonize(model::Chain)
     # TODO: support chains of chains
+    # TODO: support parallel layers
     i = 1
     while i < length(model)
         model, fused = try_fusing(model, i)

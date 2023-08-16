@@ -2,7 +2,7 @@ module LRP_CONFIG
 using ExplainableAI
 using ExplainableAI: LRPSupportedLayer, LRPSupportedActivation
 
-# TODO: refactor
+# TODO: compatibility with Chains and Parallel layers
 
 """
     LRP_CONFIG.supports_layer(layer)

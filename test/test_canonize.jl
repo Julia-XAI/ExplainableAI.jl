@@ -4,7 +4,6 @@ using ExplainableAI
 using ExplainableAI: fuse_batchnorm
 using Random
 
-pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 batchsize = 50
 
 # # Test `fuse_batchnorm` on Dense layer

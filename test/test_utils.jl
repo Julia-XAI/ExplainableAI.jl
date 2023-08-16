@@ -5,8 +5,6 @@ using ExplainableAI: has_output_softmax, check_output_softmax, activation_fn
 using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index, masked_copy
 using Random
 
-pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
-
 # Test `activation_fn`
 @test activation_fn(Dense(5, 2, gelu)) == gelu
 @test activation_fn(Conv((5, 5), 3 => 2, softplus)) == softplus
