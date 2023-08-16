@@ -14,14 +14,15 @@ or by passing a composite, see [`Composite`](@ref) for an example.
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 """
-struct LRP{M<:Chain,R<:ChainTuple} <: AbstractXAIMethod
-    model::M
+struct LRP{C<:Chain,R<:ChainTuple,L<:ChainTuple} <: AbstractXAIMethod
+    model::C
     rules::R
+    modified_layers::L
 
     # Construct LRP analyzer by assigning a rule to each layer
     function LRP(
-        model::M, rules::R; skip_checks=false, flatten=true, verbose=true
-    ) where {M<:Chain,R<:ChainTuple}
+        model::Chain, rules::ChainTuple; skip_checks=false, flatten=true, verbose=true
+    )
         if flatten # TODO: document kwarg `flatten`
             model = chainflatten(model)
             rules = chainflatten(rules)
@@ -30,7 +31,10 @@ struct LRP{M<:Chain,R<:ChainTuple} <: AbstractXAIMethod
             check_output_softmax(model)
             check_model(Val(:LRP), model; verbose=verbose)
         end
-        return new{M,R}(model, rules)
+        modified_layers = get_modified_layers(rules, model)
+        return new{typeof(model),typeof(rules),typeof(modified_layers)}(
+            model, rules, modified_layers
+        )
     end
 end
 # Rules can be passed as vector and will be turned to ChainTuple
@@ -50,10 +54,10 @@ function (lrp::LRP)(
     rels = similar.(acts)                                 # allocate Rₖ for all layers k
     mask_output_neuron!(rels[end], acts[end], ns)         # compute  Rₖ₊₁ of output layer
 
-    modified_layers = get_modified_layers(lrp.rules, lrp.model.layers)
-    for i in length(lrp.rules):-1:1
+    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
+    for (i, rule) in Iterators.reverse(enumerate(lrp.rules))
         # Backward-pass applying LRP rules, inplace updating rels[i]
-        lrp!(rels[i], lrp.rules[i], modified_layers[i], acts[i], rels[i + 1])
+        lrp!(rels[i], rule, lrp.modified_layers[i], acts[i], rels[i + 1])
     end
 
     return Explanation(
