@@ -30,14 +30,15 @@ supports_activation(σ) = false
 supports_activation(::LRPSupportedActivation) = true
 end # LRP_CONFIG module
 
-_check_layer(::Val{:LRP}, layer) = LRP_CONFIG.supports_layer(layer)
-_check_layer(::Val{:LRP}, c::Chain) = all(_check_layer(Val(:LRP), l) for l in c)
+lrp_check_layer(layer) = LRP_CONFIG.supports_layer(layer)
+lrp_check_layer(c::Chain) = all(lrp_check_layer, c)
 
-function _check_activation(::Val{:LRP}, layer)
+# TODO: use activation_fn
+function lrp_check_activation(layer)
     hasproperty(layer, :σ) && return LRP_CONFIG.supports_activation(layer.σ)
     return true
 end
-_check_activation(::Val{:LRP}, c::Chain) = all(_check_activation(Val(:LRP), l) for l in c)
+lrp_check_activation(c::Chain) = all(lrp_check_activation, c)
 
 # Utils for printing model check summary
 _print_name(layer) = "$layer"
@@ -45,19 +46,15 @@ _print_name(layer::Parallel) = "Parallel(...)"
 _print_activation(layer) = hasproperty(layer, :σ) ? "$(layer.σ)" : "—"
 _print_activation(layer::Parallel) = "—"
 
+# TODO: document deprecation of check_model
 """
-    check_model(method::Symbol, model; verbose=true)
+    check_lrp_compat(model; verbose=true)
 
-Check whether the given method can be used on the model.
-Currently, model checks are only implemented for LRP, using the symbol `:LRP`.
-
-# Example
-julia> check_model(:LRP, model)
+Check whether LRP can be used on the model.
 """
-check_model(method::Symbol, model; kwargs...) = check_model(Val(method), model; kwargs...)
-function check_model(::Val{:LRP}, model::Chain; verbose=true)
-    layer_checks = collect(_check_layer.(Val(:LRP), model.layers))
-    activ_checks = collect(_check_activation.(Val(:LRP), model.layers))
+function check_lrp_compat(model::Chain; verbose=true)
+    layer_checks = collect(lrp_check_layer.(model.layers))
+    activ_checks = collect(lrp_check_activation.(model.layers))
     if !all(layer_checks) || !all(activ_checks)
         verbose && _display_model_check(model, layer_checks, activ_checks)
         error("Unknown layer or activation function found in model")
@@ -66,8 +63,8 @@ function check_model(::Val{:LRP}, model::Chain; verbose=true)
 end
 
 function _display_model_check(model, layer_checks, activ_checks)
-    layer_names = [_print_name(l) for l in model]
-    activ_names = [_print_activation(l) for l in model]
+    layer_names = _print_name.(model)
+    activ_names = _print_activation.(model)
 
     display(_MD_CHECK_FAILED)
     _display_summary_table(layer_names, layer_checks, activ_names, activ_checks)
@@ -81,16 +78,17 @@ function _display_model_check(model, layer_checks, activ_checks)
     return nothing
 end
 
-const _MD_CHECK_FAILED = md"""# Layers failed model check
+# TODO: This could probably be one big string
+const _MD_CHECK_FAILED = md"# Layers failed model check
     Found unknown layers or activation functions that are not supported
     by ExplainableAI's LRP implementation yet:
-    """
-const _MD_OPEN_ISSUE = md"""LRP assumes that the model is a deep rectifier network
+    "
+const _MD_OPEN_ISSUE = md"LRP assumes that the model is a deep rectifier network
     that only contains ReLU-like activation functions.
 
     If you think the missing layer should be supported by default,
     **please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues)**.
-    """
+    "
 const _MD_CUSTOM_LAYER = md"""## Using custom layers
     If you implemented custom layers, register them via
     ```julia
@@ -100,16 +98,16 @@ const _MD_CUSTOM_LAYER = md"""## Using custom layers
     The default fallback for this layer will use Automatic Differentiation
     according to "Layer-Wise Relevance Propagation: An Overview".
     """
-const _MD_CUSTOM_ACTIV = md"""## Using custom activation functions
+const _MD_CUSTOM_ACTIV = md"## Using custom activation functions
     If you use custom ReLU-like activation functions, register them via
     ```julia
     LRP_CONFIG.supports_activation(::typeof(myfunction)) = true  # for functions
     LRP_CONFIG.supports_activation(::MyActivation) = true        # for structs
     ```
-    """
-const _MD_SKIP_CHECK = md"""Model checks can be skipped at your own risk by setting
+    "
+const _MD_SKIP_CHECK = md"Model checks can be skipped at your own risk by setting
     the `LRP` keyword argument `skip_checks=true`.
-    """
+    "
 
 function _display_summary_table(layer_names, layer_checks, activ_names, activ_checks)
     hl_pass = Highlighter((data, i, j) -> j in (3, 5) && data[i, j]; foreground=:green)

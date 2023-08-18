@@ -29,7 +29,7 @@ struct LRP{C<:Chain,R<:ChainTuple,L<:ChainTuple} <: AbstractXAIMethod
         end
         if !skip_checks
             check_output_softmax(model)
-            check_model(Val(:LRP), model; verbose=verbose)
+            check_lrp_compat(model; verbose=verbose)
         end
         modified_layers = get_modified_layers(rules, model)
         return new{typeof(model),typeof(rules),typeof(modified_layers)}(
