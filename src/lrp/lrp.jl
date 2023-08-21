@@ -14,38 +14,39 @@ or by passing a composite, see [`Composite`](@ref) for an example.
 [1] G. Montavon et al., Layer-Wise Relevance Propagation: An Overview
 [2] W. Samek et al., Explaining Deep Neural Networks and Beyond: A Review of Methods and Applications
 """
-struct LRP{R<:AbstractVector{<:AbstractLRPRule}} <: AbstractXAIMethod
-    model::Chain
+struct LRP{C<:Chain,R<:ChainTuple,L<:ChainTuple} <: AbstractXAIMethod
+    model::C
     rules::R
+    modified_layers::L
 
     # Construct LRP analyzer by assigning a rule to each layer
     function LRP(
-        model::Chain,
-        rules::AbstractVector{<:AbstractLRPRule};
-        is_flat=false,
-        skip_checks=false,
-        verbose=true,
+        model::Chain, rules::ChainTuple; skip_checks=false, flatten=true, verbose=true
     )
-        !is_flat && (model = flatten_model(model))
+        if flatten # TODO: document kwarg `flatten`
+            model = chainflatten(model)
+            rules = chainflatten(rules)
+        end
         if !skip_checks
             check_output_softmax(model)
-            check_model(Val(:LRP), model; verbose=verbose)
+            check_lrp_compat(model; verbose=verbose)
         end
-        return new{typeof(rules)}(model, rules)
+        modified_layers = get_modified_layers(rules, model)
+        return new{typeof(model),typeof(rules),typeof(modified_layers)}(
+            model, rules, modified_layers
+        )
     end
 end
+# Rules can be passed as vector and will be turned to ChainTuple
+LRP(model, rules::AbstractVector; kwargs...) = LRP(model, ChainTuple(rules...); kwargs...)
 
-# Construct vector of rules by applying composite
-function LRP(model::Chain, composite::Composite; is_flat=false, kwargs...)
-    !is_flat && (model = flatten_model(model))
-    rules = composite(model)
-    return LRP(model, rules; is_flat=true, kwargs...)
-end
-
-# Convenience constructor: use ZeroRule everywhere
+# Convenience constructor without rules: use ZeroRule everywhere
 LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 
-# The call to the LRP analyzer.
+# Construct Chain-/ParallelTuple of rules by applying composite
+LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
+
+# Call to the LRP analyzer
 function (lrp::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
@@ -53,10 +54,16 @@ function (lrp::LRP)(
     rels = similar.(acts)                                 # allocate Rₖ for all layers k
     mask_output_neuron!(rels[end], acts[end], ns)         # compute  Rₖ₊₁ of output layer
 
-    modified_layers = get_modified_layers(lrp.rules, lrp.model.layers)
-    for i in length(lrp.rules):-1:1
-        # Backward-pass applying LRP rules, inplace updating rels[i]
-        lrp!(rels[i], lrp.rules[i], modified_layers[i], acts[i], rels[i + 1])
+    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
+    for i in length(lrp.model):-1:1
+        lrp!(
+            rels[i],
+            lrp.rules[i],
+            lrp.model[i],
+            lrp.modified_layers[i],
+            acts[i],
+            rels[i + 1],
+        )
     end
 
     return Explanation(
@@ -66,4 +73,16 @@ function (lrp::LRP)(
         :LRP,
         ifelse(layerwise_relevances, rels, Nothing),
     )
+end
+
+function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aₖ, Rₖ₊₁)
+    acts = [aₖ, Flux.activations(layers, aₖ)...]
+    rels = similar.(acts)
+    last(rels) .= Rₖ₊₁
+
+    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
+    for i in length(layers):-1:1
+        lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i + 1])
+    end
+    return Rₖ .= first(rels)
 end

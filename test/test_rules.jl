@@ -36,8 +36,10 @@ const RULES = Dict(
     Rₖ = reshape([17 / 90, 316 / 675], 2, 1) # expected output
 
     layer = Dense(W, b, relu)
+    modified_layer = nothing
+
     R̂ₖ = similar(aₖ) # will be inplace updated
-    @inferred lrp!(R̂ₖ, rule, layer, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
 
     ## Pooling layer
@@ -52,7 +54,7 @@ const RULES = Dict(
 
     layer = MaxPool((2, 2); stride=(1, 1))
     R̂ₖ = similar(aₖ) # will be inplace updated
-    @inferred lrp!(R̂ₖ, rule, layer, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
 end
 
@@ -70,17 +72,17 @@ end
     R̂ₖ = similar(aₖ) # will be inplace updated
     rule = AlphaBetaRule(1.0f0, 0.0f0)
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α1β0
 
     rule = AlphaBetaRule(2.0f0, 1.0f0)
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α2β1
 
     rule = ZPlusRule()
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, modified_layers, aₖ, Rₖ₊₁)
+    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aₖ, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ_α1β0
 end
 
@@ -112,15 +114,13 @@ end
     @test ml.layerˡ⁻.weight == W⁻
     @test ml.layerʳ⁻.weight == W⁻
     @test ml.layerʳ⁺.weight == W⁺
-    @test ml.layer.weight == W
     @test ml.layerˡ⁺.bias == b⁺
     @test ml.layerʳ⁻.bias == b⁻
-    @test ml.layer.bias == b
     @test iszero(ml.layerˡ⁻.bias)
     @test iszero(ml.layerʳ⁺.bias)
 
     R̂ₖ = similar(Rₖ)
-    lrp!(R̂ₖ, rule, ml, a, Rₖ₊₁)
+    lrp!(R̂ₖ, rule, layer, ml, a, Rₖ₊₁)
     @test R̂ₖ ≈ Rₖ
 end
 
@@ -163,7 +163,7 @@ function run_rule_tests(rule, layer, rulename, layername, aₖ)
         Rₖ₊₁ = layer(aₖ)
         Rₖ = similar(aₖ)
         modified_layer = modify_layer(rule, layer)
-        lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+        lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
         @test typeof(Rₖ) == typeof(aₖ)
         @test size(Rₖ) == size(aₖ)
         @test_reference "references/rules/$rulename/$layername.jld2" Dict("R" => Rₖ) by =
@@ -210,8 +210,8 @@ layers = Dict(
     "AdaptiveMeanPool" => AdaptiveMeanPool((3, 3)),
     "GlobalMeanPool"   => GlobalMeanPool(),
     "flatten"          => Flux.flatten,
-    "Dropout"          => Dropout(0.2),
-    "AlphaDropout"     => AlphaDropout(0.2),
+    "Dropout"          => Dropout(0.2; active=false),
+    "AlphaDropout"     => AlphaDropout(0.2; active=false),
 )
 @testset "Other Layers" begin
     for (rulename, rule) in RULES
@@ -232,8 +232,8 @@ Rₖ_z⁺ = similar(aₖ)
 Rₖ_αβ = similar(aₖ)
 rule = ZPlusRule()
 modified_layers = modify_layer(rule, layer)
-lrp!(Rₖ_z⁺, rule, modified_layers, aₖ, Rₖ₊₁)
+lrp!(Rₖ_z⁺, rule, layer, modified_layers, aₖ, Rₖ₊₁)
 rule = AlphaBetaRule(1.0f0, 0.0f0)
 modified_layers = modify_layer(rule, layer)
-lrp!(Rₖ_αβ, rule, modified_layers, aₖ, Rₖ₊₁)
+lrp!(Rₖ_αβ, rule, layer, modified_layers, aₖ, Rₖ₊₁)
 @test Rₖ_z⁺ ≈ Rₖ_αβ

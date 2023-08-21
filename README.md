@@ -28,7 +28,7 @@ using HTTP, FileIO, ImageMagick         # load image from URL
 
 # Load model
 model = VGG(16, pretrain=true).layers
-model = strip_softmax(flatten_chain(model))
+model = strip_softmax(model.layers)
 
 # Load input
 url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")

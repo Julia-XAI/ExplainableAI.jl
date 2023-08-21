@@ -8,7 +8,6 @@ ins = 20
 outs = 10
 batchsize = 15
 
-pseudorand(n...) = rand(MersenneTwister(123), Float32, n...)
 model = Chain(Dense(ins, outs, relu; init=pseudorand))
 
 # Input 1 w/o batch dimension
@@ -22,6 +21,7 @@ input_batch = cat(input1_bd, input2_bd; dims=2)
 
 ANALYZERS = Dict(
     "LRPZero"             => LRP,
+    "LRPZero_COC"         => m -> LRP(m; flatten=false),  # chain of chains
     "Gradient"            => Gradient,
     "InputTimesGradient"  => InputTimesGradient,
     "SmoothGrad"          => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),

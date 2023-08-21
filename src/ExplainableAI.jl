@@ -1,28 +1,26 @@
 module ExplainableAI
 
 using Base.Iterators
-using LinearAlgebra
+using MacroTools: @forward
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
 using Flux
 using Zygote
 using Tullio
+using Markdown
 
 # Heatmapping:
 using ImageCore
 using ImageTransformations: imresize
 using ColorSchemes
 
-# Model checks:
-using Markdown
-using PrettyTables
-
 include("compat.jl")
 include("bibliography.jl")
 include("neuron_selection.jl")
 include("analyze_api.jl")
 include("flux_types.jl")
-include("flux_utils.jl")
+include("flux_layer_utils.jl")
+include("flux_chain_utils.jl")
 include("utils.jl")
 include("input_augmentation.jl")
 include("gradient.jl")
@@ -54,7 +52,8 @@ export PassRule, ZBoxRule, ZPlusRule, AlphaBetaRule, GeneralizedGammaRule
 export Composite, AbstractCompositePrimitive
 export LayerRule, GlobalRule, RangeRule, FirstLayerRule, LastLayerRule
 export GlobalTypeRule, RangeTypeRule, FirstLayerTypeRule, LastLayerTypeRule
-export FirstNTypeRule, LastNTypeRule
+export FirstNTypeRule
+export lrp_rules
 # Default composites
 export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat
@@ -65,6 +64,6 @@ export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
 export heatmap
 
 # utils
-export strip_softmax, flatten_model, check_model, flatten_chain, canonize
+export strip_softmax, flatten_model, canonize
 export preprocess_imagenet
 end # module

@@ -7,8 +7,8 @@ using ExplainableAI: lrp!, modify_layer
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
 include("../test/vgg11.jl")
-vgg11 = VGG11(; pretrain=false)
-model = flatten_model(strip_softmax(vgg11.layers))
+model = VGG11(; pretrain=false)
+model = strip_softmax(model.layers)
 
 T = Float32
 img = rand(MersenneTwister(123), T, (224, 224, 3, 1))
@@ -41,6 +41,7 @@ in_dense = 500
 out_dense = 100
 aₖ = randn(T, insize)
 
+#! format: off
 layers = Dict(
     "Conv"  => (Conv((3, 3), 3 => 2), aₖ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
@@ -57,12 +58,13 @@ rules = Dict(
 )
 layernames = String.(keys(layers))
 rulenames  = String.(keys(rules))
+#! format: on
 
 SUITE["modify layer"] = BenchmarkGroup(rulenames)
 SUITE["apply rule"]   = BenchmarkGroup(rulenames)
 for rname in rulenames
     SUITE["modify layer"][rname] = BenchmarkGroup(layernames)
-    SUITE["apply rule"][rname]  = BenchmarkGroup(layernames)
+    SUITE["apply rule"][rname] = BenchmarkGroup(layernames)
 end
 
 for (lname, (layer, aₖ)) in layers
@@ -72,7 +74,7 @@ for (lname, (layer, aₖ)) in layers
         modified_layer = modify_layer(rule, layer)
         SUITE["modify layer"][rname][lname] = @benchmarkable modify_layer($(rule), $(layer))
         SUITE["apply rule"][rname][lname] = @benchmarkable lrp!(
-            $(Rₖ), $(rule), $(modified_layer), $(aₖ), $(Rₖ₊₁)
+            $(Rₖ), $(rule), $(layer), $(modified_layer), $(aₖ), $(Rₖ₊₁)
         )
     end
 end

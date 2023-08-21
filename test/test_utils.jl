@@ -1,21 +1,19 @@
 using Flux
 using Flux: flatten
-using ExplainableAI: flatten_model, has_output_softmax, check_output_softmax, activation
+using ExplainableAI: flatten_model
+using ExplainableAI: has_output_softmax, check_output_softmax, activation_fn
 using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index, masked_copy
 using Random
 
-pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
-
-# Test `activation`
-@test activation(Dense(5, 2, gelu)) == gelu
-@test activation(Conv((5, 5), 3 => 2, softplus)) == softplus
-@test activation(BatchNorm(5, selu)) == selu
-@test isnothing(activation(flatten))
+# Test `activation_fn`
+@test activation_fn(Dense(5, 2, gelu)) == gelu
+@test activation_fn(Conv((5, 5), 3 => 2, softplus)) == softplus
+@test activation_fn(BatchNorm(5, selu)) == selu
+@test isnothing(activation_fn(flatten))
 
 # flatten_model
 @test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
 @test flatten_model(Chain(abs, sqrt, relu)) == Chain(abs, sqrt, relu)
-@test_deprecated flatten_chain(Chain(identity))
 
 # has_output_softmax
 @test has_output_softmax(Chain(abs, sqrt, relu, softmax)) == true
@@ -37,9 +35,9 @@ d_relu     = Dense(2, 2, relu; init=pseudorand)
 d_identity = Dense(2, 2; init=pseudorand)
 # flatten to remove softmax
 m = strip_softmax(Chain(Chain(abs), sqrt, Chain(Chain(softmax))))
-@test m == Chain(abs, sqrt)
+@test m == Chain(Chain(abs), sqrt, Chain(Chain(identity)))
 m1 = strip_softmax(Chain(d_relu, Chain(d_softmax)))
-m2 = Chain(d_relu, d_identity)
+m2 = Chain(d_relu, Chain(d_identity))
 x = rand(Float32, 2, 10)
 @test typeof(m1) == typeof(m2)
 @test m1(x) == m2(x)

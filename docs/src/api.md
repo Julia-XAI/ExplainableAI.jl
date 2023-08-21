@@ -76,7 +76,6 @@ RangeTypeRule
 FirstLayerTypeRule
 LastLayerTypeRule
 FirstNTypeRule
-LastNTypeRule
 ```
 
 ### [Default composites](@id default_composite_api)
