@@ -1,4 +1,6 @@
 ## Layer types
+# TODO: support BatchNorm
+
 """Union type for convolutional layers."""
 const ConvLayer = Union{Conv,ConvTranspose,CrossCor}
 
@@ -25,10 +27,19 @@ const ReluLikeActivation = Union{typeof(relu),typeof(gelu),typeof(swish),typeof(
 const SoftmaxActivation = Union{typeof(softmax),typeof(softmax!)}
 
 # Layers & activation functions supported by LRP
-"""Union type for layers that are allowed by default in "deep rectifier networks"."""
-const LRPSupportedLayer = Union{
-    Chain,Parallel,Dense,ConvLayer,DropoutLayer,ReshapingLayer,PoolingLayer
-}
-
 """Union type for activation functions that are allowed by default in "deep rectifier networks"."""
 const LRPSupportedActivation = Union{typeof(identity),ReluLikeActivation}
+
+"""Union type for layers that are allowed by default in "deep rectifier networks".
+This includes the usage of allowed activation functions as layers.
+"""
+const LRPSupportedLayer = Union{
+    Chain,
+    Parallel,
+    Dense,
+    ConvLayer,
+    DropoutLayer,
+    ReshapingLayer,
+    PoolingLayer,
+    LRPSupportedActivation,
+}
