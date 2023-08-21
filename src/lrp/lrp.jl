@@ -55,9 +55,15 @@ function (lrp::LRP)(
     mask_output_neuron!(rels[end], acts[end], ns)         # compute  Rₖ₊₁ of output layer
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
-    for (i, rule) in Iterators.reverse(enumerate(lrp.rules))
-        # Backward-pass applying LRP rules, inplace updating rels[i]
-        lrp!(rels[i], rule, lrp.model[i], lrp.modified_layers[i], acts[i], rels[i + 1])
+    for i in length(lrp.model):-1:1
+        lrp!(
+            rels[i],
+            lrp.rules[i],
+            lrp.model[i],
+            lrp.modified_layers[i],
+            acts[i],
+            rels[i + 1],
+        )
     end
 
     return Explanation(
@@ -75,8 +81,8 @@ function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTupl
     last(rels) .= Rₖ₊₁
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
-    for (i, rule) in Iterators.reverse(enumerate(rules))
-        lrp!(rels[i], rule, layers[i], modified_layers[i], acts[i], rels[i + 1])
+    for i in length(layers):-1:1
+        lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i + 1])
     end
     return Rₖ .= first(rels)
 end
