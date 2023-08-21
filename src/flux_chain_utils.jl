@@ -112,33 +112,18 @@ function chainmap(f, x)
 end
 
 """
-    chainzip(f, x, y)
-    chainzip(f, xs...)
+    chainall(f, model)
 
-`zip` for Flux models. Applies the function `f` to nested structures of `Chain`s
-and `Parallel` layers. Assumes that arguments have the same structure.
-Returns a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
-
+Determines whether `f` returns `true` for all elements of a Flux `Chain` `x`.
 Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.
-
-See also [`chainmap`](@ref).
 """
-function chainzip(f, xs...)
-    if all(isleaf, xs)
-        return f(xs...)
-    else
-        constructors = constructor.(xs)
-        T = first(constructors)
-        # Assume that arguments xs are zippable if constructors match:
-        all(c -> c == T, constructors) || error("Cannot chainzip arguments $xs.")
-        vals = chainzip.(f, children.(xs)...)
-        return T(vals...)
-    end
+function chainall(f, x)
+    isleaf(x) && return f(x)
+    return all(chainall.(f, children(x)))
 end
 
 """
-    chainkeys(model)
-
+:q
 Sequentially enumerate all layers in a Flux model.
 Nested `Chain` and `Parallel` layers will result in tuples of indices.
 
@@ -174,10 +159,35 @@ function chainkeys(x, key)
     end
 end
 
+"""
+    chainzip(f, x, y)
+    chainzip(f, xs...)
+
+`zip` for Flux models. Applies the function `f` to nested structures of `Chain`s
+and `Parallel` layers. Assumes that arguments have the same structure.
+Returns a [`ChainTuple`](@ref) or [`ParallelTuple`](@ref) matching the model structure.
+
+Can also be applied to nested structures of `ChainTuple` and `ParallelTuple`.
+
+See also [`chainmap`](@ref).
+"""
+function chainzip(f, xs...)
+    if all(isleaf, xs)
+        return f(xs...)
+    else
+        constructors = constructor.(xs)
+        T = first(constructors)
+        # Assume that arguments xs are zippable if constructors match:
+        all(c -> c == T, constructors) || error("Cannot chainzip arguments $xs.")
+        vals = chainzip.(f, children.(xs)...)
+        return T(vals...)
+    end
+end
+
 #===============#
 # Flatten model #
 #===============#
-# TODO: document deprecation of flatten_model by chainflatten
+
 """
     flatten_model(model)
 
