@@ -10,8 +10,6 @@ end
 Composite(primitives...) = Composite(primitives)
 Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims...))
 
-(c::Composite)(model) = lrp_rules(model, c) # defined at end of file
-
 # TODO: Documentation and new lrp_rules function, add to Changelog
 # - new lrp_rules function
 # - deprecation of LastNTypeRule

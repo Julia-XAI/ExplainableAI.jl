@@ -143,7 +143,6 @@ get_modified_layers(rules, layers) = chainzip(modify_layer, rules, layers)
 # Useful presets, used e.g. in AlphaBetaRule, ZBoxRule & ZPlusRule:
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
-modify_parameters(::Val{:no_modification}, p) = p
 
 #############
 # LRP Rules #

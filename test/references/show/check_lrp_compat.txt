@@ -1,0 +1,8 @@
+  ChainTuple(
+    Dense(2 => 2)       => supported,
+    ParallelTuple(
+      Dense(2 => 2)          => supported,
+      Dense(2 => 2, softmax) => unsupported or unknown activation function softmax,
+    ),
+    Dense(2 => 2, relu) => supported,
+  ),

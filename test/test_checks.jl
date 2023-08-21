@@ -1,5 +1,5 @@
 using ExplainableAI
-using ExplainableAI: check_lrp_compat
+using ExplainableAI: check_lrp_compat, print_lrp_model_check
 using Suppressor
 err = ErrorException("Unknown layer or activation function found in model")
 
@@ -33,6 +33,15 @@ unknown_function(x) = x
     );
     verbose=false,
 )
+
+# Test printed output
+io = IOBuffer()
+print_lrp_model_check(
+    io,
+    Chain(Dense(2, 2), Parallel(+, Dense(2, 2), Dense(2, 2, softmax)), Dense(2, 2, relu)),
+)
+check_lrp_compat_output = String(take!(io))
+@test_reference "references/show/check_lrp_compat.txt" check_lrp_compat_output
 
 # Custom layers
 ## Test using a simple wrapper
