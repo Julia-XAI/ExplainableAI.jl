@@ -40,13 +40,6 @@ analyzer = LRP(model, rules)
 #
 heatmap(input, analyzer)
 
-# Since some Flux Chains contain other Flux Chains, ExplainableAI provides
-# a utility function called [`flatten_model`](@ref).
-#
-#md # !!! warning "Flattening models"
-#md #     Not all models can be flattened, e.g. those using
-#md #     `Parallel` and `SkipConnection` layers.
-
 # ### Custom composites
 # Instead of manually defining a list of rules, we can also use a [`Composite`](@ref).
 # A composite contructs a list of LRP-rules by sequentially applying
@@ -85,7 +78,6 @@ heatmap(input, analyzer)
 # * [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
 # * [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
 # * [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
-# * [`LastNTypeRule`](@ref) for a `TypeRule` on the last `n` layers
 #
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.
@@ -282,7 +274,7 @@ analyzer = LRP(model)
 #
 # This is done by calling low level functions
 # ```julia
-# lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+# lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
 # end
 # ```
@@ -331,7 +323,10 @@ analyzer = LRP(model)
 # For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
 # compute ``c`` from the previous equation as a VJP, pulling back ``s=R/z``:
 # ```julia
-# function lrp!(Rₖ, rule, modified_layer, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
+#    # Use modified_layer if available, otherwise layer
+#    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
+#
 #    ãₖ = modify_input(rule, aₖ)
 #    z, back = Zygote.pullback(modified_layer, ãₖ)
 #    s = Rₖ₊₁ ./ modify_denominator(rule, z)
@@ -349,7 +344,7 @@ analyzer = LRP(model)
 # Reshaping layers don't affect attributions. We can therefore avoid the computational
 # overhead of AD by writing a specialized implementation that simply reshapes back:
 # ```julia
-# function lrp!(Rₖ, rule, ::ReshapingLayer, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule, _layer::ReshapingLayer, _modified_layer, aₖ, Rₖ₊₁)
 #     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
 # end
 # ```
@@ -358,10 +353,11 @@ analyzer = LRP(model)
 #
 # We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
-# function lrp!(Rₖ, rule, layer::Dense, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule, layer::Dense, modified_layer, aₖ, Rₖ₊₁)
+#    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
 #    ãₖ = modify_input(rule, aₖ)
-#    z = modify_denominator(rule, modified_layer(ãₖ))
-#    @tullio Rₖ[j, b] = modified_layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
+#    z = modify_denominator(rule, layer(ãₖ))
+#    @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
 # end
 # ```
 #
@@ -369,7 +365,7 @@ analyzer = LRP(model)
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
-# function lrp!(Rₖ, rule::MyRule, layer::MyLayer, aₖ, Rₖ₊₁)
+# function lrp!(Rₖ, rule::MyRule, layer::MyLayer, _modified_layer, aₖ, Rₖ₊₁)
 #     Rₖ .= ...
 # end
 # ```
