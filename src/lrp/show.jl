@@ -1,7 +1,10 @@
-const COLOR_COMMENT = :light_black
-const COLOR_RULE    = :yellow
-const COLOR_TYPE    = :light_blue
-const COLOR_RANGE   = :green
+const COLOR_COMMENT    = :light_black
+const COLOR_ARROW      = :light_black
+const COLOR_RULE       = :yellow
+const COLOR_TYPE       = :light_blue
+const COLOR_RANGE      = :green
+const COLOR_CHECK_PASS = :green
+const COLOR_CHECK_FAIL = :red
 
 typename(x) = string(nameof(typeof(x)))
 
@@ -10,40 +13,94 @@ typename(x) = string(nameof(typeof(x)))
 #==============#
 
 layer_name(io::IO, l) = string(sprint(show, l; context=io))
-function get_print_rule_padding(names::Union{ChainTuple,ParallelTuple})
+
+function get_layer_name_padding(names::Union{ChainTuple,ParallelTuple})
     children = filter(isleaf, names.vals)
     isempty(children) && return 0
     return maximum(length.(children))
 end
 function Base.show(io::IO, m::MIME"text/plain", lrp::LRP)
     layer_names = chainmap(Base.Fix1(layer_name, io), lrp.model)
-    npad = get_print_rule_padding(layer_names)
+    npad = get_layer_name_padding(layer_names)
 
     println(io, "LRP", "(")
-    for (rule, name) in zip(lrp.rules, layer_names)
-        print_rule(io, rule, name, 1, npad)
+    for (name, rule) in zip(layer_names, lrp.rules)
+        print_rule(io, name, rule, 1, npad)
     end
     println(io, ")")
 end
 
 for T in (:ChainTuple, :ParallelTuple)
-    name = string(T)
+    tuple_name = string(T)
     @eval begin
-        function print_rule(io::IO, rules::$T, names::$T, indent::Int=0, npad::Int=0)
-            npad = get_print_rule_padding(names)
-            println(io, "  "^indent, $name, "(")
-            for (r, l) in zip(rules.vals, names.vals)
-                print_rule(io, r, l, indent + 1, npad)
+        function print_rule(io::IO, names::$T, rules::$T, indent::Int=0, npad::Int=0)
+            npad = get_layer_name_padding(names)
+            println(io, "  "^indent, $tuple_name, "(")
+            for (name, rule) in zip(children(names), children(rules))
+                print_rule(io, name, rule, indent + 1, npad)
             end
             println(io, "  "^indent, "),")
         end
     end # eval
 end
 
-function print_rule(io::IO, rule, name, indent::Int=0, npad::Int=0)
-    print(io, "  "^indent, rpad(name, npad), " => ")
+function print_rule(io::IO, name, rule, indent::Int=0, npad::Int=0)
+    print(io, "  "^indent, rpad(name, npad))
+    printstyled(io, " => "; color=COLOR_ARROW)
     printstyled(io, rule; color=COLOR_RULE)
     println(io, ",")
+end
+
+#=============================#
+# Print result of model check #
+#=============================#
+
+function print_lrp_model_check(io::IO, model)
+    layer_names = chainmap(Base.Fix1(layer_name, io), model)
+    npad = get_layer_name_padding(layer_names)
+    print_lrp_model_check(io, model, layer_names, 1, npad)
+end
+
+for T in (:ChainTuple, :ParallelTuple)
+    tuple_name = string(T)
+    @eval begin
+        function print_lrp_model_check(io::IO, model, names::$T, indent::Int=0, npad::Int=0)
+            npad = get_layer_name_padding(names)
+            println(io, "  "^indent, $tuple_name, "(")
+            for (layer, name) in zip(children(model), children(names))
+                print_lrp_model_check(io, layer, name, indent + 1, npad)
+            end
+            println(io, "  "^indent, "),")
+        end
+    end # eval
+end
+
+function print_lrp_model_check(io::IO, layer, name, indent::Int=0, npad::Int=0)
+    print(io, "  "^indent, rpad(name, npad))
+    printstyled(io, " => "; color=COLOR_ARROW)
+    print_layer_check(io, layer)
+    println(io, ",")
+end
+
+function print_layer_check(io, l)
+    layer_failed = !lrp_check_layer_type(l)
+    activ_failed = !lrp_check_activation(l)
+    activ = activation_fn(l)
+
+    if layer_failed && activ_failed
+        return printstyled(
+            io,
+            "unsupported or unknown activation function $activ and layer type";
+            color=COLOR_CHECK_FAIL,
+        )
+    elseif activ_failed
+        return printstyled(
+            io, "unsupported or unknown activation function $activ"; color=COLOR_CHECK_FAIL
+        )
+    elseif layer_failed
+        return printstyled(io, "unknown layer type"; color=COLOR_CHECK_FAIL)
+    end
+    return printstyled(io, "supported"; color=COLOR_CHECK_PASS)
 end
 
 #===========#

@@ -25,8 +25,6 @@ Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims.
 # Rule primitives #
 #=================#
 
-# All primitives need to implement the following interfaces: # TODO
-
 abstract type AbstractCompositePrimitive end
 abstract type AbstractRulePrimitive <: AbstractCompositePrimitive end
 

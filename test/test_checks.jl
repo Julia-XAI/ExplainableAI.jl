@@ -3,12 +3,27 @@ using ExplainableAI: check_lrp_compat
 using Suppressor
 err = ErrorException("Unknown layer or activation function found in model")
 
-# TODO: test checks on unflattened model
-
 # Flux layers
 unknown_function(x) = x
-@test check_lrp_compat(Chain(Dense(2, 2, relu)))
 @test_throws err check_lrp_compat(Chain(Dense(2, 2, softmax)); verbose=false)
+@test check_lrp_compat(Chain(Dense(2, 2, relu)))
+
+@test_throws err check_lrp_compat(
+    Chain(Dense(2, 2), Chain(Dense(2, 2), Dense(2, 2, softmax))); verbose=false
+)
+@test check_lrp_compat(
+    Chain(Dense(2, 2), Chain(Dense(2, 2), Dense(2, 2, relu))); verbose=false
+)
+
+@test_throws err check_lrp_compat(
+    Chain(Dense(2, 2), Parallel(+, Dense(2, 2), Dense(2, 2, softmax)), Dense(2, 2, relu));
+    verbose=false,
+)
+@test check_lrp_compat(
+    Chain(Dense(2, 2), Parallel(+, Dense(2, 2), Dense(2, 2, relu)), Dense(2, 2, relu));
+    verbose=false,
+)
+
 @test_throws err check_lrp_compat(Chain(unknown_function); verbose=false)
 @test_throws err @suppress check_lrp_compat(
     Chain(
