@@ -25,8 +25,8 @@ function test_vgg11(name, method; kwargs...)
     @testset "$name" begin
         # Reference test attribution
         analyzer = method(model)
-        print("Timing $name cold...\t")
-        @time expl = analyze(img, analyzer; kwargs...)
+        @info "timing $name on VGG11..."
+        @time "cold" expl = analyze(img, analyzer; kwargs...)
         attr = expl.attribution
         @test size(attr) == size(img)
         if name == "LRPZero_COC"
@@ -39,8 +39,7 @@ function test_vgg11(name, method; kwargs...)
         end
         # Test direct call of analyzer
         analyzer = method(model)
-        print("Timing $name warm...\t")
-        @time expl2 = analyzer(img; kwargs...)
+        @time "warm" expl2 = analyzer(img; kwargs...)
         @test expl.attribution ≈ expl2.attribution
 
         # Test direct call of heatmap
