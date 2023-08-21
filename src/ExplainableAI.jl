@@ -2,21 +2,17 @@ module ExplainableAI
 
 using Base.Iterators
 using MacroTools: @forward
-using LinearAlgebra
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
 using Flux
 using Zygote
 using Tullio
+using Markdown
 
 # Heatmapping:
 using ImageCore
 using ImageTransformations: imresize
 using ColorSchemes
-
-# Model checks:
-using Markdown
-using PrettyTables
 
 include("compat.jl")
 include("bibliography.jl")
