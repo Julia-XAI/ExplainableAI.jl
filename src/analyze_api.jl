@@ -65,12 +65,13 @@ Contains:
 * `output`: the model output
 * `neuron_selection`: the neuron index used for the attribution
 * `analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
+* `extras`: an optional named tuple that can be used by analyzers
+    to return additional information.
 """
-struct Explanation{A,O,I,L}
+struct Explanation{A,O,I,E<:Union{Nothing, NamedTuple}}
     attribution::A
     output::O
     neuron_selection::I
     analyzer::Symbol
-    # TODO: turn into field extras of type Union{Nothing, Dict}
-    layerwise_relevances::L
+    extras::E
 end

@@ -66,12 +66,18 @@ function (lrp::LRP)(
         )
     end
 
+    if layerwise_relevances
+        extras = (layerwise_relevances = rels,)
+    else
+        extras = nothing
+    end
+
     return Explanation(
         first(rels),
         last(acts),
         ns(last(acts)),
         :LRP,
-        ifelse(layerwise_relevances, rels, Nothing),
+        extras
     )
 end
 
