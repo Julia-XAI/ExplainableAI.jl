@@ -1,4 +1,49 @@
 # ExplainableAI.jl
+## Version `v0.6.0-DEV`
+This release brings a large refactor of LRP analyzers, 
+supporting nested "dataflow layers" from Flux.jl like `Chain` and `Parallel` layers. 
+This enables LRP on more complex model architectures like ResNets.
+
+Due to the fact that these new features require a breaking release,
+we've used the occasion to clean up the API. 
+Since the number of changes is large, this changelog has been 
+split between changes to LRP analyzers and more general changes to the package.
+
+### Changes to LRP analyzers
+Breaking changes:
+- ![BREAKING][badge-breaking] Remove all unicode characters from user-facing API ([#107][pr-107])
+    - `EpsilonRule`: argument `epsilon` replaces `ϵ` 
+    - `GammaRule`: argument `gamma` replaces `γ` 
+    - `AlphaBetaRule`: arguments `alpha` and `beta` replace `α`, `β` 
+- ![BREAKING][badge-breaking] Rename `LRP` analyzer keyword argument from `is_flat=false` to `flatten=true` ([#119][pr-119])
+- ![BREAKING][badge-breaking] Remove `check_model` (replaced by non-exported `check_lrp_compat`) ([#119][pr-119])
+- ![BREAKING][badge-breaking] `lrp!` rule calls require extra argument `layer` ([#119][pr-119])
+- ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
+- ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
+
+New features and enhancements:
+- ![Feature][badge-feature] LRP support for nested Flux Chains  ([#119][pr-119]) 
+- ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
+- ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119]) 
+- ![Enhancement][badge-enhancement] `lrp!` rule calls require extra argument `layer`, avoiding copies of unmodified layers ([#119][pr-119])
+- ![Enhancement][badge-enhancement] Performance fixes for LRP rules, reducing number of generated pullback functions ([#106][pr-106], [#108][pr-108])
+- ![Enhancement][badge-enhancement] Simplify LRP analyzer ([#112][pr-112], [#119][pr-119])
+- ![Enhancement][badge-enhancement] Simplify LRP model checks ([#110][pr-110], [#119][pr-119])
+- ![Enhancement][badge-enhancement] Improve type stability of LRP rules
+
+Improvements to documentation:
+- ![Documentation][badge-docs] Fix API reference, add diagram explaining LRP layer modification ([#105][pr-105])
+
+Package maintenance:
+- ![Maintenance][badge-maintenance] Refactor LRP rule tests ([#103][pr-103])
+- ![Maintenance][badge-maintenance] Fix LRP benchmarks ([#104][pr-104])
+
+### General changes
+- ![Documentation][badge-docs] Fix image loading in README example
+- ![Maintenance][badge-maintenance] Compatibility with Flux.jl `v0.14` ([#116][pr-116])
+- ![Maintenance][badge-maintenance] Drop dependency on LinearAlgebra.jl and PrettyTables.jl ([#119][pr-119])
+- ![Maintenance][badge-maintenance] Add Aqua.jl tests ([#125][pr-125])
+
 ## Version `v0.5.7`
 - ![Bugfix][badge-bugfix] Fix `WSquareRule` dispatch on Dense layers
 - ![Maintenance][badge-maintenance] Fix `Vararg` deprecation warnings from composites
@@ -96,6 +141,36 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-125]: https://github.com/adrhill/ExplainableAI.jl/pull/125
+[pr-119]: https://github.com/adrhill/ExplainableAI.jl/pull/119
+[pr-116]: https://github.com/adrhill/ExplainableAI.jl/pull/116
+[pr-112]: https://github.com/adrhill/ExplainableAI.jl/pull/112
+[pr-110]: https://github.com/adrhill/ExplainableAI.jl/pull/110
+[pr-109]: https://github.com/adrhill/ExplainableAI.jl/pull/109
+[pr-108]: https://github.com/adrhill/ExplainableAI.jl/pull/108
+[pr-107]: https://github.com/adrhill/ExplainableAI.jl/pull/107
+[pr-106]: https://github.com/adrhill/ExplainableAI.jl/pull/106
+[pr-105]: https://github.com/adrhill/ExplainableAI.jl/pull/105
+[pr-104]: https://github.com/adrhill/ExplainableAI.jl/pull/104
+[pr-103]: https://github.com/adrhill/ExplainableAI.jl/pull/103
+[pr-102]: https://github.com/adrhill/ExplainableAI.jl/pull/102
+[pr-99]: https://github.com/adrhill/ExplainableAI.jl/pull/99
+[pr-98]: https://github.com/adrhill/ExplainableAI.jl/pull/98
+[pr-96]: https://github.com/adrhill/ExplainableAI.jl/pull/96
+[pr-93]: https://github.com/adrhill/ExplainableAI.jl/pull/93
+[pr-92]: https://github.com/adrhill/ExplainableAI.jl/pull/92
+[pr-89]: https://github.com/adrhill/ExplainableAI.jl/pull/89
+[pr-88]: https://github.com/adrhill/ExplainableAI.jl/pull/88
+[pr-87]: https://github.com/adrhill/ExplainableAI.jl/pull/87
+[pr-84]: https://github.com/adrhill/ExplainableAI.jl/pull/84
+[pr-80]: https://github.com/adrhill/ExplainableAI.jl/pull/80
+[pr-78]: https://github.com/adrhill/ExplainableAI.jl/pull/78
+[pr-77]: https://github.com/adrhill/ExplainableAI.jl/pull/77
+[pr-76]: https://github.com/adrhill/ExplainableAI.jl/pull/76
+[pr-75]: https://github.com/adrhill/ExplainableAI.jl/pull/75
+[pr-74]: https://github.com/adrhill/ExplainableAI.jl/pull/74
+[pr-73]: https://github.com/adrhill/ExplainableAI.jl/pull/73
+[pr-72]: https://github.com/adrhill/ExplainableAI.jl/pull/72
 [pr-70]: https://github.com/adrhill/ExplainableAI.jl/pull/70
 [pr-69]: https://github.com/adrhill/ExplainableAI.jl/pull/69
 [pr-67]: https://github.com/adrhill/ExplainableAI.jl/pull/67
@@ -103,29 +178,7 @@ Performance improvements:
 [pr-65]: https://github.com/adrhill/ExplainableAI.jl/pull/65
 [pr-58]: https://github.com/adrhill/ExplainableAI.jl/pull/58
 [pr-57]: https://github.com/adrhill/ExplainableAI.jl/pull/57
-[pr-58]: https://github.com/adrhill/ExplainableAI.jl/pull/57
-[pr-65]: https://github.com/adrhill/ExplainableAI.jl/pull/65
-[pr-66]: https://github.com/adrhill/ExplainableAI.jl/pull/66
-[pr-67]: https://github.com/adrhill/ExplainableAI.jl/pull/67
-[pr-69]: https://github.com/adrhill/ExplainableAI.jl/pull/69
-[pr-70]: https://github.com/adrhill/ExplainableAI.jl/pull/70
-[pr-72]: https://github.com/adrhill/ExplainableAI.jl/pull/72
-[pr-73]: https://github.com/adrhill/ExplainableAI.jl/pull/73
-[pr-74]: https://github.com/adrhill/ExplainableAI.jl/pull/74
-[pr-75]: https://github.com/adrhill/ExplainableAI.jl/pull/75
-[pr-76]: https://github.com/adrhill/ExplainableAI.jl/pull/76
-[pr-77]: https://github.com/adrhill/ExplainableAI.jl/pull/77
-[pr-78]: https://github.com/adrhill/ExplainableAI.jl/pull/78
-[pr-80]: https://github.com/adrhill/ExplainableAI.jl/pull/80
-[pr-84]: https://github.com/adrhill/ExplainableAI.jl/pull/84
-[pr-87]: https://github.com/adrhill/ExplainableAI.jl/pull/87
-[pr-88]: https://github.com/adrhill/ExplainableAI.jl/pull/88
-[pr-89]: https://github.com/adrhill/ExplainableAI.jl/pull/89
-[pr-92]: https://github.com/adrhill/ExplainableAI.jl/pull/92
-[pr-93]: https://github.com/adrhill/ExplainableAI.jl/pull/93
-[pr-96]: https://github.com/adrhill/ExplainableAI.jl/pull/96
-[pr-98]: https://github.com/adrhill/ExplainableAI.jl/pull/98
-[pr-99]: https://github.com/adrhill/ExplainableAI.jl/pull/99
+[pr-26]: https://github.com/adrhill/ExplainableAI.jl/pull/26
 
 [flat-wsquare-commit]: https://github.com/adrhill/ExplainableAI.jl/commit/a6e2c59094fe4f1d4b744123de79407ccbd4b972
 
