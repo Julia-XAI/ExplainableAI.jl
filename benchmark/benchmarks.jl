@@ -6,7 +6,9 @@ using ExplainableAI: lrp!, modify_layer
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
+T = Float32
 input_size = (32, 32, 3, 1)
+input = rand(T, input_size)
 
 model = Chain(
     Chain(
@@ -26,9 +28,6 @@ model = Chain(
 )
 Flux.testmode!(model, true)
 
-T = Float32
-input = rand(T, input_size)
-
 # Use one representative algorithm of each type
 algs = Dict(
     "Gradient"            => Gradient,
@@ -43,21 +42,20 @@ algs = Dict(
 _alg(alg, model) = alg(model) # for use with @benchmarkable macro
 
 SUITE = BenchmarkGroup()
-SUITE["VGG11"] = BenchmarkGroup([k for k in keys(algs)])
+SUITE["CNN"] = BenchmarkGroup([k for k in keys(algs)])
 for (name, alg) in algs
     analyzer = alg(model)
-    SUITE["VGG11"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
-    SUITE["VGG11"][name]["construct analyzer"] = @benchmarkable _alg($(alg), $(model))
-    SUITE["VGG11"][name]["analyze"] = @benchmarkable analyze($(input), $(analyzer))
+    SUITE["CNN"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
+    SUITE["CNN"][name]["construct analyzer"] = @benchmarkable _alg($(alg), $(model))
+    SUITE["CNN"][name]["analyze"] = @benchmarkable analyze($(input), $(analyzer))
 end
 
 # generate input for conv layers
-insize = (64, 64, 3, 1)
-in_dense = 500
-out_dense = 100
+insize = (32, 32, 3, 1)
+in_dense = 64
+out_dense = 10
 aₖ = rand(T, insize)
 
-#! format: off
 layers = Dict(
     "Conv"  => (Conv((3, 3), 3 => 2), aₖ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
@@ -72,9 +70,9 @@ rules = Dict(
     "ZPlusRule"     => ZPlusRule(),
     "ZBoxRule"      => ZBoxRule(zero(T), oneunit(T)),
 )
+
 layernames = String.(keys(layers))
 rulenames  = String.(keys(rules))
-#! format: on
 
 SUITE["modify layer"] = BenchmarkGroup(rulenames)
 SUITE["apply rule"]   = BenchmarkGroup(rulenames)
