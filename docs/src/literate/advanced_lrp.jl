@@ -324,9 +324,8 @@ analyzer = LRP(model)
 # compute ``c`` from the previous equation as a VJP, pulling back ``s=R/z``:
 # ```julia
 # function lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
-#    # Use modified_layer if available, otherwise layer
-#    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
-#
+#    # Use modified_layer if available
+#    layer = isnothing(modified_layer) ? layer : modified_layer
 #    ãₖ = modify_input(rule, aₖ)
 #    z, back = Zygote.pullback(modified_layer, ãₖ)
 #    s = Rₖ₊₁ ./ modify_denominator(rule, z)

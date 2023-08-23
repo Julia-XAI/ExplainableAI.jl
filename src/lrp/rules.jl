@@ -10,9 +10,7 @@ const LRP_DEFAULT_BETA = 1.0f0
 
 # Generic LRP rule. Used by all rules without custom implementations.
 function lrp!(Rₖ, rule::AbstractLRPRule, layer, modified_layer, aₖ, Rₖ₊₁)
-    # Use `modified_layer` if available, otherwise `layer`
-    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
-
+    layer = isnothing(modified_layer) ? layer : modified_layer
     ãₖ = modify_input(rule, aₖ)
     z, back = Zygote.pullback(layer, ãₖ)
     s = Rₖ₊₁ ./ modify_denominator(rule, z)
@@ -20,11 +18,9 @@ function lrp!(Rₖ, rule::AbstractLRPRule, layer, modified_layer, aₖ, Rₖ₊�
     Rₖ .= ãₖ .* c
 end
 
-# TODO: document new `layer` argument as breaking change
-
-#####################################
+#===================================#
 # Functions used to implement rules #
-#####################################
+#===================================#
 
 # The function that follow define the default fallbacks used by LRP rules
 # when calling the generic `lrp!` implementation above.
@@ -144,9 +140,9 @@ get_modified_layers(rules, layers) = chainzip(modify_layer, rules, layers)
 modify_parameters(::Val{:keep_positive}, p) = keep_positive(p)
 modify_parameters(::Val{:keep_negative}, p) = keep_negative(p)
 
-#############
+#===========#
 # LRP Rules #
-#############
+#===========#
 
 # The following LRP rules use the generic `lrp!` implementation at the top of this file.
 
@@ -271,9 +267,9 @@ modify_input(::FlatRule, input) = ones_like(input)
 modify_weight(::FlatRule, w) = ones_like(w)
 modify_bias(::FlatRule, b) = zero(b)
 
-#####################
+#===================#
 # Complex LRP Rules #
-#####################
+#===================#
 
 # The following rules use custom `lrp!` implementations
 # and optionally custom `modify_layer` functions which return multiple modified layers.
@@ -521,9 +517,9 @@ function lrp!(Rₖ, rule::GeneralizedGammaRule, layer, modified_layers, aₖ, R�
     @. Rₖ = aₖ⁺ * (cˡ⁺ + cʳ⁻) + aₖ⁻ * (cˡ⁻ + cʳ⁺)
 end
 
-###########################
+#=========================#
 # Perfomance improvements #
-###########################
+#=========================#
 
 # The following functions aren't strictly necessary – tests still pass when removing them.
 # However they improve performance on specific combinations of rule and layer types.
@@ -546,9 +542,7 @@ end
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rₖ, rule::$R, layer::Dense, modified_layer, aₖ, Rₖ₊₁)
-        # Use `modified_layer` if available, otherwise `layer`
-        layer = ifelse(isnothing(modified_layer), layer, modified_layer)
-
+        layer = isnothing(modified_layer) ? layer : modified_layer
         ãₖ = modify_input(rule, aₖ)
         z = modify_denominator(rule, layer(ãₖ))
         @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
