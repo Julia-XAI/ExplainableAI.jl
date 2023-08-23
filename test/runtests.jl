@@ -8,11 +8,6 @@ using Random
 
 pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 
-# Load VGG model:
-# Run tests on pseudo-randomly intialized weights to avoid downloading ~550 MB on every CI run.
-include("./vgg11.jl")
-vgg11 = VGG11(; pretrain=false)
-
 @testset "ExplainableAI.jl" begin
     # Run Aqua.jl quality assurance tests
     @testset "Aqua.jl" begin
@@ -61,12 +56,12 @@ vgg11 = VGG11(; pretrain=false)
         @info "Testing LRP rules..."
         include("test_rules.jl")
     end
+    @testset "CNN" begin
+        @info "Testing analyzers on CNN..."
+        include("test_cnn.jl")
+    end
     @testset "Batches" begin
         @info "Testing analyzers on batches..."
         include("test_batches.jl")
-    end
-    @testset "VGG11" begin
-        @info "Testing analyzers on VGG11..."
-        include("test_vgg11.jl")
     end
 end

@@ -12,7 +12,7 @@ LRP(
   Conv((3, 3), 512 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
   Conv((3, 3), 512 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
   MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
-  Flux.flatten                          => PassRule(),
+  MLUtils.flatten                       => PassRule(),
   Dense(25088 => 4096, relu)            => EpsilonRule{Float32}(1.0f-6),
   Dropout(0.5, active=false)            => PassRule(),
   Dense(4096 => 4096, relu)             => EpsilonRule{Float32}(1.0f-6),

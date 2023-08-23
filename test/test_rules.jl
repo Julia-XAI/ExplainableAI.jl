@@ -173,8 +173,8 @@ end
 
 ## Test Dense layer
 # Define Dense test input
-din = 20 # input dimension
-dout = 10 # output dimension
+din = 4 # input dimension
+dout = 3 # output dimension
 batchsize = 2
 aₖ_dense = pseudorandn(din, batchsize)
 
@@ -195,23 +195,18 @@ layers = Dict(
 end
 
 ## Test ConvLayers and others
-cin, cout = 2, 4
-insize = (6, 6, 2, batchsize)
+cin, cout = 3, 4
+insize = (6, 6, 3, batchsize)
 aₖ = pseudorandn(insize)
 layers = Dict(
-    "Conv"             => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "Conv_relu"        => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
-    "ConvTranspose"    => ConvTranspose((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "CrossCor"         => CrossCor((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "MaxPool"          => MaxPool((3, 3)),
-    "MeanPool"         => MaxPool((3, 3)),
-    "AdaptiveMaxPool"  => AdaptiveMaxPool((3, 3)),
-    "GlobalMaxPool"    => GlobalMaxPool(),
-    "AdaptiveMeanPool" => AdaptiveMeanPool((3, 3)),
-    "GlobalMeanPool"   => GlobalMeanPool(),
-    "flatten"          => Flux.flatten,
-    "Dropout"          => Dropout(0.2; active=false),
-    "AlphaDropout"     => AlphaDropout(0.2; active=false),
+    "Conv"           => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "Conv_relu"      => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
+    "MaxPool"        => MaxPool((3, 3)),
+    "MeanPool"       => MeanPool((3, 3)),
+    "GlobalMaxPool"  => GlobalMaxPool(),
+    "GlobalMeanPool" => GlobalMeanPool(),
+    "flatten"        => Flux.flatten,
+    "Dropout"        => Dropout(0.2; active=false),
 )
 @testset "Other Layers" begin
     for (rulename, rule) in RULES
