@@ -1,11 +1,10 @@
 abstract type AbstractNeuronSelector end
 
-function mask_output_neuron!(
-    output_relevance, output_activation, ns::AbstractNeuronSelector
-)
-    fill!(output_relevance, 0)
-    neuron_selection = ns(output_activation)
-    output_relevance[neuron_selection] = output_activation[neuron_selection]
+function mask_output_neuron!(R, a, ns::AbstractNeuronSelector)
+    fill!(R, 0)
+    idx = ns(a)
+    R[idx] .= 1
+    return R
 end
 
 """
