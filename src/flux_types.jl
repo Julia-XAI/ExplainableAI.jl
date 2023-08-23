@@ -19,6 +19,9 @@ const MeanPoolLayer = Union{MeanPool,AdaptiveMeanPool,GlobalMeanPool}
 """Union type for pooling layers."""
 const PoolingLayer = Union{MaxPoolLayer,MeanPoolLayer}
 
+"""Union type for normalization layers."""
+const NormalizationLayer = Union{BatchNorm}
+
 # Activation functions
 """Union type for ReLU-like activation functions."""
 const ReluLikeActivation = Union{typeof(relu),typeof(gelu),typeof(swish),typeof(mish)}
@@ -39,6 +42,7 @@ const LRPSupportedLayer = Union{
     Dense,
     ConvLayer,
     DropoutLayer,
+    NormalizationLayer,
     ReshapingLayer,
     PoolingLayer,
     LRPSupportedActivation,

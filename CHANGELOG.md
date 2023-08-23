@@ -24,7 +24,8 @@ Breaking changes:
 - ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
 
 New features and enhancements:
-- ![Feature][badge-feature] LRP support for nested Flux Chains  ([#119][pr-119]) 
+- ![Feature][badge-feature] Support nested Flux Chains ([#119][pr-119])
+- ![Feature][badge-feature] Support `BatchNorm` layers ([#129][pr-129])
 - ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
 - ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119]) 
 - ![Enhancement][badge-enhancement] Set LRP output relevance to one ([#128][pr-128])
@@ -144,6 +145,7 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-129]: https://github.com/adrhill/ExplainableAI.jl/pull/129
 [pr-128]: https://github.com/adrhill/ExplainableAI.jl/pull/128
 [pr-126]: https://github.com/adrhill/ExplainableAI.jl/pull/126
 [pr-125]: https://github.com/adrhill/ExplainableAI.jl/pull/125
