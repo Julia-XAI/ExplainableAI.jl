@@ -1,13 +1,15 @@
 ![ExplainableAI.jl][banner-img]
 ___
 
-| **Documentation**                                                     | **Build Status**                                      | **DOI**                 |
-|:--------------------------------------------------------------------- |:----------------------------------------------------- |:----------------------- |
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] | [![][doi-img]][doi-url] |
+| **Documentation** | **Build Status** | **DOI** |
+|:----------------- |:---------------- |:------- |
+| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Aqua QA][aqua-img]][aqua-url] | [![][doi-img]][doi-url] |
 
 Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
 
-This package implements interpretability methods and visualizations for neural networks, similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch and [iNNvestigate][innvestigate-repo] for Keras models. 
+This package implements interpretability methods and visualizations for neural networks, 
+similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
+and [iNNvestigate][innvestigate-repo] for Keras models. 
 
 ## Installation 
 This package supports Julia ≥1.6. To install it, open the Julia REPL and run 
@@ -16,7 +18,8 @@ julia> ]add ExplainableAI
 ```
 
 ## Example
-Let's use LRP to explain why an image of a castle gets classified as such using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl):
+Let's use LRP to explain why an image of a castle gets classified as such 
+using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl):
 
 ![][castle]
 
@@ -28,7 +31,7 @@ using HTTP, FileIO, ImageMagick         # load image from URL
 
 # Load model
 model = VGG(16, pretrain=true).layers
-model = strip_softmax(model.layers)
+model = strip_softmax(model)
 
 # Load input
 url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
@@ -47,12 +50,17 @@ heatmap(expl)
 heatmap(input, analyzer)
 ```
 
-We can also get an explanation for the activation of the output neuron corresponding to the "street sign" class by specifying the corresponding output neuron position `920`:
+We can also get an explanation for the activation of the output neuron 
+corresponding to the "street sign" class by specifying the corresponding output neuron position `920`:
+
 ```julia
 analyze(input, analyzer, 920)  # for explanation 
 heatmap(input, analyzer, 920)  # for heatmap
 ```
-Heatmaps for all implemented analyzers are shown in the following table. Red color indicate regions of positive relevance towards the selected class, whereas regions in blue are of negative relevance.
+
+Heatmaps for all implemented analyzers are shown in the following table. 
+Red color indicate regions of positive relevance towards the selected class, 
+whereas regions in blue are of negative relevance.
 
 | **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
 |:--------------------------------------------- |:------------------------------:|:----------------------------------:|
@@ -103,7 +111,8 @@ Currently, the following analyzers are implemented:
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.
-Custom [composites][docs-composites] are easily defined and the package is easily extended by [custom rules][docs-custom-rules].
+Custom [composites][docs-composites] are easily defined 
+and the package is easily extended by [custom rules][docs-custom-rules].
 
 ## Roadmap
 In the future, we would like to include:
@@ -115,7 +124,8 @@ In the future, we would like to include:
 Contributions are welcome!
 
 ## Acknowledgements
-> Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
+> Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) 
+> for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
 [banner-img]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/banner.png
 
@@ -155,6 +165,9 @@ Contributions are welcome!
 
 [codecov-img]: https://codecov.io/gh/adrhill/ExplainableAI.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrhill/ExplainableAI.jl
+
+[aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
+[aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 
 [docs-composites]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-composites
 [docs-custom-rules]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-LRP-rules
