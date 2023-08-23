@@ -1,7 +1,8 @@
 using ExplainableAI
+using Metalhead
 using Flux
 
-model = strip_softmax(vgg11.layers)
+model = VGG(11; pretrain=false).layers
 model_flat = flatten_model(model)
 Flux.testmode!(model, true)
 Flux.testmode!(model_flat, true)
