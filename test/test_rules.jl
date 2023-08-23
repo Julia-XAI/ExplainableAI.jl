@@ -199,14 +199,14 @@ cin, cout = 3, 4
 insize = (6, 6, 3, batchsize)
 aₖ = pseudorandn(insize)
 layers = Dict(
-    "Conv"             => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
-    "Conv_relu"        => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
-    "MaxPool"          => MaxPool((3, 3)),
-    "MeanPool"         => MeanPool((3, 3)),
-    "GlobalMaxPool"    => GlobalMaxPool(),
-    "GlobalMeanPool"   => GlobalMeanPool(),
-    "flatten"          => Flux.flatten,
-    "Dropout"          => Dropout(0.2; active=false),
+    "Conv"           => Conv((3, 3), cin => cout; init=pseudorandn, bias=pseudorandn(cout)),
+    "Conv_relu"      => Conv((3, 3), cin => cout, relu; init=pseudorandn, bias=pseudorandn(cout)),
+    "MaxPool"        => MaxPool((3, 3)),
+    "MeanPool"       => MeanPool((3, 3)),
+    "GlobalMaxPool"  => GlobalMaxPool(),
+    "GlobalMeanPool" => GlobalMeanPool(),
+    "flatten"        => Flux.flatten,
+    "Dropout"        => Dropout(0.2; active=false),
 )
 @testset "Other Layers" begin
     for (rulename, rule) in RULES

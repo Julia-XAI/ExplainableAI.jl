@@ -42,7 +42,8 @@ function test_cnn(name, method)
     @testset "$name" begin
         # Reference test attribution
         analyzer = method(model)
-        print("Timing $name cold...\t")
+        println("Timing $name...")
+        print("cold:")
         @time expl = analyze(input, analyzer)
         attr = expl.attribution
         @test size(attr) == size(input)
@@ -56,7 +57,7 @@ function test_cnn(name, method)
         end
         # Test direct call of analyzer
         analyzer = method(model)
-        print("Timing $name warm...\t")
+        print("warm:")
         @time expl2 = analyzer(input)
         @test expl.attribution ≈ expl2.attribution
 
