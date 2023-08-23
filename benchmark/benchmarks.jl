@@ -6,12 +6,28 @@ using ExplainableAI: lrp!, modify_layer
 
 on_CI = haskey(ENV, "GITHUB_ACTIONS")
 
-include("../test/vgg11.jl")
-model = VGG11(; pretrain=false)
-model = strip_softmax(model.layers)
+input_size = (32, 32, 3, 1)
+
+model = Chain(
+    Chain(
+        Conv((3, 3), 3 => 8, relu; pad=1),
+        Conv((3, 3), 8 => 8, relu; pad=1),
+        MaxPool((2, 2)),
+        Conv((3, 3), 8 => 16, relu; pad=1),
+        Conv((3, 3), 16 => 16, relu; pad=1),
+        MaxPool((2, 2)),
+    ),
+    Chain(
+        Flux.flatten,
+        Dense(1024 => 512, relu),         # 102_764_544 parameters
+        Dropout(0.5),
+        Dense(512 => 100, relu),
+    ),
+)
+Flux.testmode!(model, true)
 
 T = Float32
-img = rand(MersenneTwister(123), T, (224, 224, 3, 1))
+input = rand(MersenneTwister(123), T, input_size)
 
 # Use one representative algorithm of each type
 algs = Dict(
@@ -32,7 +48,7 @@ for (name, alg) in algs
     analyzer = alg(model)
     SUITE["VGG11"][name] = BenchmarkGroup(["construct analyzer", "analyze"])
     SUITE["VGG11"][name]["construct analyzer"] = @benchmarkable _alg($(alg), $(model))
-    SUITE["VGG11"][name]["analyze"] = @benchmarkable analyze($(img), $(analyzer))
+    SUITE["VGG11"][name]["analyze"] = @benchmarkable analyze($(input), $(analyzer))
 end
 
 # generate input for conv layers
