@@ -15,8 +15,10 @@ Breaking changes:
     - `EpsilonRule`: argument `epsilon` replaces `ϵ` 
     - `GammaRule`: argument `gamma` replaces `γ` 
     - `AlphaBetaRule`: arguments `alpha` and `beta` replace `α`, `β` 
-- ![BREAKING][badge-breaking] Rename `LRP` analyzer keyword argument from `is_flat=false` to `flatten=true` ([#119][pr-119])
+- ![BREAKING][badge-breaking] Rename `LRP` analyzer keyword argument `is_flat=false` to `flatten=true` ([#119][pr-119])
 - ![BREAKING][badge-breaking] Remove `check_model` (replaced by non-exported `check_lrp_compat`) ([#119][pr-119])
+- ![BREAKING][badge-breaking] Replace `layerwise_relevances` field of `Explanation` return type by optional named tuple `extras`.
+    Access layerwise relevances via `extras.layerwise_relevances`. ([#126][pr-126])
 - ![BREAKING][badge-breaking] `lrp!` rule calls require extra argument `layer` ([#119][pr-119])
 - ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
 - ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
@@ -33,13 +35,13 @@ New features and enhancements:
 
 Improvements to documentation:
 - ![Documentation][badge-docs] Fix API reference, add diagram explaining LRP layer modification ([#105][pr-105])
+- ![Documentation][badge-docs] Fix image loading in README example
 
 Package maintenance:
 - ![Maintenance][badge-maintenance] Refactor LRP rule tests ([#103][pr-103])
 - ![Maintenance][badge-maintenance] Fix LRP benchmarks ([#104][pr-104])
 
 ### General changes
-- ![Documentation][badge-docs] Fix image loading in README example
 - ![Maintenance][badge-maintenance] Compatibility with Flux.jl `v0.14` ([#116][pr-116])
 - ![Maintenance][badge-maintenance] Drop dependency on LinearAlgebra.jl and PrettyTables.jl ([#119][pr-119])
 - ![Maintenance][badge-maintenance] Add Aqua.jl tests ([#125][pr-125])
@@ -141,6 +143,7 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-126]: https://github.com/adrhill/ExplainableAI.jl/pull/126
 [pr-125]: https://github.com/adrhill/ExplainableAI.jl/pull/125
 [pr-119]: https://github.com/adrhill/ExplainableAI.jl/pull/119
 [pr-116]: https://github.com/adrhill/ExplainableAI.jl/pull/116

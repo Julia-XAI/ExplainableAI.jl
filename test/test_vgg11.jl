@@ -16,19 +16,19 @@ const LRP_ANALYZERS = Dict(
 )
 
 input_size = (224, 224, 3, 1)
-img = pseudorand(input_size)
+input = pseudorand(input_size)
 
 model = strip_softmax(vgg11.layers)
 Flux.testmode!(model, true)
 
-function test_vgg11(name, method; kwargs...)
+function test_vgg11(name, method)
     @testset "$name" begin
         # Reference test attribution
         analyzer = method(model)
         print("Timing $name cold...\t")
-        @time expl = analyze(img, analyzer; kwargs...)
+        @time expl = analyze(input, analyzer)
         attr = expl.attribution
-        @test size(attr) == size(img)
+        @test size(attr) == size(input)
         if name == "LRPZero_COC"
             # Output of Chain of Chains should be equal to flattened model
             @test_reference "references/vgg11/LRPZero.jld2" Dict("expl" => attr) by =
@@ -40,13 +40,13 @@ function test_vgg11(name, method; kwargs...)
         # Test direct call of analyzer
         analyzer = method(model)
         print("Timing $name warm...\t")
-        @time expl2 = analyzer(img; kwargs...)
+        @time expl2 = analyzer(input)
         @test expl.attribution ≈ expl2.attribution
 
         # Test direct call of heatmap
         h1 = heatmap(expl)
         analyzer = method(model)
-        h2 = heatmap(img, analyzer; kwargs...)
+        h2 = heatmap(input, analyzer)
         @test h1 ≈ h2
         if name == "LRPZero_COC"
             # Output of Chain of Chains should be equal to flattened model
@@ -58,10 +58,10 @@ function test_vgg11(name, method; kwargs...)
     @testset "$name neuron selection" begin
         analyzer = method(model)
         neuron_selection = 1
-        expl = analyze(img, analyzer, neuron_selection; kwargs...)
+        expl = analyze(input, analyzer, neuron_selection)
         attr = expl.attribution
 
-        @test size(attr) == size(img)
+        @test size(attr) == size(input)
         if name == "LRPZero_COC"
             # Output of Chain of Chains should be equal to flattened model
             @test_reference "references/vgg11/LRPZero_neuron_$neuron_selection.jld2" Dict(
@@ -73,7 +73,7 @@ function test_vgg11(name, method; kwargs...)
             ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
         end
         analyzer = method(model)
-        expl2 = analyzer(img, neuron_selection; kwargs...)
+        expl2 = analyzer(input, neuron_selection)
         @test expl.attribution ≈ expl2.attribution
     end
 end
@@ -93,5 +93,15 @@ end
 
 # Layerwise relevances in LRP methods
 @testset "Layerwise relevances" begin
-    test_vgg11("LRPZero", LRP; layerwise_relevances=true)
+    analyzer1 = LRP(model)
+    analyzer2 = LRP(model; flatten=false)
+    e1 = analyze(input, analyzer1; layerwise_relevances=true)
+    e2 = analyze(input, analyzer2; layerwise_relevances=true)
+    lwr1 = e1.extras.layerwise_relevances
+    lwr2 = e2.extras.layerwise_relevances
+
+    @test length(lwr1) == 20 # 19 layers in flattened VGG11
+    @test length(lwr2) == 3 # 2 chains in unflattened VGG11
+    @test lwr1[1] ≈ lwr2[1]
+    @test lwr1[end] ≈ lwr2[end]
 end
