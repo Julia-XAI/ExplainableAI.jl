@@ -66,19 +66,9 @@ function (lrp::LRP)(
         )
     end
 
-    if layerwise_relevances
-        extras = (layerwise_relevances = rels,)
-    else
-        extras = nothing
-    end
+    extras = layerwise_relevances ? (layerwise_relevances=rels,) : nothing
 
-    return Explanation(
-        first(rels),
-        last(acts),
-        ns(last(acts)),
-        :LRP,
-        extras
-    )
+    return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)
 end
 
 function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aₖ, Rₖ₊₁)

@@ -68,7 +68,7 @@ Contains:
 * `extras`: an optional named tuple that can be used by analyzers
     to return additional information.
 """
-struct Explanation{A,O,I,E<:Union{Nothing, NamedTuple}}
+struct Explanation{A,O,I,E<:Union{Nothing,NamedTuple}}
     attribution::A
     output::O
     neuron_selection::I
