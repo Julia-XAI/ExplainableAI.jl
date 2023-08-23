@@ -27,6 +27,7 @@ New features and enhancements:
 - ![Feature][badge-feature] LRP support for nested Flux Chains  ([#119][pr-119]) 
 - ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
 - ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119]) 
+- ![Enhancement][badge-enhancement] Set LRP output relevance to one ([#128][pr-128])
 - ![Enhancement][badge-enhancement] `lrp!` rule calls require extra argument `layer`, avoiding copies of unmodified layers ([#119][pr-119])
 - ![Enhancement][badge-enhancement] Performance fixes for LRP rules, reducing number of generated pullback functions ([#106][pr-106], [#108][pr-108])
 - ![Enhancement][badge-enhancement] Simplify LRP analyzer ([#112][pr-112], [#119][pr-119])
@@ -87,7 +88,7 @@ This release temporarily adds ImageNet pre-processing utilities. This enables us
 - ![Enhancement][badge-enhancement] Updated README with the JuliaCon 2022 talk and examples on VGG16
 
 ## Version `v0.5.1`
-Small bugfix release adressing a bug in `v0.5.0`. 
+Small bugfix release addressing a bug in `v0.5.0`. 
 Version of ExplainableAI.jl shown in the JuliaCon 2022 talk.
 - ![Bugfix][badge-bugfix] Fix bug in `FlatRule` ([#77][pr-77])
 
@@ -143,6 +144,7 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-128]: https://github.com/adrhill/ExplainableAI.jl/pull/128
 [pr-126]: https://github.com/adrhill/ExplainableAI.jl/pull/126
 [pr-125]: https://github.com/adrhill/ExplainableAI.jl/pull/125
 [pr-119]: https://github.com/adrhill/ExplainableAI.jl/pull/119
