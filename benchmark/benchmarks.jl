@@ -27,7 +27,7 @@ model = Chain(
 Flux.testmode!(model, true)
 
 T = Float32
-input = rand(MersenneTwister(123), T, input_size)
+input = rand(T, input_size)
 
 # Use one representative algorithm of each type
 algs = Dict(
@@ -55,7 +55,7 @@ end
 insize = (64, 64, 3, 1)
 in_dense = 500
 out_dense = 100
-aₖ = randn(T, insize)
+aₖ = rand(T, insize)
 
 #! format: off
 layers = Dict(
