@@ -1,5 +1,3 @@
-# TODO: document deprecation of check_model / new check_lrp_compat function if exported
-
 module LRP_CONFIG
 using ExplainableAI
 using ExplainableAI: LRPSupportedLayer, LRPSupportedActivation

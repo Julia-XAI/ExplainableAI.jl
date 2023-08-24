@@ -10,9 +10,6 @@ end
 Composite(primitives...) = Composite(primitives)
 Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalMap(rule), prims...))
 
-# TODO: add LambdaRule
-# TODO: add LambdaTypeMap
-
 #=================#
 # Rule primitives #
 #=================#

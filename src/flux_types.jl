@@ -1,5 +1,4 @@
 ## Layer types
-# TODO: support BatchNorm
 
 """Union type for convolutional layers."""
 const ConvLayer = Union{Conv,ConvTranspose,CrossCor}

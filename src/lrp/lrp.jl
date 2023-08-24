@@ -23,7 +23,7 @@ struct LRP{C<:Chain,R<:ChainTuple,L<:ChainTuple} <: AbstractXAIMethod
     function LRP(
         model::Chain, rules::ChainTuple; skip_checks=false, flatten=true, verbose=true
     )
-        if flatten # TODO: document kwarg `flatten`
+        if flatten
             model = chainflatten(model)
             rules = chainflatten(rules)
         end
