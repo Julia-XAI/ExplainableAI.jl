@@ -133,7 +133,7 @@ julia> d = Dense(2, 2);
 
 julia> model = Chain(d, Parallel(+, d, d, Chain(d, d)), d);
 
-julia> chainkeys(model)
+julia> chainindices(model)
 ChainTuple(
   (1,),
   ParallelTuple(
@@ -148,14 +148,14 @@ ChainTuple(
 )
 ```
 """
-chainkeys(model) = chainkeys(model, tuple())
-function chainkeys(x, key)
+chainindices(model) = chainindices(model, tuple())
+function chainindices(x, key)
     if isleaf(x)
         return key
     else
         T = constructor(x)
         keys = map(i -> (key..., i), 1:length(children(x)))
-        return T(chainkeys.(children(x), keys)...)
+        return T(chainindices.(children(x), keys)...)
     end
 end
 

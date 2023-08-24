@@ -171,7 +171,7 @@ end
 Apply a composite to obtain LRP-rules for a given Flux model.
 """
 function lrp_rules(model, c::Composite)
-    keys = chainkeys(model)
+    keys = chainindices(model)
     first_key = first_element(keys)
     last_key = last_element(keys)
 
