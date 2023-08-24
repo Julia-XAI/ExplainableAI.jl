@@ -166,6 +166,40 @@ function get_type_rule(layer, map)
 end
 
 """
+    in_branch(a, b)
+
+Viewing index tuples `a` and `b` as positions on a tree-like data structure,
+this checks whether `a` is on the same "branch" as `b`.
+
+## Examples
+```julia-repl
+julia> in_branch((1, 2), 1)
+true
+
+julia> in_branch((1, 2), 2)
+false
+
+julia> in_branch((1, 2), (1, 2))
+true
+
+julia> in_branch((1, 2, 3), (1, 2))
+true
+
+julia> in_branch((1, 2), (1, 2, 3))
+false
+```
+"""
+in_branch(a::Integer, b::Integer) = a == b
+in_branch(a::Tuple, b::Integer) = first(a) == b
+function in_branch(a::Tuple, b::Tuple)
+    length(a) < length(b) && return false
+    for i in 1:length(b)
+        a[i] != b[i] && return false
+    end
+    return true
+end
+
+"""
     lrp_rules(model, composite)
 
 Apply a composite to obtain LRP-rules for a given Flux model.
