@@ -165,7 +165,7 @@ end
 Print layer indices of Flux models.
 This is primarily a utility to help define [`LayerMap`](@ref) primitives.
 """
-show_layer_indices(model) = display(chainindices(model))
+show_layer_indices(model) = chainindices(model)
 
 """
     chainzip(f, x, y)
