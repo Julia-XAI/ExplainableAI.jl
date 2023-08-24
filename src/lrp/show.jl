@@ -107,7 +107,7 @@ end
 # Composite #
 #===========#
 
-_range_string(r::LayerMap)         = "layer $(r.n)"
+_range_string(r::LayerMap)         = "layer $(r.index)"
 _range_string(::GlobalMap)         = "all layers"
 _range_string(r::RangeMap)         = "layers $(r.range)"
 _range_string(::FirstLayerMap)     = "first layer"
