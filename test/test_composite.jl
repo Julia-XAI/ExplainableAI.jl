@@ -21,6 +21,8 @@ for (name, c) in DEFAULT_COMPOSITES
 end
 
 # Test utilities
+@test in_branch(1, 1)
+@test !in_branch(1, 2)
 @test in_branch((1, 2), 1)
 @test !in_branch((1, 2), 2)
 @test in_branch((1, 2), (1, 2))
