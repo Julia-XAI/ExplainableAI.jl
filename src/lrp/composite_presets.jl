@@ -9,14 +9,14 @@ $(repr("text/plain", EpsilonGammaBox(-3.0f0, 3.0f0)))
 """
 function EpsilonGammaBox(low, high; epsilon=1.0f-6, gamma=0.25f0)
     return Composite(
-        GlobalTypeRule(
+        GlobalTypeMap(
             ConvLayer        => GammaRule(gamma),
             Dense            => EpsilonRule(epsilon),
             DropoutLayer     => PassRule(),
             ReshapingLayer   => PassRule(),
             typeof(identity) => PassRule(),
         ),
-        FirstLayerTypeRule(ConvLayer => ZBoxRule(low, high)),
+        FirstLayerTypeMap(ConvLayer => ZBoxRule(low, high)),
     )
 end
 
@@ -31,7 +31,7 @@ $(repr("text/plain", EpsilonPlus()))
 """
 function EpsilonPlus(; epsilon=1.0f-6)
     return Composite(
-        GlobalTypeRule(
+        GlobalTypeMap(
             ConvLayer        => ZPlusRule(),
             Dense            => EpsilonRule(epsilon),
             DropoutLayer     => PassRule(),
@@ -52,7 +52,7 @@ $(repr("text/plain", EpsilonAlpha2Beta1()))
 """
 function EpsilonAlpha2Beta1(; epsilon=1.0f-6)
     return Composite(
-        GlobalTypeRule(
+        GlobalTypeMap(
             ConvLayer        => AlphaBetaRule(2.0f0, 1.0f0),
             Dense            => EpsilonRule(epsilon),
             DropoutLayer     => PassRule(),
@@ -73,14 +73,14 @@ $(repr("text/plain", EpsilonPlusFlat()))
 """
 function EpsilonPlusFlat(; epsilon=1.0f-6)
     return Composite(
-        GlobalTypeRule(
+        GlobalTypeMap(
             ConvLayer        => ZPlusRule(),
             Dense            => EpsilonRule(epsilon),
             DropoutLayer     => PassRule(),
             ReshapingLayer   => PassRule(),
             typeof(identity) => PassRule(),
         ),
-        FirstLayerTypeRule(ConvLayer => FlatRule(), Dense => FlatRule()),
+        FirstLayerTypeMap(ConvLayer => FlatRule(), Dense => FlatRule()),
     )
 end
 
@@ -95,13 +95,13 @@ $(repr("text/plain", EpsilonAlpha2Beta1Flat()))
 """
 function EpsilonAlpha2Beta1Flat(; epsilon=1.0f-6)
     return Composite(
-        GlobalTypeRule(
+        GlobalTypeMap(
             ConvLayer        => AlphaBetaRule(2.0f0, 1.0f0),
             Dense            => EpsilonRule(epsilon),
             DropoutLayer     => PassRule(),
             ReshapingLayer   => PassRule(),
             typeof(identity) => PassRule(),
         ),
-        FirstLayerTypeRule(ConvLayer => FlatRule(), Dense => FlatRule()),
+        FirstLayerTypeMap(ConvLayer => FlatRule(), Dense => FlatRule()),
     )
 end
