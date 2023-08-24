@@ -22,6 +22,9 @@ Breaking changes:
 - ![BREAKING][badge-breaking] `lrp!` rule calls require extra argument `layer` ([#119][pr-119])
 - ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
 - ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
+- ![BREAKING][badge-breaking] Rename composite primitives to avoid confusion with LRP rules ([#130][pr-130])
+    - rename `*Rule` to `*Map`
+    - rename `*TypeRule` to `*TypeMap`
 
 New features and enhancements:
 - ![Feature][badge-feature] Support nested Flux Chains ([#119][pr-119])
@@ -145,6 +148,7 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-130]: https://github.com/adrhill/ExplainableAI.jl/pull/130
 [pr-129]: https://github.com/adrhill/ExplainableAI.jl/pull/129
 [pr-128]: https://github.com/adrhill/ExplainableAI.jl/pull/128
 [pr-126]: https://github.com/adrhill/ExplainableAI.jl/pull/126
