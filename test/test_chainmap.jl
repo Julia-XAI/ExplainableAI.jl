@@ -1,4 +1,4 @@
-using ExplainableAI: ChainTuple, ParallelTuple, chainmap, chainkeys
+using ExplainableAI: ChainTuple, ParallelTuple, chainmap, chainindices
 using ExplainableAI: activation_fn
 using Flux
 
@@ -37,12 +37,12 @@ h4p1 = d4(2 * h21 + h331) # output of Chain c6
 @test chainmap(activation_fn, c7) ==
     ChainTuple(relu, ParallelTuple(selu, selu, ChainTuple(gelu, gelu)), celu)
 
-@test chainkeys(c1) == ChainTuple((1,))
-@test chainkeys(c2) == ChainTuple((1,), (2,))
-@test chainkeys(c3) == ChainTuple(ChainTuple((1, 1), (1, 2)), (2,))
-@test chainkeys(c4) == ChainTuple((1,), ChainTuple((2, 1), (2, 2)))
-@test chainkeys(c5) == ChainTuple((1,), ChainTuple((2, 1), (2, 2)), (3,))
-@test chainkeys(c6) == ChainTuple(ParallelTuple((1, 1), (1, 2)))
-@test chainkeys(c7) == ChainTuple(
+@test chainindices(c1) == ChainTuple((1,))
+@test chainindices(c2) == ChainTuple((1,), (2,))
+@test chainindices(c3) == ChainTuple(ChainTuple((1, 1), (1, 2)), (2,))
+@test chainindices(c4) == ChainTuple((1,), ChainTuple((2, 1), (2, 2)))
+@test chainindices(c5) == ChainTuple((1,), ChainTuple((2, 1), (2, 2)), (3,))
+@test chainindices(c6) == ChainTuple(ParallelTuple((1, 1), (1, 2)))
+@test chainindices(c7) == ChainTuple(
     (1,), ParallelTuple((2, 1), (2, 2), ChainTuple((2, 3, 1), (2, 3, 2))), (3,)
 )

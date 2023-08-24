@@ -53,7 +53,8 @@ export Composite, AbstractCompositePrimitive
 export LayerMap, GlobalMap, RangeMap, FirstLayerMap, LastLayerMap
 export GlobalTypeMap, RangeTypeMap, FirstLayerTypeMap, LastLayerTypeMap
 export FirstNTypeMap
-export lrp_rules
+export lrp_rules, show_layer_indices
+
 # Default composites
 export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat

@@ -1,4 +1,5 @@
 using ExplainableAI
+using ExplainableAI: in_branch
 using Metalhead
 using Flux
 
@@ -18,6 +19,17 @@ const DEFAULT_COMPOSITES = Dict(
 for (name, c) in DEFAULT_COMPOSITES
     @test_reference "references/show/$name.txt" repr("text/plain", c)
 end
+
+# Test utilities
+@test in_branch(1, 1)
+@test !in_branch(1, 2)
+@test in_branch((1, 2), 1)
+@test !in_branch((1, 2), 2)
+@test in_branch((1, 2), (1, 2))
+@test in_branch((1, 2, 3), (1, 2))
+@test !in_branch((1, 2), (1, 2, 3))
+
+@test_reference "references/show/show_layer_indices.txt" repr("text/plain", show_layer_indices(model))
 
 # This composite is non-sensical, but covers many composite primitives
 composite1 = Composite(

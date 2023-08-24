@@ -20,7 +20,7 @@ abstract type AbstractCompositeMap <: AbstractCompositePrimitive end
 """
     GlobalMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to all layers in the model.
+Composite primitive that maps an LRP-rule to all layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
@@ -29,21 +29,23 @@ struct GlobalMap{R<:AbstractLRPRule} <: AbstractCompositeMap
 end
 
 """
-    LayerMap(n, rule)
+    LayerMap(index, rule)
 
-Composite primitive that maps LRP-rule `rule` to the `n`-th layer in the model.
+Composite primitive that maps an LRP-rule to all layers in the model at the given index.
+The index can either be an integer or a tuple of integers to map a rule to a specific layer
+in nested Flux `Chain`s.
 
-See [`Composite`](@ref) for an example.
+See [`show_layer_indices`](@ref) to print layer indices and [`Composite`](@ref) for an example.
 """
-struct LayerMap{R<:AbstractLRPRule} <: AbstractCompositeMap
-    n::Int
+struct LayerMap{I<:Union{Integer,Tuple},R<:AbstractLRPRule} <: AbstractCompositeMap
+    index::I
     rule::R
 end
 
 """
     RangeMap(range, rule)
 
-Composite primitive that maps LRP-rule `rule` to the specified positional `range`
+Composite primitive that maps an LRP-rule to the specified positional `range`
 of layers in the model.
 
 See [`Composite`](@ref) for an example.
@@ -56,7 +58,7 @@ end
 """
     FirstLayerMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to the first layer in the model.
+Composite primitive that maps an LRP-rule to the first layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
@@ -67,7 +69,7 @@ end
 """
     LastLayerMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to the last layer in the model.
+Composite primitive that maps an LRP-rule to the last layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
@@ -166,47 +168,81 @@ function get_type_rule(layer, map)
 end
 
 """
+    in_branch(a, b)
+
+Viewing index tuples `a` and `b` as positions on a tree-like data structure,
+this checks whether `a` is on the same "branch" as `b`.
+
+## Examples
+```julia-repl
+julia> in_branch((1, 2), 1)
+true
+
+julia> in_branch((1, 2), 2)
+false
+
+julia> in_branch((1, 2), (1, 2))
+true
+
+julia> in_branch((1, 2, 3), (1, 2))
+true
+
+julia> in_branch((1, 2), (1, 2, 3))
+false
+```
+"""
+in_branch(a::Integer, b::Integer) = a == b
+in_branch(a::Tuple, b::Integer) = first(a) == b
+function in_branch(a::Tuple, b::Tuple)
+    length(a) < length(b) && return false
+    for i in eachindex(b)
+        a[i] != b[i] && return false
+    end
+    return true
+end
+
+"""
     lrp_rules(model, composite)
 
 Apply a composite to obtain LRP-rules for a given Flux model.
 """
 function lrp_rules(model, c::Composite)
-    keys = chainkeys(model)
-    first_key = first_element(keys)
-    last_key = last_element(keys)
+    indices = chainindices(model)
+    idx_first = first_element(indices)
+    idx_last = last_element(indices)
 
-    get_rule(r::LayerMap, _, key) = ifelse(first(key) == r.n, r.rule, nothing)
-    get_rule(r::GlobalMap, _, _key) = r.rule
-    get_rule(r::RangeMap, _, key) = ifelse(first(key) ∈ r.range, r.rule, nothing)
-    get_rule(r::FirstLayerMap, _, key) = ifelse(key == first_key, r.rule, nothing)
-    get_rule(r::LastLayerMap, _, key) = ifelse(key == last_key, r.rule, nothing)
+    get_rule(r::LayerMap, _, idx) = ifelse(in_branch(idx, r.index), r.rule, nothing)
+    get_rule(r::GlobalMap, _, _idx) = r.rule
+    get_rule(r::RangeMap, _, idx) = ifelse(first(idx) ∈ r.range, r.rule, nothing)
+    get_rule(r::FirstLayerMap, _, idx) = ifelse(idx == idx_first, r.rule, nothing)
+    get_rule(r::LastLayerMap, _, idx) = ifelse(idx == idx_last, r.rule, nothing)
 
-    function get_rule(r::GlobalTypeMap, layer, _key)
+    function get_rule(r::GlobalTypeMap, layer, _idx)
         return get_type_rule(layer, r.map)
     end
-    function get_rule(r::RangeTypeMap, layer, key)
-        return ifelse(first(key) ∈ r.range, get_type_rule(layer, r.map), nothing)
+    function get_rule(r::RangeTypeMap, layer, idx)
+        return ifelse(first(idx) ∈ r.range, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::FirstLayerTypeMap, layer, key)
-        return ifelse(key == first_key, get_type_rule(layer, r.map), nothing)
+    function get_rule(r::FirstLayerTypeMap, layer, idx)
+        return ifelse(idx == idx_first, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::LastLayerTypeMap, layer, key)
-        return ifelse(key == last_key, get_type_rule(layer, r.map), nothing)
+    function get_rule(r::LastLayerTypeMap, layer, idx)
+        return ifelse(idx == idx_last, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::FirstNTypeMap, layer, key)
-        return ifelse(first(key) ∈ 1:(r.n), get_type_rule(layer, r.map), nothing)
+    function get_rule(r::FirstNTypeMap, layer, idx)
+        return ifelse(first(idx) ∈ 1:(r.n), get_type_rule(layer, r.map), nothing)
     end
 
     # The last rule returned from a composite primitive is assigned to the layer.
     # This is implemented by returning the first rule in reverse order:
-    function match_rule(layer, key)
+    function match_rule(layer, idx)
         for primitive in reverse(c.primitives)
-            rule = get_rule(primitive, layer, key)
+            rule = get_rule(primitive, layer, idx)
             !isnothing(rule) && return rule
         end
         return ZeroRule() # else if no assignment was found, return default rule
     end
-    return chainzip(match_rule, model, keys) # construct ChainTuple of rules
+    return chainzip(match_rule, model, indices) # construct ChainTuple of rules
 end
 
 """
