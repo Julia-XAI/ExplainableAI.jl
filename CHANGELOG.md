@@ -19,19 +19,21 @@ Breaking changes:
 - ![BREAKING][badge-breaking] Remove `check_model` (replaced by non-exported `check_lrp_compat`) ([#119][pr-119])
 - ![BREAKING][badge-breaking] Replace `layerwise_relevances` field of `Explanation` return type by optional named tuple `extras`.
     Access layerwise relevances via `extras.layerwise_relevances`. ([#126][pr-126])
-- ![BREAKING][badge-breaking] `lrp!` rule calls require extra argument `layer` ([#119][pr-119])
-- ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
 - ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
 - ![BREAKING][badge-breaking] Rename composite primitives to avoid confusion with LRP rules ([#130][pr-130])
     - rename `*Rule` to `*Map`
     - rename `*TypeRule` to `*TypeMap`
 
+Breaking changes to commonly extended internal functions:
+- ![BREAKING][badge-breaking] Internal `lrp!` rule calls require extra argument `layer` ([#119][pr-119])
+- ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
+
 New features and enhancements:
 - ![Feature][badge-feature] Support nested Flux Chains ([#119][pr-119])
 - ![Feature][badge-feature] Support `BatchNorm` layers ([#129][pr-129])
 - ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
-- ![Feature][badge-feature] Composite primitive `LayerMap` supports nested indexing ([#131][pr-131])
-- ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119]) 
+- ![Feature][badge-feature] Support nested indexing in composite primitive `LayerMap` ([#131][pr-131])
+- ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119])
 - ![Enhancement][badge-enhancement] Set LRP output relevance to one ([#128][pr-128])
 - ![Enhancement][badge-enhancement] `lrp!` rule calls require extra argument `layer`, avoiding copies of unmodified layers ([#119][pr-119])
 - ![Enhancement][badge-enhancement] Performance fixes for LRP rules, reducing number of generated pullback functions ([#106][pr-106], [#108][pr-108])
@@ -44,8 +46,8 @@ Improvements to documentation:
 - ![Documentation][badge-docs] Fix image loading in README example
 
 Package maintenance:
-- ![Maintenance][badge-maintenance] Refactor LRP rule tests ([#103][pr-103])
-- ![Maintenance][badge-maintenance] Fix LRP benchmarks ([#104][pr-104])
+- ![Maintenance][badge-maintenance] Refactor LRP rule tests ([#103][pr-103], [#127][pr-127])
+- ![Maintenance][badge-maintenance] Fix LRP benchmarks ([#104][pr-104], [#127][pr-127])
 
 ### General changes
 - ![Maintenance][badge-maintenance] Compatibility with Flux.jl `v0.14` ([#116][pr-116])
@@ -153,6 +155,7 @@ Performance improvements:
 [pr-130]: https://github.com/adrhill/ExplainableAI.jl/pull/130
 [pr-129]: https://github.com/adrhill/ExplainableAI.jl/pull/129
 [pr-128]: https://github.com/adrhill/ExplainableAI.jl/pull/128
+[pr-127]: https://github.com/adrhill/ExplainableAI.jl/pull/127
 [pr-126]: https://github.com/adrhill/ExplainableAI.jl/pull/126
 [pr-125]: https://github.com/adrhill/ExplainableAI.jl/pull/125
 [pr-119]: https://github.com/adrhill/ExplainableAI.jl/pull/119
