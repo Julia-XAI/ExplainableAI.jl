@@ -50,9 +50,9 @@ export PassRule, ZBoxRule, ZPlusRule, AlphaBetaRule, GeneralizedGammaRule
 
 # LRP composites
 export Composite, AbstractCompositePrimitive
-export LayerRule, GlobalRule, RangeRule, FirstLayerRule, LastLayerRule
-export GlobalTypeRule, RangeTypeRule, FirstLayerTypeRule, LastLayerTypeRule
-export FirstNTypeRule
+export LayerMap, GlobalMap, RangeMap, FirstLayerMap, LastLayerMap
+export GlobalTypeMap, RangeTypeMap, FirstLayerTypeMap, LastLayerTypeMap
+export FirstNTypeMap
 export lrp_rules
 # Default composites
 export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat

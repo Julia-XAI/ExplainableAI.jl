@@ -107,16 +107,16 @@ end
 # Composite #
 #===========#
 
-_range_string(r::LayerRule)         = "layer $(r.n)"
-_range_string(::GlobalRule)         = "all layers"
-_range_string(r::RangeRule)         = "layers $(r.range)"
-_range_string(::FirstLayerRule)     = "first layer"
-_range_string(::LastLayerRule)      = "last layer"
-_range_string(r::GlobalTypeRule)    = "all layers"
-_range_string(r::RangeTypeRule)     = "layers $(r.range)"
-_range_string(::FirstLayerTypeRule) = "first layer"
-_range_string(::LastLayerTypeRule)  = "last layer"
-_range_string(r::FirstNTypeRule)    = "layers $(1:r.n)"
+_range_string(r::LayerMap)         = "layer $(r.n)"
+_range_string(::GlobalMap)         = "all layers"
+_range_string(r::RangeMap)         = "layers $(r.range)"
+_range_string(::FirstLayerMap)     = "first layer"
+_range_string(::LastLayerMap)      = "last layer"
+_range_string(r::GlobalTypeMap)    = "all layers"
+_range_string(r::RangeTypeMap)     = "layers $(r.range)"
+_range_string(::FirstLayerTypeMap) = "first layer"
+_range_string(::LastLayerTypeMap)  = "last layer"
+_range_string(r::FirstNTypeMap)    = "layers $(1:r.n)"
 
 function Base.show(io::IO, m::MIME"text/plain", c::Composite)
     println(io, "Composite", "(")
@@ -126,7 +126,7 @@ function Base.show(io::IO, m::MIME"text/plain", c::Composite)
     println(io, ")")
 end
 
-function _show_primitive(io::IO, r::AbstractRulePrimitive, indent::Int=0)
+function _show_primitive(io::IO, r::AbstractCompositeMap, indent::Int=0)
     print(io, " "^indent, typename(r), ": ")
     printstyled(io, _range_string(r); color=COLOR_RANGE)
     print(io, " => ")
@@ -134,7 +134,7 @@ function _show_primitive(io::IO, r::AbstractRulePrimitive, indent::Int=0)
     println(io, ",")
 end
 
-function _show_primitive(io::IO, r::AbstractTypeRulePrimitive, indent::Int=0)
+function _show_primitive(io::IO, r::AbstractCompositeTypeMap, indent::Int=0)
     print(io, " "^indent, rpad(typename(r) * "(", 20))
     printstyled(io, "# on ", _range_string(r); color=COLOR_COMMENT)
     println(io)
@@ -150,7 +150,7 @@ function _print_rules(io::IO, rs, indent::Int=0)
     end
 end
 
-function _print_type_rule(io::IO, r::TypeRulePair)
+function _print_type_rule(io::IO, r::TypeMapPair)
     printstyled(io, r.first; color=COLOR_TYPE)
     print(io, " => ")
     printstyled(io, r.second; color=COLOR_RULE)

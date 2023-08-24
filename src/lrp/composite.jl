@@ -8,158 +8,152 @@ struct Composite{T<:Union{Tuple,AbstractVector}}
     primitives::T
 end
 Composite(primitives...) = Composite(primitives)
-Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalRule(rule), prims...))
+Composite(rule::AbstractLRPRule, prims...) = Composite((GlobalMap(rule), prims...))
 
-# TODO: Documentation and new lrp_rules function, add to Changelog
-# - new lrp_rules function
-# - deprecation of LastNTypeRule
-# - document new primitive interface
-
-# TODO: rename primitives to e.g. "assigners" avoid confusion with LRP rules
 # TODO: add LambdaRule
-# TODO: add LambdaTypeRule
+# TODO: add LambdaTypeMap
 
 #=================#
 # Rule primitives #
 #=================#
 
 abstract type AbstractCompositePrimitive end
-abstract type AbstractRulePrimitive <: AbstractCompositePrimitive end
+abstract type AbstractCompositeMap <: AbstractCompositePrimitive end
 
 """
-    GlobalRule(rule)
+    GlobalMap(rule)
 
-Composite primitive that applies LRP-rule `rule` to all layers in the model.
+Composite primitive that maps LRP-rule `rule` to all layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct GlobalRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
+struct GlobalMap{R<:AbstractLRPRule} <: AbstractCompositeMap
     rule::R
 end
 
 """
-    LayerRule(n, rule)
+    LayerMap(n, rule)
 
-Composite primitive that applies LRP-rule `rule` to the `n`-th layer in the model.
+Composite primitive that maps LRP-rule `rule` to the `n`-th layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct LayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
+struct LayerMap{R<:AbstractLRPRule} <: AbstractCompositeMap
     n::Int
     rule::R
 end
 
 """
-    RangeRule(range, rule)
+    RangeMap(range, rule)
 
-Composite primitive that applies LRP-rule `rule` to the specified positional `range`
+Composite primitive that maps LRP-rule `rule` to the specified positional `range`
 of layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct RangeRule{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractRulePrimitive
+struct RangeMap{T<:AbstractRange,R<:AbstractLRPRule} <: AbstractCompositeMap
     range::T
     rule::R
 end
 
 """
-    FirstLayerRule(rule)
+    FirstLayerMap(rule)
 
-Composite primitive that applies LRP-rule `rule` to the first layer in the model.
+Composite primitive that maps LRP-rule `rule` to the first layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct FirstLayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
+struct FirstLayerMap{R<:AbstractLRPRule} <: AbstractCompositeMap
     rule::R
 end
 
 """
-    LastLayerRule(rule)
+    LastLayerMap(rule)
 
-Composite primitive that applies LRP-rule `rule` to the last layer in the model.
+Composite primitive that maps LRP-rule `rule` to the last layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct LastLayerRule{R<:AbstractLRPRule} <: AbstractRulePrimitive
+struct LastLayerMap{R<:AbstractLRPRule} <: AbstractCompositeMap
     rule::R
 end
 
 #=====================#
-# TypeRule primitives #
+# TypeMap primitives #
 #=====================#
 
-abstract type AbstractTypeRulePrimitive <: AbstractCompositePrimitive end
-const TypeRulePair = Pair{<:Type,<:AbstractLRPRule}
+abstract type AbstractCompositeTypeMap <: AbstractCompositePrimitive end
+const TypeMapPair = Pair{<:Type,<:AbstractLRPRule}
 
 """
-    GlobalTypeRule(map)
+    GlobalTypeMap(map)
 
 Composite primitive that maps layer types to LRP rules based on a list of
 type-rule-pairs `map`.
 
 See [`Composite`](@ref) for an example.
 """
-struct GlobalTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
+struct GlobalTypeMap{T<:AbstractVector{<:TypeMapPair}} <: AbstractCompositeTypeMap
     map::T
 end
 
 """
-    RangeTypeRule(range, map)
+    RangeTypeMap(range, map)
 
 Composite primitive that maps layer types to LRP rules based on a list of
 type-rule-pairs `map` within the specified `range` of layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct RangeTypeRule{R<:AbstractRange,T<:AbstractVector{<:TypeRulePair}} <:
-       AbstractTypeRulePrimitive
+struct RangeTypeMap{R<:AbstractRange,T<:AbstractVector{<:TypeMapPair}} <:
+       AbstractCompositeTypeMap
     range::R
     map::T
 end
 
 """
-    FirstNTypeRule(n, map)
+    FirstNTypeMap(n, map)
 
 Composite primitive that maps layer types to LRP rules based on a list of
 type-rule-pairs `map` within the first `n` layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
-struct FirstNTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
+struct FirstNTypeMap{T<:AbstractVector{<:TypeMapPair}} <: AbstractCompositeTypeMap
     n::Int
     map::T
 end
 
 """
-    FirstLayerTypeRule(map)
+    FirstLayerTypeMap(map)
 
 Composite primitive that maps the type of the first layer of the model to LRP rules
 based on a list of type-rule-pairs `map`.
 
 See [`Composite`](@ref) for an example.
 """
-struct FirstLayerTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
+struct FirstLayerTypeMap{T<:AbstractVector{<:TypeMapPair}} <: AbstractCompositeTypeMap
     map::T
 end
 
 """
-    LastLayerTypeRule(map)
+    LastLayerTypeMap(map)
 
 Composite primitive that maps the type of the last layer of the model to LRP rules
 based on a list of type-rule-pairs `map`.
 
 See [`Composite`](@ref) for an example.
 """
-struct LastLayerTypeRule{T<:AbstractVector{<:TypeRulePair}} <: AbstractTypeRulePrimitive
+struct LastLayerTypeMap{T<:AbstractVector{<:TypeMapPair}} <: AbstractCompositeTypeMap
     map::T
 end
 
 # Convenience constructors
-GlobalTypeRule(ps::Vararg{TypeRulePair})     = GlobalTypeRule([ps...])
-RangeTypeRule(r, ps::Vararg{TypeRulePair})   = RangeTypeRule(r, [ps...])
-FirstLayerTypeRule(ps::Vararg{TypeRulePair}) = FirstLayerTypeRule([ps...])
-LastLayerTypeRule(ps::Vararg{TypeRulePair})  = LastLayerTypeRule([ps...])
-FirstNTypeRule(n, ps::Vararg{TypeRulePair})  = FirstNTypeRule(n, [ps...])
+GlobalTypeMap(ps::Vararg{TypeMapPair})     = GlobalTypeMap([ps...])
+RangeTypeMap(r, ps::Vararg{TypeMapPair})   = RangeTypeMap(r, [ps...])
+FirstLayerTypeMap(ps::Vararg{TypeMapPair}) = FirstLayerTypeMap([ps...])
+LastLayerTypeMap(ps::Vararg{TypeMapPair})  = LastLayerTypeMap([ps...])
+FirstNTypeMap(n, ps::Vararg{TypeMapPair})  = FirstNTypeMap(n, [ps...])
 
 #=====================#
 # LRP-rule assignment #
@@ -184,25 +178,25 @@ function lrp_rules(model, c::Composite)
     first_key = first_element(keys)
     last_key = last_element(keys)
 
-    get_rule(r::LayerRule, _, key) = ifelse(first(key) == r.n, r.rule, nothing)
-    get_rule(r::GlobalRule, _, _key) = r.rule
-    get_rule(r::RangeRule, _, key) = ifelse(first(key) ∈ r.range, r.rule, nothing)
-    get_rule(r::FirstLayerRule, _, key) = ifelse(key == first_key, r.rule, nothing)
-    get_rule(r::LastLayerRule, _, key) = ifelse(key == last_key, r.rule, nothing)
+    get_rule(r::LayerMap, _, key) = ifelse(first(key) == r.n, r.rule, nothing)
+    get_rule(r::GlobalMap, _, _key) = r.rule
+    get_rule(r::RangeMap, _, key) = ifelse(first(key) ∈ r.range, r.rule, nothing)
+    get_rule(r::FirstLayerMap, _, key) = ifelse(key == first_key, r.rule, nothing)
+    get_rule(r::LastLayerMap, _, key) = ifelse(key == last_key, r.rule, nothing)
 
-    function get_rule(r::GlobalTypeRule, layer, _key)
+    function get_rule(r::GlobalTypeMap, layer, _key)
         return get_type_rule(layer, r.map)
     end
-    function get_rule(r::RangeTypeRule, layer, key)
+    function get_rule(r::RangeTypeMap, layer, key)
         return ifelse(first(key) ∈ r.range, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::FirstLayerTypeRule, layer, key)
+    function get_rule(r::FirstLayerTypeMap, layer, key)
         return ifelse(key == first_key, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::LastLayerTypeRule, layer, key)
+    function get_rule(r::LastLayerTypeMap, layer, key)
         return ifelse(key == last_key, get_type_rule(layer, r.map), nothing)
     end
-    function get_rule(r::FirstNTypeRule, layer, key)
+    function get_rule(r::FirstNTypeMap, layer, key)
         return ifelse(first(key) ∈ 1:(r.n), get_type_rule(layer, r.map), nothing)
     end
 
@@ -225,31 +219,31 @@ Automatically contructs a list of LRP-rules by sequentially applying composite p
 
 # Primitives
 To apply a single rule, use:
-* [`LayerRule`](@ref) to apply a rule to the `n`-th layer of a model
-* [`GlobalRule`](@ref) to apply a rule to all layers
-* [`RangeRule`](@ref) to apply a rule to a positional range of layers
-* [`FirstLayerRule`](@ref) to apply a rule to the first layer
-* [`LastLayerRule`](@ref) to apply a rule to the last layer
+* [`LayerMap`](@ref) to apply a rule to the `n`-th layer of a model
+* [`GlobalMap`](@ref) to apply a rule to all layers
+* [`RangeMap`](@ref) to apply a rule to a positional range of layers
+* [`FirstLayerMap`](@ref) to apply a rule to the first layer
+* [`LastLayerMap`](@ref) to apply a rule to the last layer
 
 To apply a set of rules to layers based on their type, use:
-* [`GlobalTypeRule`](@ref) to apply a dictionary that maps layer types to LRP-rules
-* [`RangeTypeRule`](@ref) for a `TypeRule` on generalized ranges
-* [`FirstLayerTypeRule`](@ref) for a `TypeRule` on the first layer of a model
-* [`LastLayerTypeRule`](@ref) for a `TypeRule` on the last layer
-* [`FirstNTypeRule`](@ref) for a `TypeRule` on the first `n` layers
+* [`GlobalTypeMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
+* [`RangeTypeMap`](@ref) for a `TypeMap` on generalized ranges
+* [`FirstLayerTypeMap`](@ref) for a `TypeMap` on the first layer of a model
+* [`LastLayerTypeMap`](@ref) for a `TypeMap` on the last layer
+* [`FirstNTypeMap`](@ref) for a `TypeMap` on the first `n` layers
 
 # Example
 Using a flattened VGG11 model:
 ```julia-repl
 julia> composite = Composite(
-           GlobalTypeRule(
+           GlobalTypeMap(
                ConvLayer => AlphaBetaRule(),
                Dense => EpsilonRule(),
                PoolingLayer => EpsilonRule(),
                DropoutLayer => PassRule(),
                ReshapingLayer => PassRule(),
            ),
-           FirstNTypeRule(7, Conv => FlatRule()),
+           FirstNTypeMap(7, Conv => FlatRule()),
        );
 
 julia> analyzer = LRP(model, composite);

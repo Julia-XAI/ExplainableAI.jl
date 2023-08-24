@@ -22,18 +22,18 @@ end
 # This composite is non-sensical, but covers many composite primitives
 composite1 = Composite(
     ZeroRule(), # default rule
-    GlobalRule(PassRule()), # override default rule
-    GlobalTypeRule(
+    GlobalMap(PassRule()), # override default rule
+    GlobalTypeMap(
         ConvLayer    => AlphaBetaRule(2.0f0, 1.0f0),
         Dense        => EpsilonRule(1.0f-6),
         PoolingLayer => EpsilonRule(1.0f-6),
     ),
-    FirstNTypeRule(7, Conv => FlatRule()),
-    RangeTypeRule(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
-    LayerRule(9, AlphaBetaRule(1.0f0, 0.0f0)),
-    FirstLayerRule(ZBoxRule(-3.0f0, 3.0f0)),
-    RangeRule(18:19, ZeroRule()),
-    LastLayerRule(PassRule()),
+    FirstNTypeMap(7, Conv => FlatRule()),
+    RangeTypeMap(4:10, PoolingLayer => EpsilonRule(1.0f-5)),
+    LayerMap(9, AlphaBetaRule(1.0f0, 0.0f0)),
+    FirstLayerMap(ZBoxRule(-3.0f0, 3.0f0)),
+    RangeMap(18:19, ZeroRule()),
+    LastLayerMap(PassRule()),
 )
 @test_reference "references/show/composite1.txt" repr("text/plain", composite1)
 
@@ -72,8 +72,8 @@ model2 = Chain(
     Dense(84 => 10),
 )
 composite2 = Composite(
-    LastLayerTypeRule(Dense => EpsilonRule(2.0f-5), Conv => EpsilonRule(2.0f-4)),
-    FirstLayerTypeRule(
+    LastLayerTypeMap(Dense => EpsilonRule(2.0f-5), Conv => EpsilonRule(2.0f-4)),
+    FirstLayerTypeMap(
         Dense => AlphaBetaRule(1.0f0, 0.0f0), Conv => AlphaBetaRule(2.0f0, 1.0f0)
     ),
 )
@@ -93,14 +93,14 @@ analyzer2 = LRP(model2, composite2; flatten=false)
 @test_reference "references/show/lrp2.txt" repr("text/plain", analyzer2)
 
 composite3 = Composite(
-    GlobalTypeRule(
+    GlobalTypeMap(
         ConvLayer      => ZPlusRule(),
         Dense          => EpsilonRule(),
         DropoutLayer   => PassRule(),
         ReshapingLayer => PassRule(),
     ),
-    FirstLayerTypeRule(ConvLayer => FlatRule(), Dense => FlatRule()),
-    LastLayerRule(EpsilonRule(1.0f-5)),
+    FirstLayerTypeMap(ConvLayer => FlatRule(), Dense => FlatRule()),
+    LastLayerMap(EpsilonRule(1.0f-5)),
 )
 
 analyzer3 = LRP(model, composite3; flatten=false)
