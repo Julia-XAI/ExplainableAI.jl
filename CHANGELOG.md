@@ -30,6 +30,7 @@ New features and enhancements:
 - ![Feature][badge-feature] Support nested Flux Chains ([#119][pr-119])
 - ![Feature][badge-feature] Support `BatchNorm` layers ([#129][pr-129])
 - ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
+- ![Feature][badge-feature] Composite primitive `LayerMap` supports nested indexing ([#131][pr-131])
 - ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119]) 
 - ![Enhancement][badge-enhancement] Set LRP output relevance to one ([#128][pr-128])
 - ![Enhancement][badge-enhancement] `lrp!` rule calls require extra argument `layer`, avoiding copies of unmodified layers ([#119][pr-119])
@@ -148,6 +149,7 @@ Performance improvements:
 ![Documentation][badge-docs]
 -->
 
+[pr-131]: https://github.com/adrhill/ExplainableAI.jl/pull/131
 [pr-130]: https://github.com/adrhill/ExplainableAI.jl/pull/130
 [pr-129]: https://github.com/adrhill/ExplainableAI.jl/pull/129
 [pr-128]: https://github.com/adrhill/ExplainableAI.jl/pull/128
