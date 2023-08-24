@@ -20,7 +20,7 @@ abstract type AbstractCompositeMap <: AbstractCompositePrimitive end
 """
     GlobalMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to all layers in the model.
+Composite primitive that maps an LRP-rule to all layers in the model.
 
 See [`Composite`](@ref) for an example.
 """
@@ -29,14 +29,13 @@ struct GlobalMap{R<:AbstractLRPRule} <: AbstractCompositeMap
 end
 
 """
-    LayerMap(n, rule)
+    LayerMap(index, rule)
 
-Composite primitive that maps LRP-rule `rule` to the `n`-th layer in the model.
+Composite primitive that maps an LRP-rule to all layers in the model at the given index.
+The index can either be an integer or a tuple of integers to map a rule to a specific layer
+in nested Flux `Chain`s.
 
-This can also be used with a tuple of integers to map a rule to a specific layer
-in nested Flux `Chain`s. To print layer indices, see [`show_layer_indices`](@ref).
-
-See [`Composite`](@ref) for an example.
+See [`show_layer_indices`](@ref) to print layer indices and [`Composite`](@ref) for an example.
 """
 struct LayerMap{I<:Union{Integer,Tuple},R<:AbstractLRPRule} <: AbstractCompositeMap
     index::I
@@ -46,7 +45,7 @@ end
 """
     RangeMap(range, rule)
 
-Composite primitive that maps LRP-rule `rule` to the specified positional `range`
+Composite primitive that maps an LRP-rule to the specified positional `range`
 of layers in the model.
 
 See [`Composite`](@ref) for an example.
@@ -59,7 +58,7 @@ end
 """
     FirstLayerMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to the first layer in the model.
+Composite primitive that maps an LRP-rule to the first layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
@@ -70,7 +69,7 @@ end
 """
     LastLayerMap(rule)
 
-Composite primitive that maps LRP-rule `rule` to the last layer in the model.
+Composite primitive that maps an LRP-rule to the last layer in the model.
 
 See [`Composite`](@ref) for an example.
 """
