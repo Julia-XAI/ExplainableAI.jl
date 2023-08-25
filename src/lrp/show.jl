@@ -14,27 +14,27 @@ typename(x) = string(nameof(typeof(x)))
 
 layer_name(io::IO, l) = string(sprint(show, l; context=io))
 
-function get_layer_name_padding(names::Union{ChainTuple,ParallelTuple})
+function get_name_padding(names::Union{ChainTuple,ParallelTuple})
     children = filter(isleaf, names.vals)
     isempty(children) && return 0
     return maximum(length.(children))
 end
 function Base.show(io::IO, m::MIME"text/plain", lrp::LRP)
     layer_names = chainmap(Base.Fix1(layer_name, io), lrp.model)
-    npad = get_layer_name_padding(layer_names)
+    npad = get_name_padding(layer_names)
 
     println(io, "LRP", "(")
     for (name, rule) in zip(layer_names, lrp.rules)
         print_rule(io, name, rule, 1, npad)
     end
-    println(io, ")")
+    print(io, ")")
 end
 
 for T in (:ChainTuple, :ParallelTuple)
     tuple_name = string(T)
     @eval begin
         function print_rule(io::IO, names::$T, rules::$T, indent::Int=0, npad::Int=0)
-            npad = get_layer_name_padding(names)
+            npad = get_name_padding(names)
             println(io, "  "^indent, $tuple_name, "(")
             for (name, rule) in zip(children(names), children(rules))
                 print_rule(io, name, rule, indent + 1, npad)
@@ -57,7 +57,7 @@ end
 
 function print_lrp_model_check(io::IO, model)
     layer_names = chainmap(Base.Fix1(layer_name, io), model)
-    npad = get_layer_name_padding(layer_names)
+    npad = get_name_padding(layer_names)
     print_lrp_model_check(io, model, layer_names, 1, npad)
 end
 
@@ -65,7 +65,7 @@ for T in (:ChainTuple, :ParallelTuple)
     tuple_name = string(T)
     @eval begin
         function print_lrp_model_check(io::IO, model, names::$T, indent::Int=0, npad::Int=0)
-            npad = get_layer_name_padding(names)
+            npad = get_name_padding(names)
             println(io, "  "^indent, $tuple_name, "(")
             for (layer, name) in zip(children(model), children(names))
                 print_lrp_model_check(io, layer, name, indent + 1, npad)
@@ -118,40 +118,55 @@ _range_string(::FirstLayerTypeMap) = "first layer"
 _range_string(::LastLayerTypeMap)  = "last layer"
 _range_string(r::FirstNTypeMap)    = "layers $(1:r.n)"
 
-function Base.show(io::IO, m::MIME"text/plain", c::Composite)
+function Base.show(io::IO, m::MIME"text/plain", c::Composite, indent::Int=0)
     println(io, "Composite", "(")
     for p in c.primitives
-        _show_primitive(io, p, 2)
+        _show_primitive(io, p, indent + 1)
     end
-    println(io, ")")
+    print(io, ")")
 end
 
 function _show_primitive(io::IO, r::AbstractCompositeMap, indent::Int=0)
-    print(io, " "^indent, typename(r), ": ")
-    printstyled(io, _range_string(r); color=COLOR_RANGE)
-    print(io, " => ")
-    printstyled(io, r.rule; color=COLOR_RULE)
-    println(io, ",")
+    print(io, "  "^indent, typename(r), "( ")
+    printstyled(io, "# ", _range_string(r); color=COLOR_COMMENT)
+    println(io)
+    printstyled(io, "  "^(indent + 1), r.rule; color=COLOR_RULE)
+    println(io)
+    println(io, "  "^indent, "),")
 end
 
 function _show_primitive(io::IO, r::AbstractCompositeTypeMap, indent::Int=0)
-    print(io, " "^indent, rpad(typename(r) * "(", 20))
-    printstyled(io, "# on ", _range_string(r); color=COLOR_COMMENT)
+    npad = get_type_padding(io, r.map)
+    print(io, "  "^indent, typename(r), "(  ")
+    printstyled(io, "# ", _range_string(r); color=COLOR_COMMENT)
     println(io)
-    _print_rules(io, r.map, indent)
+    for (type, rule) in r.map
+        _print_type_rule(io, type, rule, indent + 1, npad)
+    end
     println(io, " "^(indent), "),")
 end
 
-function _print_rules(io::IO, rs, indent::Int=0)
-    for r in rs
-        print(io, " "^(indent + 2))
-        _print_type_rule(io, r)
-        println(io, ",")
+function _print_type_rule(io::IO, type::Type, rule, indent::Int=0, npad=0)
+    printstyled(io, "  "^indent, rpad(type, npad); color=COLOR_TYPE)
+    print(io, " => ")
+    printstyled(io, rule; color=COLOR_RULE)
+    println(io, ",")
+end
+function _print_type_rule(io::IO, types::Union, rule, indent::Int=0, npad=0)
+    for t in types_in_union(types)
+        _print_type_rule(io, t, rule, indent, npad)
     end
 end
 
-function _print_type_rule(io::IO, r::TypeMapPair)
-    printstyled(io, r.first; color=COLOR_TYPE)
-    print(io, " => ")
-    printstyled(io, r.second; color=COLOR_RULE)
+function get_type_padding(io, map::AbstractVector{<:TypeMapPair})
+    isempty(map) && return 0
+    types = first.(map)
+    return maximum(max_type_name_length.(io, types))
 end
+
+max_type_name_length(io, t::Type) = length(string(sprint(show, t; context=io)))
+max_type_name_length(io, ts::Union) = maximum(max_type_name_length.(io, types_in_union(ts)))
+
+types_in_union(x) = _types_in_union(x, Any[])
+_types_in_union(x::Union, ts) = (_types_in_union(x.a, ts); _types_in_union(x.b, ts); ts)
+_types_in_union(x, ts) = (push!(ts, x); ts)
