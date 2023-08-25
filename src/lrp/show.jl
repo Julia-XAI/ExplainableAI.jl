@@ -158,14 +158,16 @@ function _print_type_rule(io::IO, types::Union, rule, indent::Int=0, npad=0)
     end
 end
 
-function get_type_padding(io, map::AbstractVector{<:TypeMapPair})
+function get_type_padding(io::IO, map::AbstractVector{<:TypeMapPair})
     isempty(map) && return 0
     types = first.(map)
-    return maximum(max_type_name_length.(io, types))
+    return maximum(max_type_name_length.((io,), types))
 end
 
-max_type_name_length(io, t::Type) = length(string(sprint(show, t; context=io)))
-max_type_name_length(io, ts::Union) = maximum(max_type_name_length.(io, types_in_union(ts)))
+max_type_name_length(io::IO, t::Type) = length(string(sprint(show, t; context=io)))
+function max_type_name_length(io::IO, ts::Union)
+    maximum(max_type_name_length.((io,), types_in_union(ts)))
+end
 
 types_in_union(x) = _types_in_union(x, Any[])
 _types_in_union(x::Union, ts) = (_types_in_union(x.a, ts); _types_in_union(x.b, ts); ts)
