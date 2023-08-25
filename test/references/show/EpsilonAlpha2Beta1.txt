@@ -1,9 +1,15 @@
 Composite(
-  GlobalTypeMap(      # on all layers
-    Union{Conv, ConvTranspose, CrossCor} => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
-    Dense => EpsilonRule{Float32}(1.0f-6),
-    Union{typeof(dropout), AlphaDropout, Dropout} => PassRule(),
-    Union{typeof(flatten), typeof(MLUtils.flatten)} => PassRule(),
-    typeof(identity) => PassRule(),
-  ),
+  GlobalTypeMap(  # all layers
+    Conv                    => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+    ConvTranspose           => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+    CrossCor                => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+    Dense                   => EpsilonRule{Float32}(1.0f-6),
+    typeof(dropout)         => PassRule(),
+    AlphaDropout            => PassRule(),
+    Dropout                 => PassRule(),
+    BatchNorm               => PassRule(),
+    typeof(flatten)         => PassRule(),
+    typeof(MLUtils.flatten) => PassRule(),
+    typeof(identity)        => PassRule(),
+ ),
 )
