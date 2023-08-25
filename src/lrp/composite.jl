@@ -150,9 +150,9 @@ end
 # Convenience constructors
 GlobalTypeMap(ps::Vararg{TypeMapPair})     = GlobalTypeMap([ps...])
 RangeTypeMap(r, ps::Vararg{TypeMapPair})   = RangeTypeMap(r, [ps...])
+FirstNTypeMap(n, ps::Vararg{TypeMapPair})  = FirstNTypeMap(n, [ps...])
 FirstLayerTypeMap(ps::Vararg{TypeMapPair}) = FirstLayerTypeMap([ps...])
 LastLayerTypeMap(ps::Vararg{TypeMapPair})  = LastLayerTypeMap([ps...])
-FirstNTypeMap(n, ps::Vararg{TypeMapPair})  = FirstNTypeMap(n, [ps...])
 
 #=====================#
 # LRP-rule assignment #
@@ -266,7 +266,7 @@ To apply a set of rules to layers based on their type, use:
 * [`FirstNTypeMap`](@ref) for a `TypeMap` on the first `n` layers
 
 # Example
-Using a flattened VGG11 model:
+Using a VGG11 model:
 ```julia-repl
 julia> composite = Composite(
            GlobalTypeMap(
@@ -279,29 +279,28 @@ julia> composite = Composite(
            FirstNTypeMap(7, Conv => FlatRule()),
        );
 
-julia> analyzer = LRP(model, composite);
-
-julia> analyzer.rules
-19-element Vector{AbstractLRPRule}:
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- FlatRule()
- FlatRule()
- EpsilonRule{Float32}(1.0f-6)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- EpsilonRule{Float32}(1.0f-6)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- AlphaBetaRule{Float32}(2.0f0, 1.0f0)
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
- PassRule()
- EpsilonRule{Float32}(1.0f-6)
+julia> analyzer = LRP(model, composite)
+LRP(
+  Conv((3, 3), 3 => 64, relu, pad=1)    => FlatRule(),
+  MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
+  Conv((3, 3), 64 => 128, relu, pad=1)  => FlatRule(),
+  MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
+  Conv((3, 3), 128 => 256, relu, pad=1) => FlatRule(),
+  Conv((3, 3), 256 => 256, relu, pad=1) => FlatRule(),
+  MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
+  Conv((3, 3), 256 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+  Conv((3, 3), 512 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+  MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
+  Conv((3, 3), 512 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+  Conv((3, 3), 512 => 512, relu, pad=1) => AlphaBetaRule{Float32}(2.0f0, 1.0f0),
+  MaxPool((2, 2))                       => EpsilonRule{Float32}(1.0f-6),
+  MLUtils.flatten                       => PassRule(),
+  Dense(25088 => 4096, relu)            => EpsilonRule{Float32}(1.0f-6),
+  Dropout(0.5)                          => PassRule(),
+  Dense(4096 => 4096, relu)             => EpsilonRule{Float32}(1.0f-6),
+  Dropout(0.5)                          => PassRule(),
+  Dense(4096 => 1000)                   => EpsilonRule{Float32}(1.0f-6),
+)
 ```
 """
 Composite
