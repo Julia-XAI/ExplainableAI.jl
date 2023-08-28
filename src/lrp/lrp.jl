@@ -46,13 +46,15 @@ LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 # Construct Chain-/ParallelTuple of rules by applying composite
 LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
 
+get_activations(model, input) = [input, Flux.activations(model, input)...]
+
 # Call to the LRP analyzer
 function (lrp::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
-    acts = [input, Flux.activations(lrp.model, input)...] # compute  aₖ for all layers k
-    rels = similar.(acts)                                 # allocate Rₖ for all layers k
-    mask_output_neuron!(rels[end], acts[end], ns)         # compute  Rₖ₊₁ of output layer
+    acts = get_activations(lrp.model, input)      # compute  aᵏ for all layers k
+    rels = similar.(acts)                         # allocate Rᵏ for all layers k
+    mask_output_neuron!(rels[end], acts[end], ns) # compute  Rᵏ⁺¹ of output layer
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
     for i in length(lrp.model):-1:1
@@ -71,14 +73,14 @@ function (lrp::LRP)(
     return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)
 end
 
-function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aₖ, Rₖ₊₁)
-    acts = [aₖ, Flux.activations(layers, aₖ)...]
+function lrp!(Rᵏ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aᵏ, Rᵏ⁺¹)
+    acts = get_activations(layers, aᵏ)
     rels = similar.(acts)
-    last(rels) .= Rₖ₊₁
+    last(rels) .= Rᵏ⁺¹
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
     for i in length(layers):-1:1
         lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i + 1])
     end
-    return Rₖ .= first(rels)
+    return Rᵏ .= first(rels)
 end

@@ -268,25 +268,25 @@ analyzer = LRP(model)
 #
 # Calling `analyze` on a LRP-analyzer pre-allocates modified layers by dispatching
 # `modify_layer` on rule and layer types. It then applies a forward-pass of the model,
-# keeping track of the activations `aₖ` for each layer `k`.
-# The relevance `Rₖ₊₁` is then set to the output neuron activation and the rules are applied
+# keeping track of the activations `aᵏ` for each layer `k`.
+# The relevance `Rᵏ⁺¹` is then set to the output neuron activation and the rules are applied
 # in a backward-pass over the model layers and previous activations.
 #
 # This is done by calling low level functions
 # ```julia
-# lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
-#     Rₖ .= ...
+# lrp!(Rᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
+#     Rᵏ .= ...
 # end
 # ```
 #
-# These functions in-place modify a pre-allocated array of the input relevance `Rₖ`.
+# These functions in-place modify a pre-allocated array of the input relevance `Rᵏ`.
 # (The `!` is a [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
 # in Julia to denote functions that modify their arguments.)
 #
 # The correct rule is applied via [multiple dispatch](https://www.youtube.com/watch?v=kc9HwsxE1OY)
 # on the types of the arguments `rule` and `modified_layer`.
-# The relevance `Rₖ` is then computed based on the input activation `aₖ`
-# and the output relevance `Rₖ₊₁`.
+# The relevance `Rᵏ` is then computed based on the input activation `aᵏ`
+# and the output relevance `Rᵏ⁺¹`.
 # Multiple dispatch is also used to dispatch `modify_parameters` and `modify_denominator`
 # on the rule and layer type.
 
@@ -323,13 +323,13 @@ analyzer = LRP(model)
 # For `lrp!`, we implement the previous four step computation using `Zygote.pullback` to
 # compute ``c`` from the previous equation as a VJP, pulling back ``s=R/z``:
 # ```julia
-# function lrp!(Rₖ, rule, layer, modified_layer, aₖ, Rₖ₊₁)
+# function lrp!(Rᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
 #    # Use modified_layer if available
 #    layer = isnothing(modified_layer) ? layer : modified_layer
-#    ãₖ = modify_input(rule, aₖ)
+#    ãₖ = modify_input(rule, aᵏ)
 #    z, back = Zygote.pullback(modified_layer, ãₖ)
-#    s = Rₖ₊₁ ./ modify_denominator(rule, z)
-#    Rₖ .= ãₖ .* only(back(s))
+#    s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
+#    Rᵏ .= ãₖ .* only(back(s))
 # end
 # ```
 #
@@ -343,8 +343,8 @@ analyzer = LRP(model)
 # Reshaping layers don't affect attributions. We can therefore avoid the computational
 # overhead of AD by writing a specialized implementation that simply reshapes back:
 # ```julia
-# function lrp!(Rₖ, rule, _layer::ReshapingLayer, _modified_layer, aₖ, Rₖ₊₁)
-#     Rₖ .= reshape(Rₖ₊₁, size(aₖ))
+# function lrp!(Rᵏ, rule, _layer::ReshapingLayer, _modified_layer, aᵏ, Rᵏ⁺¹)
+#     Rᵏ .= reshape(Rᵏ⁺¹, size(aᵏ))
 # end
 # ```
 #
@@ -352,11 +352,11 @@ analyzer = LRP(model)
 #
 # We can even implement the generic rule as a specialized implementation for `Dense` layers:
 # ```julia
-# function lrp!(Rₖ, rule, layer::Dense, modified_layer, aₖ, Rₖ₊₁)
+# function lrp!(Rᵏ, rule, layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
 #    layer = ifelse(isnothing(modified_layer), layer, modified_layer)
-#    ãₖ = modify_input(rule, aₖ)
+#    ãₖ = modify_input(rule, aᵏ)
 #    z = modify_denominator(rule, layer(ãₖ))
-#    @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
+#    @tullio Rᵏ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
 # end
 # ```
 #
@@ -364,7 +364,7 @@ analyzer = LRP(model)
 # you can also implement your own `lrp!` function and dispatch
 # on individual rule types `MyRule` and layer types `MyLayer`:
 # ```julia
-# function lrp!(Rₖ, rule::MyRule, layer::MyLayer, _modified_layer, aₖ, Rₖ₊₁)
-#     Rₖ .= ...
+# function lrp!(Rᵏ, rule::MyRule, layer::MyLayer, _modified_layer, aᵏ, Rᵏ⁺¹)
+#     Rᵏ .= ...
 # end
 # ```

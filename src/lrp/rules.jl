@@ -9,13 +9,13 @@ const LRP_DEFAULT_ALPHA = 2.0f0
 const LRP_DEFAULT_BETA = 1.0f0
 
 # Generic LRP rule. Used by all rules without custom implementations.
-function lrp!(Rₖ, rule::AbstractLRPRule, layer, modified_layer, aₖ, Rₖ₊₁)
+function lrp!(Rᵏ, rule::AbstractLRPRule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     layer = isnothing(modified_layer) ? layer : modified_layer
-    ãₖ = modify_input(rule, aₖ)
+    ãₖ = modify_input(rule, aᵏ)
     z, back = Zygote.pullback(layer, ãₖ)
-    s = Rₖ₊₁ ./ modify_denominator(rule, z)
+    s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
     c = only(back(s))
-    Rₖ .= ãₖ .* c
+    Rᵏ .= ãₖ .* c
 end
 
 #===================================#
@@ -289,16 +289,16 @@ R_j^k = R_j^{k+1}
 ```
 """
 struct PassRule <: AbstractLRPRule end
-lrp!(Rₖ, ::PassRule, _layer, _modified_layer, aₖ, Rₖ₊₁) = reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
+lrp!(Rᵏ, ::PassRule, _layer, _modified_layer, aᵏ, Rᵏ⁺¹) = reshape_relevance!(Rᵏ, aᵏ, Rᵏ⁺¹)
 
 modify_layer(::PassRule, layer) = nothing # no modified layer needed
 is_compatible(::PassRule, layer) = true
 
-function reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
-    if size(aₖ) == size(Rₖ₊₁)
-        Rₖ .= Rₖ₊₁
+function reshape_relevance!(Rᵏ, aᵏ, Rᵏ⁺¹)
+    if size(aᵏ) == size(Rᵏ⁺¹)
+        Rᵏ .= Rᵏ⁺¹
     end
-    Rₖ .= reshape(Rₖ₊₁, size(aₖ))
+    Rᵏ .= reshape(Rᵏ⁺¹, size(aᵏ))
 end
 
 """
@@ -331,19 +331,19 @@ function modify_layer(::ZBoxRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::ZBoxRule, layer, modified_layers, aₖ, Rₖ₊₁)
-    l = zbox_input(aₖ, rule.low)
-    h = zbox_input(aₖ, rule.high)
+function lrp!(Rᵏ, rule::ZBoxRule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    l = zbox_input(aᵏ, rule.low)
+    h = zbox_input(aᵏ, rule.high)
 
-    z, back = Zygote.pullback(layer, aₖ)
+    z, back = Zygote.pullback(layer, aᵏ)
     z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, l)
     z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, h)
 
-    s = Rₖ₊₁ ./ modify_denominator(rule, z - z⁺ - z⁻)
+    s = Rᵏ⁺¹ ./ modify_denominator(rule, z - z⁺ - z⁻)
     c = only(back(s))
     c⁺ = only(back⁺(s))
     c⁻ = only(back⁻(s))
-    @. Rₖ = aₖ * c - l * c⁺ - h * c⁻
+    @. Rᵏ = aᵏ * c - l * c⁺ - h * c⁻
 end
 
 zbox_input(in::AbstractArray{T}, c::Real) where {T} = fill(convert(T, c), size(in))
@@ -353,7 +353,7 @@ function zbox_input(in::AbstractArray{T}, A::AbstractArray) where {T}
 end
 
 """
-    AlphaBetaRule([alpha=$(LRP_DEFAULT_ALPHA)], [beta=$(LRP_DEFAULT_BETA)])
+    AlphaBetaRule([alpha=$(LRP_DEFAULT_ALPHA), beta=$(LRP_DEFAULT_BETA)])
 
 LRP-``αβ`` rule. Weights positive and negative contributions according to the
 parameters `alpha` and `beta` respectively. The difference ``α-β`` must be equal to one.
@@ -395,27 +395,27 @@ function modify_layer(::AlphaBetaRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::AlphaBetaRule, _layer, modified_layers, aₖ, Rₖ₊₁)
-    aₖ⁺ = keep_positive(aₖ)
-    aₖ⁻ = keep_negative(aₖ)
+function lrp!(Rᵏ, rule::AlphaBetaRule, _layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    aᵏ⁺ = keep_positive(aᵏ)
+    aᵏ⁻ = keep_negative(aᵏ)
 
-    zᵅ⁺, back⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aₖ⁺)
-    zᵅ⁻, back⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aₖ⁻)
+    zᵅ⁺, back⁺ = Zygote.pullback(modified_layers.layerᵅ⁺, aᵏ⁺)
+    zᵅ⁻, back⁻ = Zygote.pullback(modified_layers.layerᵅ⁻, aᵏ⁻)
     # No need to linearize again: Wᵝ⁺ = Wᵅ⁺ and Wᵝ⁻ = Wᵅ⁻
-    zᵝ⁺ = modified_layers.layerᵝ⁺(aₖ⁻)
-    zᵝ⁻ = modified_layers.layerᵝ⁻(aₖ⁺)
+    zᵝ⁺ = modified_layers.layerᵝ⁺(aᵏ⁻)
+    zᵝ⁻ = modified_layers.layerᵝ⁻(aᵏ⁺)
 
-    sᵅ = Rₖ₊₁ ./ modify_denominator(rule, zᵅ⁺ + zᵅ⁻)
-    sᵝ = Rₖ₊₁ ./ modify_denominator(rule, zᵝ⁺ + zᵝ⁻)
+    sᵅ = Rᵏ⁺¹ ./ modify_denominator(rule, zᵅ⁺ + zᵅ⁻)
+    sᵝ = Rᵏ⁺¹ ./ modify_denominator(rule, zᵝ⁺ + zᵝ⁻)
     cᵅ⁺ = only(back⁺(sᵅ))
     cᵅ⁻ = only(back⁻(sᵅ))
     cᵝ⁺ = only(back⁺(sᵝ))
     cᵝ⁻ = only(back⁻(sᵝ))
 
-    T = eltype(aₖ)
+    T = eltype(aᵏ)
     α = convert(T, rule.α)
     β = convert(T, rule.β)
-    @. Rₖ = α * (aₖ⁺ * cᵅ⁺ + aₖ⁻ * cᵅ⁻) - β * (aₖ⁺ * cᵝ⁻ + aₖ⁻ * cᵝ⁺)
+    @. Rᵏ = α * (aᵏ⁺ * cᵅ⁺ + aᵏ⁻ * cᵅ⁻) - β * (aᵏ⁺ * cᵝ⁻ + aᵏ⁻ * cᵝ⁺)
 end
 
 """
@@ -444,17 +444,17 @@ function modify_layer(::ZPlusRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::ZPlusRule, _layer, modified_layers, aₖ, Rₖ₊₁)
-    aₖ⁺ = keep_positive(aₖ)
-    aₖ⁻ = keep_negative(aₖ)
+function lrp!(Rᵏ, rule::ZPlusRule, _layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    aᵏ⁺ = keep_positive(aᵏ)
+    aᵏ⁻ = keep_negative(aᵏ)
 
-    z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, aₖ⁺)
-    z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, aₖ⁻)
+    z⁺, back⁺ = Zygote.pullback(modified_layers.layer⁺, aᵏ⁺)
+    z⁻, back⁻ = Zygote.pullback(modified_layers.layer⁻, aᵏ⁻)
 
-    s = Rₖ₊₁ ./ modify_denominator(rule, z⁺ + z⁻)
+    s = Rᵏ⁺¹ ./ modify_denominator(rule, z⁺ + z⁻)
     c⁺ = only(back⁺(s))
     c⁻ = only(back⁻(s))
-    @. Rₖ = aₖ⁺ * c⁺ + aₖ⁻ * c⁻
+    @. Rᵏ = aᵏ⁺ * c⁺ + aᵏ⁻ * c⁻
 end
 
 """
@@ -497,24 +497,24 @@ function modify_layer(rule::GeneralizedGammaRule, layer)
     )
 end
 
-function lrp!(Rₖ, rule::GeneralizedGammaRule, layer, modified_layers, aₖ, Rₖ₊₁)
-    aₖ⁺ = keep_positive(aₖ)
-    aₖ⁻ = keep_negative(aₖ)
+function lrp!(Rᵏ, rule::GeneralizedGammaRule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    aᵏ⁺ = keep_positive(aᵏ)
+    aᵏ⁻ = keep_negative(aᵏ)
 
-    zˡ⁺, back⁺ = Zygote.pullback(modified_layers.layerˡ⁺, aₖ⁺)
-    zˡ⁻, back⁻ = Zygote.pullback(modified_layers.layerˡ⁻, aₖ⁻)
+    zˡ⁺, back⁺ = Zygote.pullback(modified_layers.layerˡ⁺, aᵏ⁺)
+    zˡ⁻, back⁻ = Zygote.pullback(modified_layers.layerˡ⁻, aᵏ⁻)
     # No need to linearize again: Wˡ⁺ = Wʳ⁺ and Wˡ⁻ = Wʳ⁻
-    zʳ⁺ = modified_layers.layerʳ⁺(aₖ⁻)
-    zʳ⁻ = modified_layers.layerʳ⁻(aₖ⁺)
-    z   = layer(aₖ)
+    zʳ⁺ = modified_layers.layerʳ⁺(aᵏ⁻)
+    zʳ⁻ = modified_layers.layerʳ⁻(aᵏ⁺)
+    z   = layer(aᵏ)
 
-    sˡ = masked_copy(Rₖ₊₁, z .> 0) ./ modify_denominator(rule, zˡ⁺ + zˡ⁻)
-    sʳ = masked_copy(Rₖ₊₁, z .< 0) ./ modify_denominator(rule, zʳ⁺ + zʳ⁻)
+    sˡ = masked_copy(Rᵏ⁺¹, z .> 0) ./ modify_denominator(rule, zˡ⁺ + zˡ⁻)
+    sʳ = masked_copy(Rᵏ⁺¹, z .< 0) ./ modify_denominator(rule, zʳ⁺ + zʳ⁻)
     cˡ⁺ = only(back⁺(sˡ))
     cˡ⁻ = only(back⁻(sˡ))
     cʳ⁺ = only(back⁺(sʳ))
     cʳ⁻ = only(back⁻(sʳ))
-    @. Rₖ = aₖ⁺ * (cˡ⁺ + cʳ⁻) + aₖ⁻ * (cˡ⁻ + cʳ⁺)
+    @. Rᵏ = aᵏ⁺ * (cˡ⁺ + cʳ⁻) + aᵏ⁻ * (cˡ⁻ + cʳ⁺)
 end
 
 #=========================#
@@ -527,28 +527,28 @@ end
 # Rules that don't require layer information:
 for R in (ZeroRule, EpsilonRule)
     for L in (DropoutLayer, ReshapingLayer)
-        @eval function lrp!(Rₖ, _rule::$R, _layer::$L, _modified_layer::$L, aₖ, Rₖ₊₁)
-            return reshape_relevance!(Rₖ, aₖ, Rₖ₊₁)
+        @eval function lrp!(Rᵏ, _rule::$R, _layer::$L, _modified_layer::$L, aᵏ, Rᵏ⁺¹)
+            return reshape_relevance!(Rᵏ, aᵏ, Rᵏ⁺¹)
         end
     end
 end
-function lrp!(Rₖ, _rule::FlatRule, _layer::Dense, _modified_layer, _aₖ, Rₖ₊₁)
-    n = size(Rₖ, 1) # number of input neurons connected to each output neuron
-    for i in axes(Rₖ, 2) # samples in batch
-        fill!(view(Rₖ, :, i), sum(view(Rₖ₊₁, :, i)) / n)
+function lrp!(Rᵏ, _rule::FlatRule, _layer::Dense, _modified_layer, _aᵏ, Rᵏ⁺¹)
+    n = size(Rᵏ, 1) # number of input neurons connected to each output neuron
+    for i in axes(Rᵏ, 2) # samples in batch
+        fill!(view(Rᵏ, :, i), sum(view(Rᵏ⁺¹, :, i)) / n)
     end
 end
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
-    @eval function lrp!(Rₖ, rule::$R, layer::Dense, modified_layer, aₖ, Rₖ₊₁)
+    @eval function lrp!(Rᵏ, rule::$R, layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
         layer = isnothing(modified_layer) ? layer : modified_layer
-        ãₖ = modify_input(rule, aₖ)
+        ãₖ = modify_input(rule, aᵏ)
         z = modify_denominator(rule, layer(ãₖ))
-        @tullio Rₖ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rₖ₊₁[i, b]
+        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
     end
 end
-function lrp!(Rₖ, ::WSquareRule, _layer::Dense, modified_layer::Dense, aₖ, Rₖ₊₁)
+function lrp!(Rᵏ, ::WSquareRule, _layer::Dense, modified_layer::Dense, aᵏ, Rᵏ⁺¹)
     den = sum(modified_layer.weight; dims=2)
-    @tullio Rₖ[j, b] = modified_layer.weight[i, j] / den[i] * Rₖ₊₁[i, b]
+    @tullio Rᵏ[j, b] = modified_layer.weight[i, j] / den[i] * Rᵏ⁺¹[i, b]
 end
