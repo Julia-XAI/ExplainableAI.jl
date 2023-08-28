@@ -73,14 +73,34 @@ function (lrp::LRP)(
     return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)
 end
 
-function lrp!(Rᵏ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aᵏ, Rᵏ⁺¹)
-    acts = get_activations(layers, aᵏ)
+function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple, aᵏ, Rᵏ⁺¹)
+    acts = get_activations(chain, aᵏ)
     rels = similar.(acts)
     last(rels) .= Rᵏ⁺¹
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
-    for i in length(layers):-1:1
-        lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i + 1])
+    for i in length(chain):-1:1
+        lrp!(rels[i], rules[i], chain[i], modified_chain[i], acts[i], rels[i + 1])
     end
     return Rᵏ .= first(rels)
+end
+
+function lrp!(
+    Rᵏ, rules::ParallelTuple, parallel::Parallel, modified_parallel::ParallelTuple, aᵏ, Rᵏ⁺¹
+)
+    # We re-distribute the relevance Rᵏ⁺¹ to the i-th "branch" of the parallel layer
+    # according to the contribution aᵏ⁺¹ᵢ of branch i to the output activation aᵏ⁺¹:
+    #   Rᵏ⁺¹ᵢ = Rᵏ⁺¹ .* aᵏ⁺¹ᵢ ./ aᵏ⁺¹ = c .* aᵏ⁺¹ᵢ
+
+    aᵏ⁺¹s = [l(aᵏ) for l in parallel.layers]     # aᵏ⁺¹ᵢ for each branch i
+    c = Rᵏ⁺¹ ./ stabilize_denom(sum(aᵏ⁺¹s))
+    Rᵏ⁺¹s = [c .* aᵏ⁺¹ for aᵏ⁺¹ in aᵏ⁺¹s]        # Rᵏ⁺¹ᵢ for each branch i
+    Rᵏs = [similar(aᵏ) for _ in parallel.layers] # pre-allocate output Rᵏᵢ for each branch i
+
+    for (Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, Rᵏ⁺¹ᵢ) in
+        zip(Rᵏs, rules, parallel.layers, modified_parallel, Rᵏ⁺¹s)
+        lrp!(Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, aᵏ, Rᵏ⁺¹ᵢ)
+    end
+
+    return Rᵏ .= sum(Rᵏs)
 end
