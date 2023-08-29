@@ -22,8 +22,10 @@ makedocs(;
     pages=[
         "Home"            => "index.md",
         "Getting started" => "generated/example.md",
-        "Advanced LRP"    => "generated/advanced_lrp.md",
-        "API Reference"   => Any["General" => "api.md", "LRP" => "lrp_api.md"],
+        "LRP"             => Any["Advanced LRP" => "generated/advanced_lrp.md",
+            "Developer documentation" => "lrp/developer.md"
+        ],
+        "API Reference"   => Any["General" => "api.md", "LRP" => "lrp/api.md"],
     ],
     linkcheck=true,
     linkcheck_ignore=[r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10"],

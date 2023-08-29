@@ -1,4 +1,4 @@
-# https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#How-it-works-internally
+# https://adrhill.github.io/ExplainableAI.jl/dev/lrp/developer.html
 abstract type AbstractLRPRule end
 
 # Default parameters
