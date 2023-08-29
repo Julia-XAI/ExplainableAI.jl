@@ -51,4 +51,3 @@ heatmap(expl; reduce=:sum, rangescale=:extrema, cs=ColorSchemes.inferno)
 mosaic(heatmap(expl_batch; rangescale=:extrema, cs=ColorSchemes.inferno); nrow=10)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-
