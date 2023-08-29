@@ -105,7 +105,7 @@ function (aug::NoiseAugmentation)(input, ns::AbstractNeuronSelector)
 
     # Average explanation
     return Explanation(
-        reduce_augmentation(augmented_expl.attribution, aug.n),
+        reduce_augmentation(augmented_expl.val, aug.n),
         output,
         output_indices,
         augmented_expl.analyzer,
@@ -146,7 +146,7 @@ function (aug::InterpolationAugmentation)(
     augmented_expl = aug.analyzer(augmented_input, AugmentationSelector(augmented_indices))
 
     # Average gradients and compute explanation
-    expl = (input - input_ref) .* reduce_augmentation(augmented_expl.attribution, aug.n)
+    expl = (input - input_ref) .* reduce_augmentation(augmented_expl.val, aug.n)
 
     return Explanation(expl, output, output_indices, augmented_expl.analyzer, nothing)
 end

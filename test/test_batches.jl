@@ -32,13 +32,13 @@ ANALYZERS = Dict(
 
 for (name, method) in ANALYZERS
     @testset "$name" begin
-        # Using `add_batch_dim=true` should result in same attribution
+        # Using `add_batch_dim=true` should result in same explanation
         # as input reshaped to have a batch dimension
         analyzer = method(model)
         expl1_no_bd = analyzer(input1_no_bd; add_batch_dim=true)
         analyzer = method(model)
         expl1_bd = analyzer(input1_bd)
-        @test expl1_bd.attribution ≈ expl1_no_bd.attribution
+        @test expl1_bd.val ≈ expl1_no_bd.val
 
         # Analyzing a batch should have the same result
         # as analyzing inputs in batch individually
@@ -46,11 +46,11 @@ for (name, method) in ANALYZERS
         expl2_bd = analyzer(input2_bd)
         analyzer = method(model)
         expl_batch = analyzer(input_batch)
-        @test expl1_bd.attribution ≈ expl_batch.attribution[:, 1]
+        @test expl1_bd.val ≈ expl_batch.val[:, 1]
         if !(analyzer isa NoiseAugmentation)
             # NoiseAugmentation methods generate random numbers for the entire batch.
             # therefore explanations don't match except for the first input in the batch.
-            @test expl2_bd.attribution ≈ expl_batch.attribution[:, 2]
+            @test expl2_bd.val ≈ expl_batch.val[:, 2]
         end
     end
 end
