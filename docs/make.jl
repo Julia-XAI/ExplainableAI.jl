@@ -23,7 +23,7 @@ makedocs(;
         "Home"            => "index.md",
         "Getting started" => "generated/example.md",
         "Advanced LRP"    => "generated/advanced_lrp.md",
-        "API Reference"   => "api.md",
+        "API Reference"   => Any["General" => "api.md", "LRP" => "lrp_api.md"],
     ],
 )
 
