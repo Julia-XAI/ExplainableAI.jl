@@ -25,6 +25,9 @@ makedocs(;
         "Advanced LRP"    => "generated/advanced_lrp.md",
         "API Reference"   => Any["General" => "api.md", "LRP" => "lrp_api.md"],
     ],
+    linkcheck=true,
+    linkcheck_ignore=[r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10"],
+    checkdocs=:exports, # only check docstrings in API reference if they are exported
 )
 
 deploydocs(; repo="github.com/adrhill/ExplainableAI.jl")
