@@ -94,13 +94,13 @@ function lrp!(
 
     aᵏ⁺¹s = [l(aᵏ) for l in parallel.layers]     # aᵏ⁺¹ᵢ for each branch i
     c = Rᵏ⁺¹ ./ stabilize_denom(sum(aᵏ⁺¹s))
-    Rᵏ⁺¹s = [c .* aᵏ⁺¹ for aᵏ⁺¹ in aᵏ⁺¹s]        # Rᵏ⁺¹ᵢ for each branch i
+    Rᵏ⁺¹s = [c .* aᵏ⁺¹ᵢ for aᵏ⁺¹ᵢ in aᵏ⁺¹s]      # Rᵏ⁺¹ᵢ for each branch i
     Rᵏs = [similar(aᵏ) for _ in parallel.layers] # pre-allocate output Rᵏᵢ for each branch i
 
     for (Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, Rᵏ⁺¹ᵢ) in
         zip(Rᵏs, rules, parallel.layers, modified_parallel, Rᵏ⁺¹s)
+        # In-place update Rᵏᵢ (and therefore Rᵏs)
         lrp!(Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, aᵏ, Rᵏ⁺¹ᵢ)
     end
-
     return Rᵏ .= sum(Rᵏs)
 end
