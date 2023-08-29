@@ -59,7 +59,7 @@ export lrp_rules, show_layer_indices
 export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat
 # Useful type unions
-export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
+export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer, NormalizationLayer
 
 # heatmapping
 export heatmap
