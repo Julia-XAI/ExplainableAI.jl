@@ -67,7 +67,6 @@ function (lrp::LRP)(
             rels[i + 1],
         )
     end
-
     extras = layerwise_relevances ? (layerwise_relevances=rels,) : nothing
 
     return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)

@@ -532,6 +532,7 @@ for R in (ZeroRule, EpsilonRule)
         end
     end
 end
+
 function lrp!(Rᵏ, _rule::FlatRule, _layer::Dense, _modified_layer, _aᵏ, Rᵏ⁺¹)
     n = size(Rᵏ, 1) # number of input neurons connected to each output neuron
     for i in axes(Rᵏ, 2) # samples in batch
@@ -548,6 +549,7 @@ for R in (ZeroRule, EpsilonRule, GammaRule)
         @tullio Rᵏ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
     end
 end
+
 function lrp!(Rᵏ, ::WSquareRule, _layer::Dense, modified_layer::Dense, aᵏ, Rᵏ⁺¹)
     den = sum(modified_layer.weight; dims=2)
     @tullio Rᵏ[j, b] = modified_layer.weight[i, j] / den[i] * Rᵏ⁺¹[i, b]
