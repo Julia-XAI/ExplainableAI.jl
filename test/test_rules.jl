@@ -30,7 +30,7 @@ const RULES = Dict(
 
     ## Simple dense layer
     Rᵏ⁺¹ = reshape([1 / 3 2 / 3], 2, 1)
-    aᵏ = reshape([1.0 2.0;], 2, 1)
+    aᵏ = reshape([1.0 2.0], 2, 1)
     W = [3.0 4.0; 5.0 6.0]
     b = [7.0, 8.0]
     Rᵏ = reshape([17 / 90, 316 / 675], 2, 1) # expected output
@@ -56,6 +56,50 @@ const RULES = Dict(
     R̂ₖ = similar(aᵏ) # will be inplace updated
     @inferred lrp!(R̂ₖ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     @test R̂ₖ ≈ Rᵏ
+end
+
+@testset "Parallel analytic" begin
+    W = [3.0 4.0; 5.0 6.0]
+    b = [7.0, 8.0]
+    model = Chain(Parallel(+, identity, Dense(W, b, relu)))
+    composite = Composite(
+        GlobalTypeMap(typeof(identity) => PassRule(), Dense => ZeroRule())
+    )
+
+    aᵏ = reshape([1.0 2.0], 2, 1)
+    # aᵏ⁺¹₁ = identity(aᵏ) = [1 2]
+    # aᵏ⁺¹₂ = Dense(aᵏ) = [3*1 + 4*2 + 7,  5*1 + 6*2 + 8] = [18 25]
+    # aᵏ⁺¹ = [19 27]
+
+    # For output neuron 1:
+    # Rᵏ⁺¹ = [1 0]
+    # Rᵏ⁺¹₁ = [1 0] .* [ 1  2] ./ [19 27] = [ 1/19 0]
+    # Rᵏ⁺¹₂ = [1 0] .* [18 25] ./ [19 27] = [18/19 0]
+    # The identity function is trivial:
+    # Rᵏ₁ = Rᵏ⁺¹₁ = [1/19 0]
+    # The Dense layer requires computation of LRP:
+    # [Rᵏ₂]ⱼ = ∑ᵢ ([W]ᵢⱼ * [aᵏ]ⱼ / [aᵏ⁺¹₂]ᵢ *  [Rᵏ⁺¹₂]ᵢ)
+    # [Rᵏ₂]₁ = 3*1/18*(18/19) + 5*1/25*0 = 3/19
+    # [Rᵏ₂]₂ = 4*2/18*(18/19) + 6*2/25*0 = 8/19
+    # Rᵏ₂ = [3/19 8/19]
+    # Rᵏ = Rᵏ₁ + Rᵏ₂ = [4/19 8/19]
+    e1 = analyze(aᵏ, LRP(model, composite), 1)
+    @test e1.attribution ≈ reshape([4 / 19 8 / 19], 2, 1)
+
+    # Analogous for output neuron 2:
+    # Rᵏ⁺¹ = [0 1]
+    # Rᵏ⁺¹₁ = [0 1] .* [ 1  2] ./ [19 27] = [0  2/27]
+    # Rᵏ⁺¹₂ = [0 1] .* [18 25] ./ [19 27] = [0 25/27]
+    # Identity function:
+    # Rᵏ₁ = Rᵏ⁺¹₁ = [0 2/27]
+    # Dense layer:
+    # [Rᵏ₂]ⱼ = ∑ᵢ ([W]ᵢⱼ * [aᵏ]ⱼ / [aᵏ⁺¹₂]ᵢ *  [Rᵏ⁺¹₂]ᵢ)
+    # [Rᵏ₂]₁ = 3*1/18*0 + 5*1/25*(25/27) =  5/27
+    # [Rᵏ₂]₂ = 4*2/18*0 + 6*2/25*(25/27) = 12/27
+    # Rᵏ₂ = [5/27 12/27]
+    # Rᵏ = Rᵏ₁ + Rᵏ₂ = [5/27 14/27]
+    e2 = analyze(aᵏ, LRP(model, composite), 2)
+    @test e2.attribution ≈ reshape([5 / 27 14 / 27], 2, 1)
 end
 
 @testset "AlphaBetaRule analytic" begin
