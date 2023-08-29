@@ -1,6 +1,6 @@
 # # Getting started
 # ExplainableAI.jl can be used on any classifier.
-# In this first example, we will look at attributions on a LeNet5 model that was pretrained on MNIST.
+# In this first example, we will look at explanations on a LeNet5 model that was pretrained on MNIST.
 #
 # ### Loading the model
 #md # !!! note
@@ -43,7 +43,7 @@ input = reshape(x, 28, 28, 1, :);
 
 #md # !!! warning "Input format"
 #md #
-#md #     For any attribution of a model, ExplainableAI.jl assumes the batch dimension to be come last in the input.
+#md #     For any explanation of a model, ExplainableAI.jl assumes the batch dimension to be come last in the input.
 #md #
 #md #     For the purpose of heatmapping, the input is assumed to be in WHCN order
 #md #     (width, height, channels, batch), which is Flux.jl's convention.
@@ -55,10 +55,11 @@ analyzer = LRP(model)
 expl = analyze(input, analyzer);
 
 # This [`Explanation`](@ref) bundles the following data:
-# * `expl.attribution`: the analyzer's attribution
-# * `expl.output`: the model output
-# * `expl.neuron_selection`: the neuron index used for the attribution
+# * `expl.val`: the numerical output of the analyzer, e.g. an attribution or gradient
+# * `expl.output`: the model output for the given analyzer input
+# * `expl.neuron_selection`: the neuron index used for the explanation
 # * `expl.analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
+# * `expl.extras`: an optional named tuple that can be used by analyzers to return additional information.
 
 # Finally, we can visualize the `Explanation` through [`heatmap`](@ref):
 heatmap(expl)
@@ -67,7 +68,7 @@ heatmap(expl)
 heatmap(input, analyzer)
 
 # ## Neuron selection
-# By passing an additional index to our call to [`analyze`](@ref), we can compute the attribution
+# By passing an additional index to our call to [`analyze`](@ref), we can compute an explanation
 # with respect to a specific output neuron.
 # Let's see why the output wasn't interpreted as a 4 (output neuron at index 5)
 heatmap(input, analyzer, 5)

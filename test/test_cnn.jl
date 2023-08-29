@@ -40,12 +40,12 @@ Flux.testmode!(model, true)
 
 function test_cnn(name, method)
     @testset "$name" begin
-        # Reference test attribution
+        # Reference test explanation
         analyzer = method(model)
         println("Timing $name...")
         print("cold:")
         @time expl = analyze(input, analyzer)
-        attr = expl.attribution
+        attr = expl.val
         @test size(attr) == size(input)
         if name == "LRPZero_COC"
             # Output of Chain of Chains should be equal to flattened model
@@ -59,7 +59,7 @@ function test_cnn(name, method)
         analyzer = method(model)
         print("warm:")
         @time expl2 = analyzer(input)
-        @test expl.attribution ≈ expl2.attribution
+        @test expl.val ≈ expl2.val
 
         # Test direct call of heatmap
         h1 = heatmap(expl)
@@ -77,7 +77,7 @@ function test_cnn(name, method)
         analyzer = method(model)
         neuron_selection = 1
         expl = analyze(input, analyzer, neuron_selection)
-        attr = expl.attribution
+        attr = expl.val
 
         @test size(attr) == size(input)
         if name == "LRPZero_COC"
@@ -92,7 +92,7 @@ function test_cnn(name, method)
         end
         analyzer = method(model)
         expl2 = analyzer(input, neuron_selection)
-        @test expl.attribution ≈ expl2.attribution
+        @test expl.val ≈ expl2.val
     end
 end
 

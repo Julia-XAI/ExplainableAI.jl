@@ -21,7 +21,7 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
     When calling `heatmap` with an array, the default is `ColorSchemes.seismic`.
 - `reduce::Symbol`: How the color channels are reduced to a single number to apply a colorscheme.
     The following methods can be selected, which are then applied over the color channels
-    for each "pixel" in the attribution:
+    for each "pixel" in the explanation:
     - `:sum`: sum up color channels
     - `:norm`: compute 2-norm over the color channels
     - `:maxabs`: compute `maximum(abs, x)` over the color channels in
@@ -49,7 +49,7 @@ function heatmap(
         DomainError(
             N,
             """heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
-            Please reshape your attribution to match this format if your model doesn't adhere to this convention.""",
+            Please reshape your explanation to match this format if your model doesn't adhere to this convention.""",
         ),
     )
     if unpack_singleton && size(attr, 4) == 1
@@ -62,7 +62,7 @@ end
 function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
     _cs, _reduce, _rangescale = HEATMAPPING_PRESETS[expl.analyzer]
     return heatmap(
-        expl.attribution;
+        expl.val;
         reduce=get(kwargs, :reduce, _reduce),
         rangescale=get(kwargs, :rangescale, _rangescale),
         cs=get(kwargs, :cs, _cs),
@@ -87,7 +87,7 @@ function _heatmap(
     return ColorSchemes.get(cs, img, rangescale)
 end
 
-# Reduce attributions across color channels into a single scalar – assumes WHCN convention
+# Reduce explanations across color channels into a single scalar – assumes WHCN convention
 function _reduce(attr::AbstractArray{T,3}, method::Symbol) where {T}
     if size(attr, 3) == 1 # nothing to reduce
         return attr

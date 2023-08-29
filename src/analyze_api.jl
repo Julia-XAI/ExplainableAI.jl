@@ -11,7 +11,7 @@ const BATCHDIM_MISSING = ArgumentError(
     analyze(input, method)
     analyze(input, method, neuron_selection)
 
-Return an [`Explanation`](@ref) containing the attribution and the raw classifier output.
+Apply the analyzer `method` for the given input, returning an [`Explanation`](@ref).
 If `neuron_selection` is specified, the explanation will be calculated for that neuron.
 Otherwise, the output neuron with the highest activation is automatically chosen.
 
@@ -58,18 +58,18 @@ function _analyze(
 end
 
 """
-Return type of analyzers when calling `analyze`.
+Return type of analyzers when calling [`analyze`](@ref).
 
-Contains:
-* `attribution`: the analyzer's attribution
-* `output`: the model output
-* `neuron_selection`: the neuron index used for the attribution
-* `analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
-* `extras`: an optional named tuple that can be used by analyzers
+## Fields
+* `val`: numerical output of the analyzer, e.g. an attribution or gradient
+* `output`: model output for the given analyzer input
+* `neuron_selection`: neuron index used for the explanation
+* `analyzer`: symbol corresponding the used analyzer, e.g. `:LRP` or `:Gradient`
+* `extras`: optional named tuple that can be used by analyzers
     to return additional information.
 """
-struct Explanation{A,O,I,E<:Union{Nothing,NamedTuple}}
-    attribution::A
+struct Explanation{V,O,I,E<:Union{Nothing,NamedTuple}}
+    val::V
     output::O
     neuron_selection::I
     analyzer::Symbol

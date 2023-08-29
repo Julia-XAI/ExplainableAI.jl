@@ -84,7 +84,7 @@ end
     # Rᵏ₂ = [3/19 8/19]
     # Rᵏ = Rᵏ₁ + Rᵏ₂ = [4/19 8/19]
     e1 = analyze(aᵏ, LRP(model, composite), 1)
-    @test e1.attribution ≈ reshape([4 / 19 8 / 19], 2, 1)
+    @test e1.val ≈ reshape([4 / 19 8 / 19], 2, 1)
 
     # Analogous for output neuron 2:
     # Rᵏ⁺¹ = [0 1]
@@ -99,7 +99,7 @@ end
     # Rᵏ₂ = [5/27 12/27]
     # Rᵏ = Rᵏ₁ + Rᵏ₂ = [5/27 14/27]
     e2 = analyze(aᵏ, LRP(model, composite), 2)
-    @test e2.attribution ≈ reshape([5 / 27 14 / 27], 2, 1)
+    @test e2.val ≈ reshape([5 / 27 14 / 27], 2, 1)
 end
 
 @testset "AlphaBetaRule analytic" begin
