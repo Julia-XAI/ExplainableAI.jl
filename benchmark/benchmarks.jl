@@ -54,10 +54,10 @@ end
 insize = (32, 32, 3, 1)
 in_dense = 64
 out_dense = 10
-aₖ = rand(T, insize)
+aᵏ = rand(T, insize)
 
 layers = Dict(
-    "Conv"  => (Conv((3, 3), 3 => 2), aₖ),
+    "Conv"  => (Conv((3, 3), 3 => 2), aᵏ),
     "Dense" => (Dense(in_dense, out_dense, relu), randn(T, in_dense, 1)),
 )
 rules = Dict(
@@ -81,14 +81,14 @@ for rname in rulenames
     SUITE["apply rule"][rname] = BenchmarkGroup(layernames)
 end
 
-for (lname, (layer, aₖ)) in layers
-    Rₖ = similar(aₖ)
-    Rₖ₊₁ = layer(aₖ)
+for (lname, (layer, aᵏ)) in layers
+    Rᵏ = similar(aᵏ)
+    Rᵏ⁺¹ = layer(aᵏ)
     for (rname, rule) in rules
         modified_layer = modify_layer(rule, layer)
         SUITE["modify layer"][rname][lname] = @benchmarkable modify_layer($(rule), $(layer))
         SUITE["apply rule"][rname][lname] = @benchmarkable lrp!(
-            $(Rₖ), $(rule), $(layer), $(modified_layer), $(aₖ), $(Rₖ₊₁)
+            $(Rᵏ), $(rule), $(layer), $(modified_layer), $(aᵏ), $(Rᵏ⁺¹)
         )
     end
 end

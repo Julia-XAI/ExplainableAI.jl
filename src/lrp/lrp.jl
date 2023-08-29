@@ -46,13 +46,15 @@ LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 # Construct Chain-/ParallelTuple of rules by applying composite
 LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
 
+get_activations(model, input) = [input, Flux.activations(model, input)...]
+
 # Call to the LRP analyzer
 function (lrp::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
-    acts = [input, Flux.activations(lrp.model, input)...] # compute  aₖ for all layers k
-    rels = similar.(acts)                                 # allocate Rₖ for all layers k
-    mask_output_neuron!(rels[end], acts[end], ns)         # compute  Rₖ₊₁ of output layer
+    acts = get_activations(lrp.model, input)      # compute  aᵏ for all layers k
+    rels = similar.(acts)                         # allocate Rᵏ for all layers k
+    mask_output_neuron!(rels[end], acts[end], ns) # compute  Rᵏ⁺¹ of output layer
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
     for i in length(lrp.model):-1:1
@@ -65,20 +67,39 @@ function (lrp::LRP)(
             rels[i + 1],
         )
     end
-
     extras = layerwise_relevances ? (layerwise_relevances=rels,) : nothing
 
     return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)
 end
 
-function lrp!(Rₖ, rules::ChainTuple, layers::Chain, modified_layers::ChainTuple, aₖ, Rₖ₊₁)
-    acts = [aₖ, Flux.activations(layers, aₖ)...]
+function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple, aᵏ, Rᵏ⁺¹)
+    acts = get_activations(chain, aᵏ)
     rels = similar.(acts)
-    last(rels) .= Rₖ₊₁
+    last(rels) .= Rᵏ⁺¹
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
-    for i in length(layers):-1:1
-        lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i + 1])
+    for i in length(chain):-1:1
+        lrp!(rels[i], rules[i], chain[i], modified_chain[i], acts[i], rels[i + 1])
     end
-    return Rₖ .= first(rels)
+    return Rᵏ .= first(rels)
+end
+
+function lrp!(
+    Rᵏ, rules::ParallelTuple, parallel::Parallel, modified_parallel::ParallelTuple, aᵏ, Rᵏ⁺¹
+)
+    # We re-distribute the relevance Rᵏ⁺¹ to the i-th "branch" of the parallel layer
+    # according to the contribution aᵏ⁺¹ᵢ of branch i to the output activation aᵏ⁺¹:
+    #   Rᵏ⁺¹ᵢ = Rᵏ⁺¹ .* aᵏ⁺¹ᵢ ./ aᵏ⁺¹ = c .* aᵏ⁺¹ᵢ
+
+    aᵏ⁺¹s = [l(aᵏ) for l in parallel.layers]     # aᵏ⁺¹ᵢ for each branch i
+    c = Rᵏ⁺¹ ./ stabilize_denom(sum(aᵏ⁺¹s))
+    Rᵏ⁺¹s = [c .* aᵏ⁺¹ᵢ for aᵏ⁺¹ᵢ in aᵏ⁺¹s]      # Rᵏ⁺¹ᵢ for each branch i
+    Rᵏs = [similar(aᵏ) for _ in parallel.layers] # pre-allocate output Rᵏᵢ for each branch i
+
+    for (Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, Rᵏ⁺¹ᵢ) in
+        zip(Rᵏs, rules, parallel.layers, modified_parallel, Rᵏ⁺¹s)
+        # In-place update Rᵏᵢ (and therefore Rᵏs)
+        lrp!(Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, aᵏ, Rᵏ⁺¹ᵢ)
+    end
+    return Rᵏ .= sum(Rᵏs)
 end
