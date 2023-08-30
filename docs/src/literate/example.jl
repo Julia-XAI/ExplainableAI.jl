@@ -112,15 +112,23 @@ mosaic(heatmap(batch, analyzer, 1); nrow=10)
 # ├── SmoothGrad
 # ├── IntegratedGradients
 # └── LRP
-#     ├── ZeroRule
-#     ├── EpsilonRule
-#     ├── GammaRule
-#     ├── WSquareRule
-#     ├── FlatRule
-#     ├── ZBoxRule
-#     ├── ZPlusRule
-#     ├── AlphaBetaRule
-#     └── PassRule
+#     ├── Rules
+#     │   ├── ZeroRule
+#     │   ├── EpsilonRule
+#     │   ├── GammaRule
+#     │   ├── GeneralizedGammaRule
+#     │   ├── WSquareRule
+#     │   ├── FlatRule
+#     │   ├── ZBoxRule
+#     │   ├── ZPlusRule
+#     │   ├── AlphaBetaRule
+#     │   └── PassRule
+#     └── Composite
+#         ├── EpsilonGammaBox
+#         ├── EpsilonPlus
+#         ├── EpsilonPlusFlat
+#         ├── EpsilonAlpha2Beta1
+#         └── EpsilonAlpha2Beta1Flat
 # ```
 #
 # Let's try [`InputTimesGradient`](@ref)
