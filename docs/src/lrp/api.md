@@ -2,6 +2,11 @@
 # LRP analyzer
 Refer to [`LRP`](@ref) for documentation on the LRP analyzer.
 
+# Canonization
+```@docs
+canonize
+```
+
 # LRP rules
 ```@docs
 ZeroRule
@@ -16,27 +21,11 @@ PassRule
 GeneralizedGammaRule
 ```
 
-# Custom rules 
-These utilities can be used to define custom rules without writing boilerplate code.
-To extend these functions, explicitly `import` them: 
+For [manual rule assignment](@ref manual_rules), use `ChainTuple` and `ParallelTuple`,
+matching the model structure:
 ```@docs
-ExplainableAI.modify_input
-ExplainableAI.modify_denominator
-ExplainableAI.modify_parameters
-ExplainableAI.modify_weight
-ExplainableAI.modify_bias
-ExplainableAI.modify_layer
-ExplainableAI.is_compatible
-```
-Compatibility settings:
-```@docs
-LRP_CONFIG.supports_layer
-LRP_CONFIG.supports_activation
-```
-
-# Canonization
-```@docs
-canonize
+ChainTuple
+ParallelTuple
 ```
 
 # Composites
@@ -89,6 +78,24 @@ EpsilonPlus
 EpsilonAlpha2Beta1
 EpsilonPlusFlat
 EpsilonAlpha2Beta1Flat
+```
+
+# Custom rules 
+These utilities can be used to define custom rules without writing boilerplate code.
+To extend these functions, explicitly `import` them: 
+```@docs
+ExplainableAI.modify_input
+ExplainableAI.modify_denominator
+ExplainableAI.modify_parameters
+ExplainableAI.modify_weight
+ExplainableAI.modify_bias
+ExplainableAI.modify_layer
+ExplainableAI.is_compatible
+```
+Compatibility settings:
+```@docs
+LRP_CONFIG.supports_layer
+LRP_CONFIG.supports_activation
 ```
 
 # Index
