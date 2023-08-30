@@ -21,14 +21,14 @@ model = BSON.load("../../model.bson", @__MODULE__)[:model]
 # The rule has to be of supertype `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# ## Step 2: implement 4 functions
+# ## Step 2: Implement rule behavior
 # It is then possible to dispatch on the following four utility functions
 # with the rule type `MyCustomLRPRule` to define custom rules without writing boilerplate code.
 #
-# 1. [`modify_input(rule, input)`](@ref ExplainableAI.modify_input)
-# 1. [`modify_parameters(rule, parameter)`](@ref ExplainableAI.modify_parameters)
-# 1. [`modify_denominator(rule, denominator)`](@ref ExplainableAI.modify_denominator)
-# 1. [`is_compatible(rule, layer)`](@ref ExplainableAI.is_compatible)
+# 1. [`modify_input(rule::MyGammaRule, input)`](@ref ExplainableAI.modify_input)
+# 1. [`modify_parameters(rule::MyGammaRule, parameter)`](@ref ExplainableAI.modify_parameters)
+# 1. [`modify_denominator(rule::MyGammaRule, denominator)`](@ref ExplainableAI.modify_denominator)
+# 1. [`is_compatible(rule::MyGammaRule, layer)`](@ref ExplainableAI.is_compatible)
 #
 # By default:
 # 1. `modify_input` doesn't change the input
@@ -42,10 +42,10 @@ import ExplainableAI: modify_parameters
 modify_parameters(::MyGammaRule, param) = param + 0.25f0 * relu.(param)
 
 # Note that we didn't implement three of the four functions.
-# This is because the defaults are sufficient for the `GammaRule`.
+# This is because the defaults are sufficient to implement the `GammaRule`.
 
 # ## Step 3: Use your rule
-# We can directly use this rule to make an analyzer!
+# We can directly use our rule to make an analyzer!
 rules = [
     FlatRule(),
     EpsilonRule(),

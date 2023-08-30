@@ -31,7 +31,7 @@ model = Chain(
     ),
     Chain(
         Flux.flatten,
-        Dense(1024 => 512, relu; init=init),         # 102_764_544 parameters
+        Dense(1024 => 512, relu; init=init),
         Dropout(0.5),
         Dense(512 => 100, relu; init=init),
     ),

@@ -7,10 +7,8 @@ OUT_DIR = joinpath(@__DIR__, "src/generated")
 
 # Use Literate.jl to generate docs and notebooks of examples
 function convert_literate(dir_in, dir_out)
-    @show dir_in dir_out
     for p in readdir(dir_in)
         path = joinpath(dir_in, p)
-        @show path
 
         if isdir(path)
             convert_literate(path, joinpath(dir_out, p))
@@ -34,8 +32,8 @@ makedocs(;
         "Getting started" => "generated/example.md",
         "LRP"             => Any[
             "Assigning rules to layers" => "generated/lrp/composites.md",
-            "Using custom rules"        => "generated/lrp/custom_rules.md",
-            "Using custom layers"       => "generated/lrp/custom_layer.md",
+            "Supporting new layers"  => "generated/lrp/custom_layer.md",
+            "Custom LRP rules"          => "generated/lrp/custom_rules.md",
             "Developer documentation"   => "lrp/developer.md"
         ],
         "API Reference"   => Any[
