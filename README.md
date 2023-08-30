@@ -26,8 +26,9 @@ using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Me
 ```julia
 using ExplainableAI
 using Flux
-using Metalhead                         # pre-trained vision models
-using HTTP, FileIO, ImageMagick         # load image from URL
+using Metalhead                   # pre-trained vision models
+using HTTP, FileIO, ImageMagick   # load image from URL
+using ImageInTerminal             # show heatmap in terminal
 
 # Load model
 model = VGG(16, pretrain=true).layers
@@ -95,6 +96,7 @@ Currently, the following analyzers are implemented:
     │   ├── ZeroRule
     │   ├── EpsilonRule
     │   ├── GammaRule
+    │   ├── GeneralizedGammaRule
     │   ├── WSquareRule
     │   ├── FlatRule
     │   ├── ZBoxRule
@@ -107,7 +109,6 @@ Currently, the following analyzers are implemented:
         ├── EpsilonPlusFlat
         ├── EpsilonAlpha2Beta1
         └── EpsilonAlpha2Beta1Flat
-
 ```
 
 One of the design goals of ExplainableAI.jl is extensibility.
