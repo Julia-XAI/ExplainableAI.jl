@@ -76,21 +76,21 @@ analyzer = LRP(model, rules; flatten=false)
 
 # ## Custom composites
 # Instead of manually defining a list of rules, we can also define a [`Composite`](@ref).
-# A composite contructs a list of LRP-rules by sequentially applying
-# [Composite primitives](@ref composite_primitive_api) it contains.
+# A composite contructs a list of LRP-rules by sequentially applying the
+# [composite primitives](@ref composite_primitive_api) it contains.
 #
 # To obtain the same set of rules as in the previous example, we can define
 composite = Composite(
-    GlobalTypeMap(
+    GlobalTypeMap( # the following maps of layer types to LRP rules are applied globally
         Conv                 => ZPlusRule(),   # apply ZPlusRule on all Conv layers
         Dense                => EpsilonRule(), # apply EpsilonRule on all Dense layers
         Dropout              => PassRule(),    # apply PassRule on all Dropout layers
         MaxPool              => ZeroRule(),    # apply ZeroRule on all MaxPool layers
         typeof(Flux.flatten) => PassRule(),    # apply PassRule on all flatten layers
     ),
-    FirstLayerMap(
+    FirstLayerMap( # the following rule is applied to the first layer
         FlatRule()
-    ), # apply FlatRule on the first layer
+    ),
 );
 
 # We now construct an LRP analyzer from `composite`
@@ -104,7 +104,7 @@ lrp_rules(model, composite)
 # The following [Composite primitives](@ref composite_primitive_api) can used to construct a [`Composite`](@ref).
 #
 # To apply a single rule, use:
-# * [`LayerMap`](@ref) to apply a rule to the `n`-th layer of a model
+# * [`LayerMap`](@ref) to apply a rule to a layer at a given index
 # * [`GlobalMap`](@ref) to apply a rule to all layers
 # * [`RangeMap`](@ref) to apply a rule to a positional range of layers
 # * [`FirstLayerMap`](@ref) to apply a rule to the first layer
@@ -120,9 +120,25 @@ lrp_rules(model, composite)
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.
 
+# ## Assining a rule to a specific layer
+# To assign a rule to a specific layer, we can use [`LayerMap`](@ref),
+# which maps an LRP-rule to all layers in the model at the given index.
+#
+# To display indices, use the [`show_layer_indices`](@ref) helper function:
+show_layer_indices(model)
+
+# Let's demonstrate `LayerMap` by assigning a specific rule to the last `Conv` layer
+# at index `(1, 5)`:
+composite = Composite(LayerMap((1, 5), EpsilonRule()))
+
+LRP(model, composite; flatten=false)
+
+# This approach also works with `Parallel` layers.
+
 # ## Composite presets
-# A list of implemented default composites can be found under
-# [composite presets](@ref default_composite_api) in the API reference,
+# ExplainableAI.jl provides a set of default composites.
+# A list of all implemented default composites can be found
+# [in the API reference](@ref default_composite_api),
 # e.g. the [`EpsilonPlusFlat`](@ref) composite:
 composite = EpsilonPlusFlat()
 #
