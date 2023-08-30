@@ -1,93 +1,22 @@
-# # Advanced LRP usage
+# # Custom LRP rules
 # One of the design goals of ExplainableAI.jl is to combine ease of use and
 # extensibility for the purpose of research.
 #
 #
 # This example will show you how to implement custom LRP rules and register custom layers
 # and activation functions.
-# For this purpose, we will quickly load our model from the previous section
+# For this purpose, we will quickly load the MNIST dataset and model from the previous section
 using ExplainableAI
 using Flux
 using MLDatasets
 using ImageCore
 using BSON
 
-model = BSON.load("../model.bson", @__MODULE__)[:model]
-
-# and data from the MNIST dataset
 index = 10
 x, _ = MNIST(Float32, :test)[10]
-input = reshape(x, 28, 28, 1, :);
+input = reshape(x, 28, 28, 1, :)
 
-# ## LRP composites
-# ### Assigning individual rules
-# When creating an LRP-analyzer, we can assign individual rules to each layer.
-# The array of rules has to match the length of the Flux chain.
-# The `LRP` analyzer will show a summary of how layers and rules got matched:
-rules = [
-    ZBoxRule(0.0f0, 1.0f0),
-    EpsilonRule(),
-    GammaRule(),
-    EpsilonRule(),
-    ZeroRule(),
-    ZeroRule(),
-    ZeroRule(),
-    ZeroRule(),
-]
-
-analyzer = LRP(model, rules)
-
-#
-heatmap(input, analyzer)
-
-# ### Custom composites
-# Instead of manually defining a list of rules, we can also use a [`Composite`](@ref).
-# A composite contructs a list of LRP-rules by sequentially applying
-# [Composite primitives](@ref composite_primitive_api) it contains.
-#
-# To obtain the same set of rules as in the previous example, we can define
-composite = Composite(
-    ZeroRule(),                              # default rule
-    GlobalTypeMap(
-        Conv => GammaRule(),                 # apply GammaRule on all convolutional layers
-        MaxPool => EpsilonRule(),            # apply EpsilonRule on all pooling-layers
-    ),
-    FirstLayerMap(ZBoxRule(0.0f0, 1.0f0)),   # apply ZBoxRule on the first layer
-)
-
-# We now construct an LRP analyzer from `composite`
-analyzer = LRP(model, composite)
-
-# As you can see, this analyzer contains the same rules as our previous one
-# and therefore also produces the same heatmaps:
-heatmap(input, analyzer)
-
-# ### Composite primitives
-# The following [Composite primitives](@ref composite_primitive_api) can used to construct a [`Composite`](@ref).
-#
-# To apply a single rule, use:
-# * [`LayerMap`](@ref) to apply a rule to the `n`-th layer of a model
-# * [`GlobalMap`](@ref) to apply a rule to all layers
-# * [`RangeMap`](@ref) to apply a rule to a positional range of layers
-# * [`FirstLayerMap`](@ref) to apply a rule to the first layer
-# * [`LastLayerMap`](@ref) to apply a rule to the last layer
-#
-# To apply a set of rules to layers based on their type, use:
-# * [`GlobalTypeMap`](@ref) to apply a dictionary that maps layer types to LRP-rules
-# * [`RangeTypeMap`](@ref) for a `TypeMap` on generalized ranges
-# * [`FirstLayerTypeMap`](@ref) for a `TypeMap` on the first layer of a model
-# * [`LastLayerTypeMap`](@ref) for a `TypeMap` on the last layer
-# * [`FirstNTypeMap`](@ref) for a `TypeMap` on the first `n` layers
-#
-# Primitives are called sequentially in the order the `Composite` was created with
-# and overwrite rules specified by previous primitives.
-
-# ### Default composites
-# A list of implemented default composites can be found under
-# [Default composites](@ref default_composite_api) in the API reference, e.g. [`EpsilonPlusFlat`](@ref):
-composite = EpsilonPlusFlat()
-#
-analyzer = LRP(model, composite)
+model = BSON.load("../../model.bson", @__MODULE__)[:model]
 
 # ## Custom LRP rules
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.
