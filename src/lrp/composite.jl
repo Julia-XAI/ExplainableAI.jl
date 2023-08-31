@@ -246,7 +246,8 @@ function lrp_rules(model, c::Composite)
 end
 
 """
-    Composite([default_rule=LRPZero()], primitives...)
+    Composite(primitives...)
+    Composite(default_rule, primitives...)
 
 Automatically contructs a list of LRP-rules by sequentially applying composite primitives.
 
