@@ -1,6 +1,8 @@
 # # [Heatmapping](@id docs-heatmapping)
-# This tutorial builds on the basics shown in the
-# [*Getting started*](@ref docs-getting-started) section.
+# Since numerical explanations are not very informative at first sight,
+# we can visualize them by computing a [`heatmap`](@ref).
+# This page showcases different options and preset for heatmapping,
+# building on the basics shown in the [*Getting started*](@ref docs-getting-started) section.
 #
 # We start out by loading the same pre-trained LeNet5 model and MNIST input data:
 using ExplainableAI
@@ -62,7 +64,8 @@ heatmap(expl; reduce=:norm)
 #-
 heatmap(expl; reduce=:maxabs)
 
-# In this specific example, the difference in heatmaps is negligible.
+# Since MNIST only has a single color channel, there is no need for reduction
+# and heatmaps look identical.
 
 # ### [Mapping explanations onto a color scheme](@id docs-heatmap-rangescale)
 # To map a [color-channel-reduced](@ref docs-heatmap-reduce) explanation onto a color scheme,
@@ -87,7 +90,7 @@ heatmap(expl; rangescale=:extrema, cs=ColorSchemes.inferno)
 
 # For the full list of `heatmap` keyword arguments, refer to the [`heatmap`](@ref) documentation.
 
-# ## Heatmapping batches
+# ## [Heatmapping batches](@id docs-heatmapping-batches)
 # Heatmapping also works with input batches.
 # Let's demonstrate this by using a batch of 100 images from the MNIST dataset:
 xs, ys = MNIST(Float32, :test)[1:100]

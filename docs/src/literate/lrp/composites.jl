@@ -138,7 +138,7 @@ LRP(model, composite; flatten=false)
 # ## [Composite presets](@id docs-composites-presets)
 # ExplainableAI.jl provides a set of default composites.
 # A list of all implemented default composites can be found
-# [in the API reference](@ref default_composite_api),
+# [in the API reference](@ref api_default_composite),
 # e.g. the [`EpsilonPlusFlat`](@ref) composite:
 composite = EpsilonPlusFlat()
 #

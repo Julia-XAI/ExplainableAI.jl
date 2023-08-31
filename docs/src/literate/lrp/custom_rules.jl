@@ -1,9 +1,11 @@
 # # [Custom LRP rules](@id docs-custom-rules)
 # One of the design goals of ExplainableAI.jl is to combine ease of use and
 # extensibility for the purpose of research.
+
 # This example will show you how to implement custom LRP rules.
+# building on the basics shown in the [*Getting started*](@ref docs-getting-started) section.
 #
-# For this purpose, we will quickly load the MNIST dataset and model from the previous section
+# We start out by loading the same pre-trained LeNet5 model and MNIST input data:
 using ExplainableAI
 using Flux
 using MLDatasets
@@ -11,12 +13,13 @@ using ImageCore
 using BSON
 
 index = 10
-x, _ = MNIST(Float32, :test)[10]
+x, y = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :)
 
-model = BSON.load("../../model.bson", @__MODULE__)[:model]
+model = BSON.load("../../model.bson", @__MODULE__)[:model] # hide
+model
 
-# ## Step 1: Define struct of supertype `AbstractLRPRule`
+# ## Step 1: Define rule struct
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.
 # The rule has to be of supertype `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
@@ -44,10 +47,10 @@ modify_parameters(::MyGammaRule, param) = param + 0.25f0 * relu.(param)
 # Note that we didn't implement three of the four functions.
 # This is because the defaults are sufficient to implement the `GammaRule`.
 
-# ## Step 3: Use your rule
+# ## Step 3: Use rule in LRP analyzer
 # We can directly use our rule to make an analyzer!
 rules = [
-    FlatRule(),
+    ZPlusRule(),
     EpsilonRule(),
     MyGammaRule(), # our custom GammaRule
     EpsilonRule(),
@@ -62,7 +65,7 @@ heatmap(input, analyzer)
 # We just implemented our own version of the ``γ``-rule in 2 lines of code.
 # The heatmap perfectly matches the pre-implemented `GammaRule`:
 rules = [
-    FlatRule(),
+    ZPlusRule(),
     EpsilonRule(),
     GammaRule(), # XAI.jl's GammaRule
     EpsilonRule(),
@@ -80,7 +83,6 @@ heatmap(input, analyzer)
 # 2. If your rule `MyRule` doesn't modify weights or biases,
 #    defining `modify_layer(::MyRule, layer) = nothing`
 #    can provide reduce memory allocations and improve performance.
-
 
 # ## Advanced layer modification
 # For more granular control over weights and biases,

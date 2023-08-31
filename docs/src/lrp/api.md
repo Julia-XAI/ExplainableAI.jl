@@ -71,7 +71,7 @@ ReshapingLayer
 NormalizationLayer
 ```
 
-## [Composite presets](@id default_composite_api)
+## [Composite presets](@id api_default_composite)
 ```@docs
 EpsilonGammaBox
 EpsilonPlus

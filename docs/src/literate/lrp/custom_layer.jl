@@ -5,7 +5,7 @@
 using Flux
 using ExplainableAI
 
-# ## Model checks
+# ## [Model checks](@id docs-lrp-model-checks)
 # To assure that novice users use LRP according to best practices,
 # ExplainableAI.jl runs strict model checks when creating an `LRP` analyzer.
 #
