@@ -131,7 +131,7 @@ struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
 end
 
 function (aug::InterpolationAugmentation)(
-    input, ns::AbstractNeuronSelector, input_ref=zero(input)
+    input, ns::AbstractNeuronSelector; input_ref=zero(input)
 )
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))
