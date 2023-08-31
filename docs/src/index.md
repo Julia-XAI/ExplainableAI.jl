@@ -25,6 +25,7 @@ Depth = 2
 ### LRP
 ```@contents
 Pages = [
+    "generated/lrp/basics.md",
     "generated/lrp/composites.md",
     "generated/lrp/custom_layer.md",
     "generated/lrp/custom_rules.md",

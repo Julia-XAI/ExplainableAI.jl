@@ -35,6 +35,7 @@ makedocs(;
             "Input augmentations"  => "generated/augmentations.md",
         ],
         "LRP" => Any[
+            "Basic usage"                => "generated/lrp/basics.md",
             "Assigning rules to layers"  => "generated/lrp/composites.md",
             "Supporting new layer types" => "generated/lrp/custom_layer.md",
             "Custom LRP rules"           => "generated/lrp/custom_rules.md",
