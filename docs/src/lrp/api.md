@@ -7,7 +7,7 @@ Refer to [`LRP`](@ref) for documentation on the LRP analyzer.
 canonize
 ```
 
-# LRP rules
+# [LRP rules](@id api-lrp-rules)
 ```@docs
 ZeroRule
 EpsilonRule
@@ -21,8 +21,8 @@ PassRule
 GeneralizedGammaRule
 ```
 
-For [manual rule assignment](@ref docs-composites-manual), use `ChainTuple` and `ParallelTuple`,
-matching the model structure:
+For [manual rule assignment](@ref docs-composites-manual), 
+use `ChainTuple` and `ParallelTuple`, matching the model structure:
 ```@docs
 ChainTuple
 ParallelTuple
@@ -34,7 +34,7 @@ Composite
 lrp_rules
 ```
 
-## [Composite primitives](@id composite_primitive_api)
+## [Composite primitives](@id api-composite-primitives)
 ### Simple maps
 Composite primitives that apply a single rule:
 ```@docs
@@ -71,7 +71,7 @@ ReshapingLayer
 NormalizationLayer
 ```
 
-## [Composite presets](@id api_default_composite)
+## [Composite presets](@id api-composite-presets)
 ```@docs
 EpsilonGammaBox
 EpsilonPlus

@@ -77,7 +77,7 @@ analyzer = LRP(model, rules; flatten=false)
 # ## [Custom composites](@id docs-composites-custom)
 # Instead of manually defining a list of rules, we can also define a [`Composite`](@ref).
 # A composite contructs a list of LRP-rules by sequentially applying the
-# [composite primitives](@ref composite_primitive_api) it contains.
+# [composite primitives](@ref api-composite-primitives) it contains.
 #
 # To obtain the same set of rules as in the previous example, we can define
 composite = Composite(
@@ -101,7 +101,7 @@ analyzer = LRP(model, composite; flatten=false)
 lrp_rules(model, composite)
 
 # ## Composite primitives
-# The following [Composite primitives](@ref composite_primitive_api) can used to construct a [`Composite`](@ref).
+# The following [Composite primitives](@ref api-composite-primitives) can used to construct a [`Composite`](@ref).
 #
 # To apply a single rule, use:
 # * [`LayerMap`](@ref) to apply a rule to a layer at a given index
@@ -138,7 +138,7 @@ LRP(model, composite; flatten=false)
 # ## [Composite presets](@id docs-composites-presets)
 # ExplainableAI.jl provides a set of default composites.
 # A list of all implemented default composites can be found
-# [in the API reference](@ref api_default_composite),
+# [in the API reference](@ref api-composite-presets),
 # e.g. the [`EpsilonPlusFlat`](@ref) composite:
 composite = EpsilonPlusFlat()
 #
