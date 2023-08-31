@@ -1,4 +1,4 @@
-# # Custom LRP rules
+# # [Custom LRP rules](@id docs-custom-rules)
 # One of the design goals of ExplainableAI.jl is to combine ease of use and
 # extensibility for the purpose of research.
 # This example will show you how to implement custom LRP rules.
@@ -74,6 +74,14 @@ rules = [
 analyzer = LRP(model, rules)
 heatmap(input, analyzer)
 
+# ## Performance tips
+# 1. Make sure functions like `modify_parameters` don't promote the type of weights
+#    (e.g. from `Float32` to `Float64`).
+# 2. If your rule `MyRule` doesn't modify weights or biases,
+#    defining `modify_layer(::MyRule, layer) = nothing`
+#    can provide reduce memory allocations and improve performance.
+
+
 # ## Advanced layer modification
 # For more granular control over weights and biases,
 # [`modify_weight`](@ref ExplainableAI.modify_weight) and
@@ -116,10 +124,3 @@ heatmap(input, analyzer)
 # ## Advanced LRP rules
 # To implement custom LRP rules that require more than `modify_layer`, `modify_input`
 # and `modify_denominator`, take a look at the [LRP developer documentation](@ref lrp-dev-docs).
-
-# ## Performance tips
-# 1. Make sure functions like `modify_parameters` don't promote the type of weights
-#    (e.g. from `Float32` to `Float64`).
-# 2. If your rule `MyRule` doesn't modify weights or biases,
-#    defining `modify_layer(::MyRule, layer) = nothing`
-#    can provide reduce memory allocations and improve performance.

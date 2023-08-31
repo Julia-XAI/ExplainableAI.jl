@@ -1,4 +1,4 @@
-# # Assigning LRP rules to layers
+# # [Assigning LRP rules to layers](@id docs-composites)
 # In this example, we will show how to assign LRP rules to specific layers.
 # For this purpose, we first define a small VGG-like convolutional neural network:
 using ExplainableAI
@@ -21,7 +21,7 @@ model = Chain(
     ),
 );
 
-# ## [Manually assigning rules](@id manual_rules)
+# ## [Manually assigning rules](@id docs-composites-manual)
 # When creating an LRP-analyzer, we can assign individual rules to each layer.
 # As we can see above, our model is a `Chain` of two Flux `Chain`s.
 # Using [`flatten_model`](@ref), we can flatten the model into a single `Chain`:
@@ -74,7 +74,7 @@ analyzer = LRP(model, rules; flatten=false)
 #md #     that the structure of the model can be preserved.
 #md #     For performance reasons, the default `flatten=true` is recommended.
 
-# ## Custom composites
+# ## [Custom composites](@id docs-composites-custom)
 # Instead of manually defining a list of rules, we can also define a [`Composite`](@ref).
 # A composite contructs a list of LRP-rules by sequentially applying the
 # [composite primitives](@ref composite_primitive_api) it contains.
@@ -135,7 +135,7 @@ LRP(model, composite; flatten=false)
 
 # This approach also works with `Parallel` layers.
 
-# ## Composite presets
+# ## [Composite presets](@id docs-composites-presets)
 # ExplainableAI.jl provides a set of default composites.
 # A list of all implemented default composites can be found
 # [in the API reference](@ref default_composite_api),

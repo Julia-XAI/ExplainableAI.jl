@@ -21,7 +21,7 @@ PassRule
 GeneralizedGammaRule
 ```
 
-For [manual rule assignment](@ref manual_rules), use `ChainTuple` and `ParallelTuple`,
+For [manual rule assignment](@ref docs-composites-manual), use `ChainTuple` and `ParallelTuple`,
 matching the model structure:
 ```@docs
 ChainTuple
