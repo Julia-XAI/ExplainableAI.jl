@@ -13,16 +13,34 @@ julia> ]add ExplainableAI
 ```
 
 ## Manual
+### General usage
 ```@contents
 Pages = [
     "generated/example.md",
-    "generated/advanced_lrp.md",
+    "generated/heatmapping.md",
+]
+Depth = 2
+```
+### LRP
+```@contents
+Pages = [
+    "generated/lrp/composites.md",
+    "generated/lrp/custom_layer.md",
+    "generated/lrp/custom_rules.md",
+    "lrp/developer.md",
 ]
 Depth = 2
 ```
 
 ## API reference
+### General
 ```@contents
-Pages = ["api.md",]
-Depth = 2
+Pages = ["api.md"]
+Depth = 1
+```
+
+### LRP
+```@contents
+Pages = ["lrp/api.md"]
+Depth = 1
 ```
