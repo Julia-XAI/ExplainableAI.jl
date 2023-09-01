@@ -24,7 +24,7 @@ model
 # The rule has to be of supertype `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# ## Step 2: Implement rule behavior
+# ## [Step 2: Implement rule behavior](@id docs-custom-rules-impl)
 # It is then possible to dispatch on the following four utility functions
 # with the rule type `MyCustomLRPRule` to define custom rules without writing boilerplate code.
 #

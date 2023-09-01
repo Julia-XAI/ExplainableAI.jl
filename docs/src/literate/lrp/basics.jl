@@ -83,7 +83,7 @@ LRP(model)
 # This analyzer will return heatmaps that look identical to [`InputTimesGradient`](@ref).
 
 # LRP's strength lies in assigning different rules to different layers,
-# based on their functionality in the neural network.
+# based on their functionality in the neural network[^1].
 # ExplainableAI.jl [implements many LRP rules out of the box](@ref api-lrp-rules),
 # but it is also possible to [*implement custom rules*](@ref docs-custom-rules).
 #
@@ -131,3 +131,5 @@ expl.extras.layerwise_relevances
 # using LoopVectorization
 # using ExplainableAI
 # ```
+#
+# [^1]: G. Montavon et al., [Layer-Wise Relevance Propagation: An Overview](https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10)
