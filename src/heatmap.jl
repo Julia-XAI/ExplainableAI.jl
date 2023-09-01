@@ -15,11 +15,13 @@ const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
 Visualize explanation.
 Assumes Flux's WHCN convention (width, height, color channels, batch size).
 
+See also [`analyze`](@ref).
+
 ## Keyword arguments
-- `cs::ColorScheme`: ColorScheme that is applied.
+- `cs::ColorScheme`: color scheme from ColorSchemes.jl that is applied.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `ColorSchemes.seismic`.
-- `reduce::Symbol`: How the color channels are reduced to a single number to apply a color scheme.
+- `reduce::Symbol`: selects how color channels are reduced to a single number to apply a color scheme.
     The following methods can be selected, which are then applied over the color channels
     for each "pixel" in the explanation:
     - `:sum`: sum up color channels
@@ -27,8 +29,8 @@ Assumes Flux's WHCN convention (width, height, color channels, batch size).
     - `:maxabs`: compute `maximum(abs, x)` over the color channels
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default is `:sum`.
-- `rangescale::Symbol`: How the color channel reduced heatmap is normalized before the color scheme is applied.
-    Can be either `:extrema` or `:centered`.
+- `rangescale::Symbol`: selects how the color channel reduced heatmap is normalized
+    before the color scheme is applied. Can be either `:extrema` or `:centered`.
     When calling `heatmap` with an `Explanation` or analyzer, the method default is selected.
     When calling `heatmap` with an array, the default for use with the `seismic` color scheme is `:centered`.
 - `permute::Bool`: Whether to flip W&H input channels. Default is `true`.

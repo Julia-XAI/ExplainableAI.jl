@@ -15,6 +15,8 @@ Apply the analyzer `method` for the given input, returning an [`Explanation`](@r
 If `neuron_selection` is specified, the explanation will be calculated for that neuron.
 Otherwise, the output neuron with the highest activation is automatically chosen.
 
+See also [`Explanation`](@ref) and [`heatmap`](@ref).
+
 ## Keyword arguments
 - `add_batch_dim`: add batch dimension to the input without allocating. Default is `false`.
 """
