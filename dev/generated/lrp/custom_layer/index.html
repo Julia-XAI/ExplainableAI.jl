@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Supporting new layer types · ExplainableAI.jl</title><script data-outdated-warner src="../../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../../assets/documenter.js"></script><script src="../../../siteinfo.js"></script><script src="../../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../../"><img src="../../../assets/logo.png" alt="ExplainableAI.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../../">ExplainableAI.jl</a></span></div><form class="docs-search" action="../../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../../">Home</a></li><li><a class="tocitem" href="../../example/">Getting started</a></li><li><span class="tocitem">General usage</span><ul><li><a class="tocitem" href="../../heatmapping/">Heatmapping</a></li><li><a class="tocitem" href="../../augmentations/">Input augmentations</a></li></ul></li><li><span class="tocitem">LRP</span><ul><li><a class="tocitem" href="../basics/">Basic usage</a></li><li><a class="tocitem" href="../composites/">Assigning rules to layers</a></li><li class="is-active"><a class="tocitem" href>Supporting new layer types</a><ul class="internal"><li><a class="tocitem" href="#docs-lrp-model-checks"><span>Model checks</span></a></li><li><a class="tocitem" href="#Registering-layers"><span>Registering layers</span></a></li><li><a class="tocitem" href="#Registering-activation-functions"><span>Registering activation functions</span></a></li><li><a class="tocitem" href="#Skipping-model-checks"><span>Skipping model checks</span></a></li></ul></li><li><a class="tocitem" href="../custom_rules/">Custom LRP rules</a></li><li><a class="tocitem" href="../../../lrp/developer/">Developer documentation</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../../../api/">General</a></li><li><a class="tocitem" href="../../../lrp/api/">LRP</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">LRP</a></li><li class="is-active"><a href>Supporting new layer types</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Supporting new layer types</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/adrhill/ExplainableAI.jl/blob/master/docs/src/literate/lrp/custom_layer.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="docs-custom-layers"><a class="docs-heading-anchor" href="#docs-custom-layers">Supporting new layers and activation functions</a><a id="docs-custom-layers-1"></a><a class="docs-heading-anchor-permalink" href="#docs-custom-layers" title="Permalink"></a></h1><p>One of the design goals of ExplainableAI.jl is to combine ease of use and extensibility for the purpose of research. This example will show you how to extent LRP to new layer types and activation functions.</p><pre><code class="language-julia hljs">using Flux
+using ExplainableAI</code></pre><h2 id="docs-lrp-model-checks"><a class="docs-heading-anchor" href="#docs-lrp-model-checks">Model checks</a><a id="docs-lrp-model-checks-1"></a><a class="docs-heading-anchor-permalink" href="#docs-lrp-model-checks" title="Permalink"></a></h2><p>To assure that novice users use LRP according to best practices, ExplainableAI.jl runs strict model checks when creating an <code>LRP</code> analyzer.</p><p>Let&#39;s demonstrate this by defining a new layer type that doubles its input</p><pre><code class="language-julia hljs">struct MyDoublingLayer end
+(::MyDoublingLayer)(x) = 2 * x
+
+mylayer = MyDoublingLayer()
+mylayer([1, 2, 3])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{Int64}:
+ 2
+ 4
+ 6</code></pre><p>and by defining a model that uses this layer:</p><pre><code class="language-julia hljs">model = Chain(
+    Dense(100, 20),
+    MyDoublingLayer()
+);</code></pre><p>Creating an LRP analyzer, e.g. <code>LRP(model)</code>, will throw an <code>ArgumentError</code> and print a summary of the model check in the REPL:</p><pre><code class="language-julia-repl hljs">julia&gt; LRP(model)
+  ChainTuple(
+    Dense(100 =&gt; 20)  =&gt; supported,
+    MyDoublingLayer() =&gt; unknown layer type,
+  ),
+
+  LRP model check failed
+  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
+
+  Found unknown layer types or activation functions that are not supported by ExplainableAI&#39;s LRP implementation yet.
+
+  LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
+
+  If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
+
+  [...]
+
+ERROR: Unknown layer or activation function found in model</code></pre><p>LRP should only be used on deep rectifier networks and ExplainableAI doesn&#39;t recognize <code>MyDoublingLayer</code> as a compatible layer by default. It will therefore return an error and a model check summary instead of returning an incorrect explanation.</p><p>However, if we know <code>MyDoublingLayer</code> is compatible with deep rectifier networks, we can register it to tell ExplainableAI that it is ok to use. This will be shown in the following section.</p><h2 id="Registering-layers"><a class="docs-heading-anchor" href="#Registering-layers">Registering layers</a><a id="Registering-layers-1"></a><a class="docs-heading-anchor-permalink" href="#Registering-layers" title="Permalink"></a></h2><p>The error in the model check will stop after registering our custom layer type <code>MyDoublingLayer</code> as &quot;supported&quot; by ExplainableAI.</p><p>This is done using the function <a href="../../../lrp/api/#ExplainableAI.LRP_CONFIG.supports_layer"><code>LRP_CONFIG.supports_layer</code></a>, which should be set to return <code>true</code> for the type <code>MyDoublingLayer</code>:</p><pre><code class="language-julia hljs">LRP_CONFIG.supports_layer(::MyDoublingLayer) = true</code></pre><p>Now we can create and run an analyzer without getting an error:</p><pre><code class="language-julia hljs">analyzer = LRP(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LRP(
+  Dense(100 =&gt; 20)                                        =&gt; ZeroRule(),
+  Main.MyDoublingLayer() =&gt; ZeroRule(),
+)</code></pre><div class="admonition is-info"><header class="admonition-header">Registering functions</header><div class="admonition-body"><p>Flux&#39;s <code>Chains</code> can also contain functions, e.g. <code>flatten</code>. This kind of layer can be registered as</p><pre><code class="language-julia hljs">LRP_CONFIG.supports_layer(::typeof(flatten)) = true</code></pre></div></div><h2 id="Registering-activation-functions"><a class="docs-heading-anchor" href="#Registering-activation-functions">Registering activation functions</a><a id="Registering-activation-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Registering-activation-functions" title="Permalink"></a></h2><p>The mechanism for registering custom activation functions is analogous to that of custom layers:</p><pre><code class="language-julia hljs">myrelu(x) = max.(0, x)
+
+model = Chain(
+    Dense(784, 100, myrelu),
+    Dense(100, 10),
+);</code></pre><p>Once again, creating an LRP analyzer for this model will throw an <code>ArgumentError</code> and display the following model check summary:</p><pre><code class="language-julia-repl hljs">julia&gt; LRP(model)
+  ChainTuple(
+    Dense(784 =&gt; 100, myrelu) =&gt; unsupported or unknown activation function myrelu,
+    Dense(100 =&gt; 10)          =&gt; supported,
+  ),
+
+  LRP model check failed
+  ≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡
+
+  Found unknown layer types or activation functions that are not supported by ExplainableAI&#39;s LRP implementation yet.
+
+  LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
+
+  If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
+
+  [...]
+
+ERROR: Unknown layer or activation function found in model</code></pre><p>Registation works by defining the function <a href="../../../lrp/api/#ExplainableAI.LRP_CONFIG.supports_activation"><code>LRP_CONFIG.supports_activation</code></a> as <code>true</code>:</p><pre><code class="language-julia hljs">LRP_CONFIG.supports_activation(::typeof(myrelu)) = true</code></pre><p>now the analyzer can be created without error:</p><pre><code class="language-julia hljs">analyzer = LRP(model)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LRP(
+  Dense(784 =&gt; 100, myrelu) =&gt; ZeroRule(),
+  Dense(100 =&gt; 10)          =&gt; ZeroRule(),
+)</code></pre><h2 id="Skipping-model-checks"><a class="docs-heading-anchor" href="#Skipping-model-checks">Skipping model checks</a><a id="Skipping-model-checks-1"></a><a class="docs-heading-anchor-permalink" href="#Skipping-model-checks" title="Permalink"></a></h2><p>All model checks can be skipped at your own risk by setting the LRP-analyzer keyword argument <code>skip_checks=true</code>.</p><pre><code class="language-julia hljs">struct UnknownLayer end
+(::UnknownLayer)(x) = x
+
+unknown_activation(x) = max.(0, x)
+
+model = Chain(Dense(100, 20, unknown_activation), MyDoublingLayer())
+
+LRP(model; skip_checks=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">LRP(
+  Dense(100 =&gt; 20, unknown_activation)                    =&gt; ZeroRule(),
+  Main.MyDoublingLayer() =&gt; ZeroRule(),
+)</code></pre><p>Instead of throwing the usual <code>ERROR: Unknown layer or activation function found in model</code>, the LRP analyzer was created without having to register either the layer <code>UnknownLayer</code> or the activation function <code>unknown_activation</code>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../composites/">« Assigning rules to layers</a><a class="docs-footer-nextpage" href="../custom_rules/">Custom LRP rules »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Friday 1 September 2023 18:37">Friday 1 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
