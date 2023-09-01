@@ -2,11 +2,6 @@
 # LRP analyzer
 Refer to [`LRP`](@ref) for documentation on the LRP analyzer.
 
-# Canonization
-```@docs
-canonize
-```
-
 # [LRP rules](@id api-lrp-rules)
 ```@docs
 ZeroRule
@@ -29,13 +24,14 @@ ParallelTuple
 ```
 
 # Composites
+## Applying composites
 ```@docs
 Composite
 lrp_rules
 ```
 
 ## [Composite primitives](@id api-composite-primitives)
-### Simple maps
+### Mapping layers to rules
 Composite primitives that apply a single rule:
 ```@docs
 LayerMap
@@ -51,7 +47,7 @@ make use of `show_layer_indices`:
 show_layer_indices
 ```
 
-### Type maps
+### Mapping layers to rules based on type
 Composite primitives that apply rules based on the layer type:
 ```@docs
 GlobalTypeMap
@@ -61,7 +57,7 @@ LastLayerTypeMap
 FirstNTypeMap
 ```
 
-### Union types for use in composites
+### Union types for composites
 The following exported union types types can be used to define TypeMaps:
 ```@docs
 ConvLayer

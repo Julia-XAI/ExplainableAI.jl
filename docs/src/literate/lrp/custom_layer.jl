@@ -114,7 +114,7 @@ LRP_CONFIG.supports_activation(::typeof(myrelu)) = true
 analyzer = LRP(model)
 
 # ## Skipping model checks
-# All model checks can be skipped at the user's own risk by setting the LRP-analyzer
+# All model checks can be skipped at your own risk by setting the LRP-analyzer
 # keyword argument `skip_checks=true`.
 struct UnknownLayer end
 (::UnknownLayer)(x) = x
@@ -125,6 +125,6 @@ model = Chain(Dense(100, 20, unknown_activation), MyDoublingLayer())
 
 LRP(model; skip_checks=true)
 
-# Instead of throwing the usual `# ERROR: Unknown layer or activation function found in model`,
+# Instead of throwing the usual `ERROR: Unknown layer or activation function found in model`,
 # the LRP analyzer was created without having to register either the layer `UnknownLayer`
 # or the activation function `unknown_activation`.

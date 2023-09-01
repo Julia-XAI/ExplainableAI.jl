@@ -20,7 +20,7 @@ Pages = [
     "generated/heatmapping.md",
     "generated/augmentations.md",
 ]
-Depth = 2
+Depth = 3
 ```
 ### LRP
 ```@contents
@@ -31,18 +31,18 @@ Pages = [
     "generated/lrp/custom_rules.md",
     "lrp/developer.md",
 ]
-Depth = 2
+Depth = 3
 ```
 
 ## API reference
 ### General
 ```@contents
 Pages = ["api.md"]
-Depth = 1
+Depth = 2
 ```
 
 ### LRP
 ```@contents
 Pages = ["lrp/api.md"]
-Depth = 1
+Depth = 2
 ```

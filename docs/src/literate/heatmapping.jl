@@ -67,7 +67,7 @@ heatmap(expl; reduce=:maxabs)
 # Since MNIST only has a single color channel, there is no need for reduction
 # and heatmaps look identical.
 
-# ### [Mapping explanations onto a color scheme](@id docs-heatmap-rangescale)
+# ### [Mapping explanations onto the color scheme](@id docs-heatmap-rangescale)
 # To map a [color-channel-reduced](@ref docs-heatmap-reduce) explanation onto a color scheme,
 # we first need to normalize all values to the range $[0, 1]$.
 #

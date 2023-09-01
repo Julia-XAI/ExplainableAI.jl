@@ -19,12 +19,13 @@ input = reshape(x, 28, 28, 1, :)
 model = BSON.load("../../model.bson", @__MODULE__)[:model] # hide
 model
 
-# ## Step 1: Define rule struct
+# ## Implementing a custom rule
+# ### Step 1: Define rule struct
 # Let's define a rule that modifies the weights and biases of our layer on the forward pass.
 # The rule has to be of supertype `AbstractLRPRule`.
 struct MyGammaRule <: AbstractLRPRule end
 
-# ## [Step 2: Implement rule behavior](@id docs-custom-rules-impl)
+# ### [Step 2: Implement rule behavior](@id docs-custom-rules-impl)
 # It is then possible to dispatch on the following four utility functions
 # with the rule type `MyCustomLRPRule` to define custom rules without writing boilerplate code.
 #
@@ -47,7 +48,7 @@ modify_parameters(::MyGammaRule, param) = param + 0.25f0 * relu.(param)
 # Note that we didn't implement three of the four functions.
 # This is because the defaults are sufficient to implement the `GammaRule`.
 
-# ## Step 3: Use rule in LRP analyzer
+# ### Step 3: Use rule in LRP analyzer
 # We can directly use our rule to make an analyzer!
 rules = [
     ZPlusRule(),
@@ -84,7 +85,7 @@ heatmap(input, analyzer)
 #    defining `modify_layer(::MyRule, layer) = nothing`
 #    can provide reduce memory allocations and improve performance.
 
-# ## Advanced layer modification
+# ## [Advanced layer modification](@id docs-custom-rules-advanced)
 # For more granular control over weights and biases,
 # [`modify_weight`](@ref ExplainableAI.modify_weight) and
 # [`modify_bias`](@ref ExplainableAI.modify_bias) can be used.

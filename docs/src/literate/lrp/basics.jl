@@ -36,7 +36,8 @@ model = Chain(
 );
 # This model contains two chains: the convolutional layers and the fully connected layers.
 
-# ## [Stripping the output softmax](@id docs-lrp-strip-softmax)
+# ## [Model preparation](@id docs-lrp-model-prep)
+# ### [Stripping the output softmax](@id docs-lrp-strip-softmax)
 # When using LRP, it is recommended to explain output logits instead of probabilities.
 # This can be done by stripping the output softmax activation from the model
 # using the [`strip_softmax`](@ref) function:
@@ -45,14 +46,14 @@ model = strip_softmax(model)
 # If you don't remove the output softmax,
 # [model checks](@ref docs-lrp-model-checks) will fail.
 
-# ## [Canonizing the model](@id docs-lrp-canonization)
+# ### [Canonizing the model](@id docs-lrp-canonization)
 # LRP is not invariant to a model's implementation.
 # Applying the [`GammaRule`](@ref) to two linear layers in a row will yield different results
 # than first fusing the two layers into one linear layer and then applying the rule.
 # This fusing is called "canonization" and can be done using the [`canonize`](@ref) function:
 model = canonize(model)
 
-# ## [Flattening the model](@id docs-lrp-flatten-model)
+# ### [Flattening the model](@id docs-lrp-flatten-model)
 # ExplainableAI.jl's LRP implementation supports nested Flux Chains and Parallel layers.
 # However, it is recommended to flatten the model before analyzing it.
 #
@@ -96,7 +97,7 @@ composite = EpsilonPlusFlat() # using composite preset EpsilonPlusFlat
 #-
 LRP(model, composite)
 
-# ## [Layerwise relevances](@id docs-lrp-layerwise)
+# ## [Computing layerwise relevances](@id docs-lrp-layerwise)
 # If you are interested in computing layerwise relevances,
 # call `analyze` with an LRP analyzer and the keyword argument
 # `layerwise_relevances=true`.
