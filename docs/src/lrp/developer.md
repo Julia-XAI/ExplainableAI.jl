@@ -140,7 +140,7 @@ the corresponding entry in `modified_layers` is simply set to the modified layer
 For a detailed description of the layer modification mechanism, refer to the section on
 [*Advanced layer modification*](@ref docs-custom-rules-advanced).
 
-## Foward and reverse pass
+## Forward and reverse pass
 When calling an `LRP` analyzer, a forward pass through the model is performed,
 saving the activations $aᵏ$ for all layers $k$ in an array called `acts`.
 This array is then used to pre-allocate the relevances $R^k$ for all layers in an array called `rels`.

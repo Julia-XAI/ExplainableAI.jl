@@ -76,7 +76,7 @@ analyzer = LRP(model, rules; flatten=false)
 
 # ## [Custom composites](@id docs-composites-custom)
 # Instead of manually defining a list of rules, we can also define a [`Composite`](@ref).
-# A composite contructs a list of LRP-rules by sequentially applying the
+# A composite constructs a list of LRP-rules by sequentially applying the
 # [composite primitives](@ref api-composite-primitives) it contains.
 #
 # To obtain the same set of rules as in the previous example, we can define
@@ -120,7 +120,7 @@ lrp_rules(model, composite)
 # Primitives are called sequentially in the order the `Composite` was created with
 # and overwrite rules specified by previous primitives.
 
-# ## Assining a rule to a specific layer
+# ## Assigning a rule to a specific layer
 # To assign a rule to a specific layer, we can use [`LayerMap`](@ref),
 # which maps an LRP-rule to all layers in the model at the given index.
 #

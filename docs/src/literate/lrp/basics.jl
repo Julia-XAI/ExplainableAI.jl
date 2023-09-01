@@ -111,7 +111,7 @@ expl.extras.layerwise_relevances
 
 # Note that the layerwise relevances are only kept for layers in the outermost `Chain` of the model.
 # When using our unflattened model, we only obtain three layerwise relevances,
-# one for each chain in the model and the output relavance:
+# one for each chain in the model and the output relevance:
 analyzer = LRP(model; flatten=false) # use unflattened model
 
 expl = analyze(input, analyzer; layerwise_relevances=true)

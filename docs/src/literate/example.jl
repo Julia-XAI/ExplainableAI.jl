@@ -115,7 +115,7 @@ heatmap(expl)
 
 #md # !!! note
 #md #
-#md #     The ouput neuron can also be specified when calling [`heatmap`](@ref):
+#md #     The output neuron can also be specified when calling [`heatmap`](@ref):
 #md #     ```julia
 #md #     heatmap(input, analyzer, 5)
 #md #     ```
