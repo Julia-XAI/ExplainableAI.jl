@@ -50,6 +50,7 @@ export PassRule, ZBoxRule, ZPlusRule, AlphaBetaRule, GeneralizedGammaRule
 
 # LRP composites
 export Composite, AbstractCompositePrimitive
+export ChainTuple, ParallelTuple
 export LayerMap, GlobalMap, RangeMap, FirstLayerMap, LastLayerMap
 export GlobalTypeMap, RangeTypeMap, FirstLayerTypeMap, LastLayerTypeMap
 export FirstNTypeMap
@@ -59,7 +60,7 @@ export lrp_rules, show_layer_indices
 export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat
 # Useful type unions
-export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer
+export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer, NormalizationLayer
 
 # heatmapping
 export heatmap

@@ -1,6 +1,7 @@
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExplainableAI = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"

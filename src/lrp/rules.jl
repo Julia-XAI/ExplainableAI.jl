@@ -1,4 +1,4 @@
-# https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#How-it-works-internally
+# https://adrhill.github.io/ExplainableAI.jl/dev/lrp/developer.html
 abstract type AbstractLRPRule end
 
 # Default parameters
@@ -11,11 +11,11 @@ const LRP_DEFAULT_BETA = 1.0f0
 # Generic LRP rule. Used by all rules without custom implementations.
 function lrp!(Rᵏ, rule::AbstractLRPRule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     layer = isnothing(modified_layer) ? layer : modified_layer
-    ãₖ = modify_input(rule, aᵏ)
-    z, back = Zygote.pullback(layer, ãₖ)
+    ãᵏ = modify_input(rule, aᵏ)
+    z, back = Zygote.pullback(layer, ãᵏ)
     s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
     c = only(back(s))
-    Rᵏ .= ãₖ .* c
+    Rᵏ .= ãᵏ .* c
 end
 
 #===================================#
@@ -154,7 +154,7 @@ LRP-``0`` rule. Commonly used on upper layers.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i \\frac{w_{ij}a_j^k}{\\sum_l w_{il}a_l^k+b_i} R_i^{k+1}
+R_j^k = \\sum_i \\frac{W_{ij}a_j^k}{\\sum_l W_{il}a_l^k+b_i} R_i^{k+1}
 ```
 
 # References
@@ -172,7 +172,7 @@ LRP-``ϵ`` rule. Commonly used on middle layers.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{w_{ij}a_j^k}{\\epsilon +\\sum_{l}w_{il}a_l^k+b_i} R_i^{k+1}
+R_j^k = \\sum_i\\frac{W_{ij}a_j^k}{\\epsilon +\\sum_{l}W_{il}a_l^k+b_i} R_i^{k+1}
 ```
 
 # Optional arguments
@@ -198,8 +198,8 @@ LRP-``γ`` rule. Commonly used on lower layers.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{(w_{ij}+\\gamma w_{ij}^+)a_j^k}
-    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_l^k+(b_i+\\gamma b_i^+)} R_i^{k+1}
+R_j^k = \\sum_i\\frac{(W_{ij}+\\gamma W_{ij}^+)a_j^k}
+    {\\sum_l(W_{il}+\\gamma W_{il}^+)a_l^k+(b_i+\\gamma b_i^+)} R_i^{k+1}
 ```
 
 # Optional arguments
@@ -235,7 +235,7 @@ LRP-``w²`` rule. Commonly used on the first layer when values are unbounded.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{w_{ij}^2}{\\sum_l w_{il}^2} R_i^{k+1}
+R_j^k = \\sum_i\\frac{W_{ij}^2}{\\sum_l W_{il}^2} R_i^{k+1}
 ```
 
 # References
@@ -313,8 +313,8 @@ It is also possible to provide two arrays of that match the input size.
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k=\\sum_i \\frac{w_{ij}a_j^k - w_{ij}^{+}l_j - w_{ij}^{-}h_j}
-    {\\sum_l w_{il}a_l^k+b_i - \\left(w_{il}^{+}l_l+b_i^{+}\\right) - \\left(w_{il}^{-}h_l+b_i^{-}\\right)} R_i^{k+1}
+R_j^k=\\sum_i \\frac{W_{ij}a_j^k - W_{ij}^{+}l_j - W_{ij}^{-}h_j}
+    {\\sum_l W_{il}a_l^k+b_i - \\left(W_{il}^{+}l_l+b_i^{+}\\right) - \\left(W_{il}^{-}h_l+b_i^{-}\\right)} R_i^{k+1}
 ```
 
 # References
@@ -363,8 +363,8 @@ Commonly used on lower layers.
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
 R_j^k = \\sum_i\\left(
-    \\alpha\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^+}
-    -\\beta\\frac{\\left(w_{ij}a_j^k\\right)^-}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^-}
+    \\alpha\\frac{\\left(W_{ij}a_j^k\\right)^+}{\\sum_l\\left(W_{il}a_l^k+b_i\\right)^+}
+    -\\beta\\frac{\\left(W_{ij}a_j^k\\right)^-}{\\sum_l\\left(W_{il}a_l^k+b_i\\right)^-}
 \\right) R_i^{k+1}
 ```
 
@@ -429,7 +429,7 @@ See also [`AlphaBetaRule`](@ref).
 # Definition
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
-R_j^k = \\sum_i\\frac{\\left(w_{ij}a_j^k\\right)^+}{\\sum_l\\left(w_{il}a_l^k+b_i\\right)^+} R_i^{k+1}
+R_j^k = \\sum_i\\frac{\\left(W_{ij}a_j^k\\right)^+}{\\sum_l\\left(W_{il}a_l^k+b_i\\right)^+} R_i^{k+1}
 ```
 
 # References
@@ -466,12 +466,12 @@ Generalized LRP-``γ`` rule. Can be used on layers with `leakyrelu` activation f
 Propagates relevance ``R^{k+1}`` at layer output to ``R^k`` at layer input according to
 ```math
 R_j^k = \\sum_i\\frac
-    {(w_{ij}+\\gamma w_{ij}^+)a_j^+ +(w_{ij}+\\gamma w_{ij}^-)a_j^-}
-    {\\sum_l(w_{il}+\\gamma w_{il}^+)a_j^+ +(w_{il}+\\gamma w_{il}^-)a_j^- +(b_i+\\gamma b_i^+)}
+    {(W_{ij}+\\gamma W_{ij}^+)a_j^+ +(W_{ij}+\\gamma W_{ij}^-)a_j^-}
+    {\\sum_l(W_{il}+\\gamma W_{il}^+)a_j^+ +(W_{il}+\\gamma W_{il}^-)a_j^- +(b_i+\\gamma b_i^+)}
 I(z_k>0) \\cdot R^{k+1}_i
 +\\sum_i\\frac
-    {(w_{ij}+\\gamma w_{ij}^-)a_j^+ +(w_{ij}+\\gamma w_{ij}^+)a_j^-}
-    {\\sum_l(w_{il}+\\gamma w_{il}^-)a_j^+ +(w_{il}+\\gamma w_{il}^+)a_j^- +(b_i+\\gamma b_i^-)}
+    {(W_{ij}+\\gamma W_{ij}^-)a_j^+ +(W_{ij}+\\gamma W_{ij}^+)a_j^-}
+    {\\sum_l(W_{il}+\\gamma W_{il}^-)a_j^+ +(W_{il}+\\gamma W_{il}^+)a_j^- +(b_i+\\gamma b_i^-)}
 I(z_k<0) \\cdot R^{k+1}_i
 ```
 
@@ -544,9 +544,9 @@ end
 for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rᵏ, rule::$R, layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
         layer = isnothing(modified_layer) ? layer : modified_layer
-        ãₖ = modify_input(rule, aᵏ)
-        z = modify_denominator(rule, layer(ãₖ))
-        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
+        ãᵏ = modify_input(rule, aᵏ)
+        z = modify_denominator(rule, layer(ãᵏ))
+        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãᵏ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
     end
 end
 

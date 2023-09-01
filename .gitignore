@@ -6,6 +6,7 @@ Manifest.toml
 
 # Generated files
 /docs/build/
+/docs/src/generated/
 
 # Benchmarking
 /.benchmarkci
