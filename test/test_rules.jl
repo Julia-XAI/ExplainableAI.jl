@@ -38,9 +38,9 @@ const RULES = Dict(
     layer = Dense(W, b, relu)
     modified_layer = nothing
 
-    R̂ₖ = similar(aᵏ) # will be inplace updated
-    @inferred lrp!(R̂ₖ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ
+    R̂ᵏ = similar(aᵏ) # will be inplace updated
+    @inferred lrp!(R̂ᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ
 
     ## Pooling layer
     Rᵏ⁺¹ = Float32.([1 2; 3 4]//30)
@@ -53,9 +53,9 @@ const RULES = Dict(
     Rᵏ = reshape(repeat(Rᵏ, 1, 3), 3, 3, 3, 1)
 
     layer = MaxPool((2, 2); stride=(1, 1))
-    R̂ₖ = similar(aᵏ) # will be inplace updated
-    @inferred lrp!(R̂ₖ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ
+    R̂ᵏ = similar(aᵏ) # will be inplace updated
+    @inferred lrp!(R̂ᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ
 end
 
 @testset "Parallel analytic" begin
@@ -113,21 +113,21 @@ end
     Rᵏ_α1β0 = [-1.0f0, 0.0f0]
     Rᵏ_α2β1 = [-2.0f0, 0.5f0]
 
-    R̂ₖ = similar(aᵏ) # will be inplace updated
+    R̂ᵏ = similar(aᵏ) # will be inplace updated
     rule = AlphaBetaRule(1.0f0, 0.0f0)
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ_α1β0
+    @inferred lrp!(R̂ᵏ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ_α1β0
 
     rule = AlphaBetaRule(2.0f0, 1.0f0)
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ_α2β1
+    @inferred lrp!(R̂ᵏ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ_α2β1
 
     rule = ZPlusRule()
     modified_layers = modify_layer(rule, layer)
-    @inferred lrp!(R̂ₖ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ_α1β0
+    @inferred lrp!(R̂ᵏ, rule, layer, modified_layers, aᵏ, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ_α1β0
 end
 
 @testset "GeneralizedGammaRule analytic" begin
@@ -163,9 +163,9 @@ end
     @test iszero(ml.layerˡ⁻.bias)
     @test iszero(ml.layerʳ⁺.bias)
 
-    R̂ₖ = similar(Rᵏ)
-    lrp!(R̂ₖ, rule, layer, ml, a, Rᵏ⁺¹)
-    @test R̂ₖ ≈ Rᵏ
+    R̂ᵏ = similar(Rᵏ)
+    lrp!(R̂ᵏ, rule, layer, ml, a, Rᵏ⁺¹)
+    @test R̂ᵏ ≈ Rᵏ
 end
 
 ## Test individual rules

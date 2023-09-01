@@ -11,11 +11,11 @@ const LRP_DEFAULT_BETA = 1.0f0
 # Generic LRP rule. Used by all rules without custom implementations.
 function lrp!(Rᵏ, rule::AbstractLRPRule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     layer = isnothing(modified_layer) ? layer : modified_layer
-    ãₖ = modify_input(rule, aᵏ)
-    z, back = Zygote.pullback(layer, ãₖ)
+    ãᵏ = modify_input(rule, aᵏ)
+    z, back = Zygote.pullback(layer, ãᵏ)
     s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
     c = only(back(s))
-    Rᵏ .= ãₖ .* c
+    Rᵏ .= ãᵏ .* c
 end
 
 #===================================#
@@ -544,9 +544,9 @@ end
 for R in (ZeroRule, EpsilonRule, GammaRule)
     @eval function lrp!(Rᵏ, rule::$R, layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
         layer = isnothing(modified_layer) ? layer : modified_layer
-        ãₖ = modify_input(rule, aᵏ)
-        z = modify_denominator(rule, layer(ãₖ))
-        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãₖ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
+        ãᵏ = modify_input(rule, aᵏ)
+        z = modify_denominator(rule, layer(ãᵏ))
+        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãᵏ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
     end
 end
 
