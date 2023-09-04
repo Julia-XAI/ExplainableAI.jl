@@ -27,25 +27,6 @@ is_fuseable(l::Union{Dense,Conv}, bn::BatchNorm) = activation_fn(l) == identity
 is_fuseable(l1, l2) = false
 
 """
-    try_fusing(model, i)
-
-Attempt to fuse pair of model layers at indices `i` and `i+1`.
-Returns fused model and `true` if layers were fused, unmodified model and `false` otherwise.
-"""
-function try_fusing(model, i)
-    l1, l2 = model[i:(i + 1)]
-
-    if is_fuseable(l1, l2)
-        if i == length(model) - 1
-            model = Chain(model[1:(i - 1)]..., fuse_batchnorm(l1, l2))
-        end
-        model = Chain(model[1:(i - 1)]..., fuse_batchnorm(l1, l2), model[(i + 2):end]...)
-        return model, true
-    end
-    return model, false
-end
-
-"""
     canonize(model)
 
 Canonize model by flattening it and fusing BatchNorm layers into preceding Dense and Conv
