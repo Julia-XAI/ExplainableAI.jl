@@ -16,7 +16,7 @@ Breaking changes:
     - `GammaRule`: argument `gamma` replaces `γ` 
     - `AlphaBetaRule`: arguments `alpha` and `beta` replace `α`, `β` 
 - ![BREAKING][badge-breaking] Rename `LRP` analyzer keyword argument `is_flat=false` to `flatten=true` ([#119][pr-119])
-- ![BREAKING][badge-breaking] Remove `check_model` (replaced by non-exported `check_lrp_compat`) ([#119][pr-119])
+- ![BREAKING][badge-breaking] Remove `check_model`, replaced by non-exported `check_lrp_compat` ([#119][pr-119])
 - ![BREAKING][badge-breaking] Replace `layerwise_relevances` field of `Explanation` return type by optional named tuple `extras`.
     Access layerwise relevances via `extras.layerwise_relevances`. ([#126][pr-126])
 - ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119][pr-119]) 
@@ -29,8 +29,9 @@ Breaking changes to commonly extended internal functions:
 - ![BREAKING][badge-breaking] Pre-allocate modified layers, replacing `modify_param!` with `modify_parameters` ([#102][pr-102])
 
 New features and enhancements:
-- ![Feature][badge-feature] Support nested Flux Chains ([#119][pr-119])
-- ![Feature][badge-feature] Support `BatchNorm` layers ([#129][pr-129])
+- ![Feature][badge-feature] Support nested Flux `Chain`s ([#119][pr-119])
+- ![Feature][badge-feature] Support `Parallel` layers ([#135][pr-135], [#138][pr-138])
+- ![Feature][badge-feature] Support `BatchNorm` layers ([#129][pr-129], [#134][pr-134])
 - ![Feature][badge-feature] Add `GeneralizedGammaRule` ([#109][pr-109])
 - ![Feature][badge-feature] Support nested indexing in composite primitive `LayerMap` ([#131][pr-131])
 - ![Enhancement][badge-enhancement] Pre-allocate modified layers in `LRP` analyzer field `modified_layers` ([#119][pr-119])
@@ -41,15 +42,22 @@ New features and enhancements:
 - ![Enhancement][badge-enhancement] Simplify LRP model checks ([#110][pr-110], [#119][pr-119])
 - ![Enhancement][badge-enhancement] Improve type stability of LRP rules
 
-Improvements to documentation:
-- ![Documentation][badge-docs] Fix API reference, add diagram explaining LRP layer modification ([#105][pr-105])
-- ![Documentation][badge-docs] Fix image loading in README example
+Documentation:
+- ![Documentation][badge-docs] Update documentation, adding pages on model preparation, composites, custom LRP rules, developer documentation
+  and a separate API reference for LRP analyzers ([#137][pr-137], [#105][pr-105])
 
 Package maintenance:
 - ![Maintenance][badge-maintenance] Refactor LRP rule tests ([#103][pr-103], [#127][pr-127])
 - ![Maintenance][badge-maintenance] Fix LRP benchmarks ([#104][pr-104], [#127][pr-127])
 
 ### General changes
+Breaking changes:
+- ![BREAKING][badge-breaking] Rename `Explanation` field `attribution` to `val` ([#136][pr-136])
+
+Documentation:
+- ![Documentation][badge-docs] Update documentation, adding pages on heatmapping and input augmentations ([#137][pr-137], [#105][pr-105])
+
+Package maintenance:
 - ![Maintenance][badge-maintenance] Compatibility with Flux.jl `v0.14` ([#116][pr-116])
 - ![Maintenance][badge-maintenance] Drop dependency on LinearAlgebra.jl and PrettyTables.jl ([#119][pr-119])
 - ![Maintenance][badge-maintenance] Add Aqua.jl tests ([#125][pr-125])
@@ -150,7 +158,11 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
-
+[pr-138]: https://github.com/adrhill/ExplainableAI.jl/pull/138
+[pr-137]: https://github.com/adrhill/ExplainableAI.jl/pull/137
+[pr-136]: https://github.com/adrhill/ExplainableAI.jl/pull/136
+[pr-135]: https://github.com/adrhill/ExplainableAI.jl/pull/135
+[pr-134]: https://github.com/adrhill/ExplainableAI.jl/pull/134
 [pr-131]: https://github.com/adrhill/ExplainableAI.jl/pull/131
 [pr-130]: https://github.com/adrhill/ExplainableAI.jl/pull/130
 [pr-129]: https://github.com/adrhill/ExplainableAI.jl/pull/129
