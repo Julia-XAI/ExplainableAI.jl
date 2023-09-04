@@ -41,7 +41,8 @@ input = preprocess_imagenet(img)
 input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
 
 # Run XAI method
-analyzer = LRP(model)
+composite = EpsilonPlusFlat()
+analyzer = LRP(model, composite)
 expl = analyze(input, analyzer)         # or: expl = analyzer(input)
 
 # Show heatmap
@@ -170,8 +171,8 @@ Contributions are welcome!
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 
-[docs-composites]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-composites
-[docs-custom-rules]: https://adrhill.github.io/ExplainableAI.jl/dev/generated/advanced_lrp/#Custom-LRP-rules
+[docs-composites]: https://adrhill.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
+[docs-custom-rules]: https://adrhill.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
 
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
