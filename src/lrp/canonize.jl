@@ -15,6 +15,9 @@ function fuse_batchnorm(c::Conv, bn::BatchNorm)
     return Conv(W, b, bn.λ)
 end
 
+is_fuseable(l::Union{Dense,Conv}, bn::BatchNorm) = activation_fn(l) == identity
+is_fuseable(l1, l2) = false
+
 """
     try_fusing(model, i)
 
@@ -22,9 +25,9 @@ Attempt to fuse pair of model layers at indices `i` and `i+1`.
 Returns fused model and `true` if layers were fused, unmodified model and `false` otherwise.
 """
 function try_fusing(model, i)
-    l1 = model[i]
-    l2 = model[i + 1]
-    if l1 isa Union{Dense,Conv} && l2 isa BatchNorm && activation_fn(l1) == identity
+    l1, l2 = model[i:(i + 1)]
+
+    if is_fuseable(l1, l2)
         if i == length(model) - 1
             model = Chain(model[1:(i - 1)]..., fuse_batchnorm(l1, l2))
         end
@@ -41,12 +44,31 @@ Canonize model by flattening it and fusing BatchNorm layers into preceding Dense
 layers with linear activation functions.
 """
 function canonize(model::Chain)
-    # TODO: support chains of chains
-    # TODO: support parallel layers
+    model = flatten_model(model)
+    return _canonize(model)
+end
+
+function _canonize(model::Chain)
+    model = Chain(_canonize.(model.layers)) # recursively canonize Parallel layers
+
     i = 1
     while i < length(model)
-        model, fused = try_fusing(model, i)
-        !fused && (i += 1)
+        l1, l2 = model[i:(i + 1)]
+
+        if is_fuseable(l1, l2)
+            fused = fuse_batchnorm(l1, l2)
+            model = Chain(model[1:(i - 1)]..., fused, model[(i + 2):end]...)
+            # if fused, don't increment i,
+            # instead try fusing the new layer with the next one
+        else
+            i += 1
+        end
     end
     return model
 end
+
+function _canonize(p::Parallel)
+    return Parallel(p.connection, _canonize.(p.layers))
+end
+
+_canonize(layer) = layer
