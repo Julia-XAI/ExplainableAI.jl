@@ -20,7 +20,7 @@ function fuse_batchnorm(c::Conv, bn::BatchNorm)
     else
         - scale .* bn.μ + bn.β
     end
-    return Conv(W, b, bn.λ)
+    return Conv(bn.λ, W, b, c.stride, c.pad, c.dilation, c.groups)
 end
 
 is_fuseable(l::Union{Dense,Conv}, bn::BatchNorm) = activation_fn(l) == identity
