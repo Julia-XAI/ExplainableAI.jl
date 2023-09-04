@@ -1,5 +1,5 @@
 # ExplainableAI.jl
-## Version `v0.6.0-DEV`
+## Version `v0.6.0`
 This release brings a large refactor of LRP analyzers, 
 supporting nested "dataflow layers" from Flux.jl like `Chain` and `Parallel` layers. 
 This enables LRP on more complex model architectures like ResNets.
