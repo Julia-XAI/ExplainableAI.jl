@@ -3,7 +3,11 @@ function fuse_batchnorm(d::Dense, bn::BatchNorm)
         throw(ArgumentError("Can't fuse Dense layer with activation $(d.σ)."))
     scale = safedivide(bn.γ, sqrt.(bn.σ²))
     W = scale .* d.weight
-    b = scale .* (d.bias - bn.μ) + bn.β
+    b = if d.bias != false
+        scale .* (d.bias - bn.μ) + bn.β
+    else
+        - scale .* bn.μ + bn.β
+    end
     return Dense(W, b, bn.λ)
 end
 
@@ -11,7 +15,11 @@ function fuse_batchnorm(c::Conv, bn::BatchNorm)
     c.σ != identity && throw(ArgumentError("Can't fuse Conv layer with activation $(c.σ)."))
     scale = safedivide(bn.γ, sqrt.(bn.σ²))
     W = c.weight .* reshape(scale, 1, 1, 1, :)
-    b = scale .* (c.bias - bn.μ) + bn.β
+    b = if c.bias != false
+        scale .* (c.bias - bn.μ) + bn.β
+    else
+        - scale .* bn.μ + bn.β
+    end
     return Conv(W, b, bn.λ)
 end
 

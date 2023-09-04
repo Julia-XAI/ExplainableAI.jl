@@ -57,7 +57,7 @@ model = Chain(
     BatchNorm(2, softplus),
     BatchNorm(2),
     flatten,
-    Dense(72, 10),
+    Dense(72, 10, bias=false),
     BatchNorm(10),
     BatchNorm(10),
     BatchNorm(10, relu),
@@ -113,7 +113,7 @@ model = Chain(
         +,
         Conv((3, 3), 4 => 5, identity),
         Chain(
-            Conv((3, 3), 4 => 5, identity), # fuse
+            Conv((3, 3), 4 => 5, bias=false, identity), # fuse
             BatchNorm(5),
         ),
         Chain(
