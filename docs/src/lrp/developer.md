@@ -2,7 +2,7 @@
 ## Generic LRP rule implementation
 Before we dive into package-specific implementation details 
 in later sections of this developer documentation, 
-we first need to cover some fundamentals of LRP, starting with the notation we use.
+we first need to cover some fundamentals of LRP, starting with our notation.
 
 The generic LRP rule, of which the ``0``-, ``\epsilon``- and ``\gamma``-rules are special cases, reads[^1][^2]
 
@@ -44,13 +44,14 @@ f(x) = Wx + b \quad .
 ```
 
 This includes most commonly used types of layers, such as fully connected layers, 
-convolutional layers, pooling layers and normalization layers.
+convolutional layers, pooling layers, and normalization layers.
 
 We will now describe a generic implementation of equation (1) 
 that can be applied to any linear layer.
 
 ### [The automatic differentiation fallback](@id lrp-dev-ad-fallback)
 The computation of the generic LRP rule can be decomposed into four steps[^1]:
+
 ```math
 \begin{array}{lr}
 z_{i} = \sum_{l} \rho(W_{il}) \; a_l^k + \rho(b_i) & \text{(Step 1)} \\[0.5em]
@@ -63,17 +64,17 @@ R_{j}^{k} = a_{j}^{k} c_{j}                        & \text{(Step 4)}
 **To compute step 1**, we first create a modified layer, 
 applying $\rho$ to the weights and biases 
 and replacing the activation function with the identity function.
-The vector $z$ is then computed as a simple forward pass through the modified layer.
+The vector $z$ is then computed using a forward pass through the modified layer.
 It has the same dimensionality as $R^{k+1}$ and $a^{k+1}$.
 
-**Step 2** is a simple element-wise division of $R^{k+1}$ by $z$.
+**Step 2** is an element-wise division of $R^{k+1}$ by $z$.
 To avoid division by zero, a small constant $\epsilon$ is added to $z$ when necessary.
 
 **Step 3** is trivial for fully connected layers, 
 as $\rho(W)$ corresponds to the weight matrix of the modified layer.
-For other types of linear layers however, the implementation is more involved:
+For other types of linear layers, however, the implementation is more involved:
 A naive approach would be to construct a large matrix $W$
-that corresponds to the affine transformation $Wx+b$ implemented the modified layer.
+that corresponds to the affine transformation $Wx+b$ implemented by the modified layer.
 This has multiple drawbacks:
 - the implementation is error-prone
 - a separate implementation is required for each type of linear layer
@@ -84,14 +85,20 @@ This has multiple drawbacks:
 
 A better approach can be found by observing that the matrix $W$ is the Jacobian
 of the affine transformation $f(x) = Wx + b$.
-The full vector $c$ computed in step 3 corresponds to $c = s^T W$,
-a so-called Vector-Jacobian-Product (VJP) of the vector $s$ with the Jacobian $W$. 
-VJPs are the building blocks of reverse-mode automatic differentiation (AD),
-and efficiently implemented by most AD frameworks in a matrix-free, GPU-accelerated manner.
+The vector $c$ computed in step 3 corresponds to $c = s^T W$,
+a so-called *Vector-Jacobian-Product* (VJP) of the vector $s$ with the Jacobian $W$. 
+
+VJPs are the fundamental building blocks of reverse-mode automatic differentiation (AD),
+and therefore implemented by most AD frameworks in a highly performant, matrix-free, GPU-accelerated manner.
+Note that computing the VJP is much more efficient than first computing the full Jacobian
+$W$ and later multiplying it with $s$. 
+This is due to the fact that computing the full Jacobian of a function 
+$f: \mathbb{R}^n \rightarrow \mathbb{R}^m$ requires computing $m$ VJPs.
 
 Functions that compute VJP's are commonly called *pullbacks*.
 Using the [Zygote.jl](https://github.com/FluxML/Zygote.jl) AD system,
 we obtain the output $z$ of a modified layer and its pullback `back` in a single function call:
+
 ```julia
 z, back = Zygote.pullback(modified_layer, aᵏ)
 ```
@@ -111,10 +118,9 @@ We will refer to it as the *"AD fallback"*.
 For more background information on automatic differentiation, refer to the 
 [JuML lecture on AD](https://adrhill.github.io/julia-ml-course/L6_Automatic_Differentiation/).
 
-
 ## LRP analyzer struct
 The [`LRP`](@ref) analyzer struct holds three fields:
-the `model` to analyze, the LRP `rules` to use and pre-allocated `modified_layers`.
+the `model` to analyze, the LRP `rules` to use, and pre-allocated `modified_layers`.
 
 As described in the section on [*Composites*](@ref docs-composites),
 applying a composite to a model will return LRP rules in nested
@@ -126,7 +132,7 @@ When creating an `LRP` analyzer with the default keyword argument `flatten=true`
 This is done for performance reasons, as discussed in 
 [*Flattening the model*](@ref docs-lrp-flatten-model).
 
-After running [*Model checks*](@ref docs-lrp-model-checks),
+After passing the [*Model checks*](@ref docs-lrp-model-checks),
 modified layers are pre-allocated, once again using the `ChainTuple` and `ParallelTuple`
 wrapper types to match the structure of the model.
 If a rule doesn't modify a layer, 
@@ -142,23 +148,26 @@ For a detailed description of the layer modification mechanism, refer to the sec
 
 ## Forward and reverse pass
 When calling an `LRP` analyzer, a forward pass through the model is performed,
-saving the activations $aᵏ$ for all layers $k$ in an array called `acts`.
-This array is then used to pre-allocate the relevances $R^k$ for all layers in an array called `rels`.
+saving the activations $aᵏ$ for all layers $k$ in a vector called `acts`.
+This vector of activations is then used to pre-allocate the relevances $R^k$ 
+for all layers in a vector called `rels`.
 This is possible since for any layer $k$, $a^k$ and $R^k$ have the same shape.
-Finally, the last entry in `rels` is set to zeros, except for the specified output neuron, which is set to one.
+Finally, the last array of relevances $R^N$ in `rels` is set to zeros, 
+except for the specified output neuron, which is set to one.
 
 We can now run the reverse pass, iterating backwards over the layers in the model
-and writing the relevances $R^k$ into the pre-allocated array `rels`:
+and writing relevances $R^k$ into the pre-allocated array `rels`:
 
 ```julia
-for i in length(model):-1:1
+for k in length(model):-1:1
     #                  └─ loop over layers in reverse
-    lrp!(rels[i], rules[i], layers[i], modified_layers[i], acts[i], rels[i+1])
+    lrp!(rels[k], rules[k], layers[k], modified_layers[i], acts[k], rels[k+1])
     #    └─ Rᵏ: modified in-place                          └─ aᵏ    └─ Rᵏ⁺¹
 end
 ```
 
-This is done by calling low level functions
+This is done by calling low-level functions
+
 ```julia
 function lrp!(Rᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     Rᵏ .= ...
@@ -175,16 +184,16 @@ and the output relevance `Rᵏ⁺¹`.
 
 The exclamation point in the function name `lrp!` is a 
 [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
-in Julia to denote functions that modify their arguments - 
-in this case the first argument `rels[i]`, which corresponds to $R^k$.
+in Julia to denote functions that modify their arguments -- 
+in this case the first argument `rels[k]`, which corresponds to $R^k$.
 
 ### Rule calls
 As discussed in [*The AD fallback*](@ref lrp-dev-ad-fallback),
 the default LRP fallback for unknown layers uses AD via 
 [Zygote](https://github.com/FluxML/Zygote.jl).
-
-Now that you are familiar with both the API and the four step computation of the generic LRP rules,
+Now that you are familiar with both the API and the four-step computation of the generic LRP rules,
 the following implementation should be straightforward to understand:
+
 ```julia
 function lrp!(Rᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
    # Use modified_layer if available
@@ -201,11 +210,11 @@ Not only `lrp!` dispatches on the rule and layer type,
 but also the internal functions `modify_input` and `modify_denominator`.
 Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
-A good entry point into the source code is
+All LRP rules are implemented in the file
 [`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
 
 ### Specialized implementations
-In other programming languages, LRP is commonly implemented in an object oriented manner,
+In other programming languages, LRP is commonly implemented in an object-oriented manner,
 providing a single backward pass implementation per rule.
 This can be seen as a form of *single dispatch* on the rule type.
 
@@ -221,7 +230,8 @@ function lrp!(Rᵏ, rule, layer::ReshapingLayer, modified_layer, aᵏ, Rᵏ⁺¹
 end
 ```
 
-We can even provide a specialized implementation of the generic LRP rule for `Dense` layers. Since we can access the weight matrix directly, we can skip the use of automatic differentiation:
+We can even provide a specialized implementation of the generic LRP rule for `Dense` layers. Since we can access the weight matrix directly, we can skip the use of automatic differentiation
+and implement the following equation directly, using Einstein summation notation:
 
 ```math
 R_j^k = \sum_i \frac{\rho(W_{ij}) \; a_j^k}{\epsilon + \sum_{l} \rho(W_{il}) \; a_l^k + \rho(b_i)} R_i^{k+1}
