@@ -48,38 +48,38 @@ LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwa
 
 get_activations(model, input) = [input, Flux.activations(model, input)...]
 
+function mask_output_neuron!(R, aᴺ, ns::AbstractNeuronSelector)
+    fill!(Rᴺ, 0)
+    idx = ns(aᴺ)
+    Rᴺ[idx] .= 1
+    return Rᴺ
+end
+
 # Call to the LRP analyzer
 function (lrp::LRP)(
     input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
 ) where {T}
-    acts = get_activations(lrp.model, input)      # compute  aᵏ for all layers k
-    rels = similar.(acts)                         # allocate Rᵏ for all layers k
-    mask_output_neuron!(rels[end], acts[end], ns) # compute  Rᵏ⁺¹ of output layer
+    as = get_activations(lrp.model, input)    # compute activations aᵏ for all layers k
+    Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
+    mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
 
-    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
-    for i in length(lrp.model):-1:1
-        lrp!(
-            rels[i],
-            lrp.rules[i],
-            lrp.model[i],
-            lrp.modified_layers[i],
-            acts[i],
-            rels[i + 1],
-        )
+    # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[k]` = Rᵏ
+    for k in length(lrp.model):-1:1
+        lrp!(Rs[k], lrp.rules[k], lrp.model[k], lrp.modified_layers[k], as[k], Rs[k + 1])
     end
-    extras = layerwise_relevances ? (layerwise_relevances=rels,) : nothing
 
-    return Explanation(first(rels), last(acts), ns(last(acts)), :LRP, extras)
+    extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
+    return Explanation(first(Rs), last(as), ns(last(as)), :LRP, extras)
 end
 
 function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple, aᵏ, Rᵏ⁺¹)
-    acts = get_activations(chain, aᵏ)
-    rels = similar.(acts)
-    last(rels) .= Rᵏ⁺¹
+    as = get_activations(chain, aᵏ)
+    Rs = similar.(as)
+    last(Rs) .= Rᵏ⁺¹
 
     # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
     for i in length(chain):-1:1
-        lrp!(rels[i], rules[i], chain[i], modified_chain[i], acts[i], rels[i + 1])
+        lrp!(Rs[i], rules[i], chain[i], modified_chain[i], as[i], Rs[i + 1])
     end
     return Rᵏ .= first(rels)
 end

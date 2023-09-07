@@ -1,12 +1,5 @@
 abstract type AbstractNeuronSelector end
 
-function mask_output_neuron!(R, a, ns::AbstractNeuronSelector)
-    fill!(R, 0)
-    idx = ns(a)
-    R[idx] .= 1
-    return R
-end
-
 """
     MaxActivationSelector()
 
