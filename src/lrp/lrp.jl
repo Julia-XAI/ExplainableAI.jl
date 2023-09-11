@@ -77,11 +77,11 @@ function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple,
     Rs = similar.(as)
     last(Rs) .= Rᵏ⁺¹
 
-    # Apply LRP rules in backward-pass, inplace-updating relevances `rels[i]`
+    # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[i]`
     for i in length(chain):-1:1
         lrp!(Rs[i], rules[i], chain[i], modified_chain[i], as[i], Rs[i + 1])
     end
-    return Rᵏ .= first(rels)
+    return Rᵏ .= first(Rs)
 end
 
 function lrp!(
