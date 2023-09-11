@@ -148,21 +148,21 @@ For a detailed description of the layer modification mechanism, refer to the sec
 
 ## Forward and reverse pass
 When calling an `LRP` analyzer, a forward pass through the model is performed,
-saving the activations $aᵏ$ for all layers $k$ in a vector called `acts`.
+saving the activations $aᵏ$ for all layers $k$ in a vector called `as`.
 This vector of activations is then used to pre-allocate the relevances $R^k$ 
-for all layers in a vector called `rels`.
+for all layers in a vector called `Rs`.
 This is possible since for any layer $k$, $a^k$ and $R^k$ have the same shape.
-Finally, the last array of relevances $R^N$ in `rels` is set to zeros, 
+Finally, the last array of relevances $R^N$ in `Rs` is set to zeros, 
 except for the specified output neuron, which is set to one.
 
 We can now run the reverse pass, iterating backwards over the layers in the model
-and writing relevances $R^k$ into the pre-allocated array `rels`:
+and writing relevances $R^k$ into the pre-allocated array `Rs`:
 
 ```julia
 for k in length(model):-1:1
     #                  └─ loop over layers in reverse
-    lrp!(rels[k], rules[k], layers[k], modified_layers[i], acts[k], rels[k+1])
-    #    └─ Rᵏ: modified in-place                          └─ aᵏ    └─ Rᵏ⁺¹
+    lrp!(Rs[k], rules[k], layers[k], modified_layers[i], as[k], Rs[k+1])
+    #    └─ Rᵏ: modified in-place                        └─ aᵏ  └─ Rᵏ⁺¹
 end
 ```
 
@@ -185,7 +185,7 @@ and the output relevance `Rᵏ⁺¹`.
 The exclamation point in the function name `lrp!` is a 
 [naming convention](https://docs.julialang.org/en/v1/manual/style-guide/#bang-convention)
 in Julia to denote functions that modify their arguments -- 
-in this case the first argument `rels[k]`, which corresponds to $R^k$.
+in this case the first argument `Rs[k]`, which corresponds to $R^k$.
 
 ### Rule calls
 As discussed in [*The AD fallback*](@ref lrp-dev-ad-fallback),

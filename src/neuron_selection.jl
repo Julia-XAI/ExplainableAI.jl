@@ -1,12 +1,5 @@
 abstract type AbstractNeuronSelector end
 
-function mask_output_neuron!(R, a, ns::AbstractNeuronSelector)
-    fill!(R, 0)
-    idx = ns(a)
-    R[idx] .= 1
-    return R
-end
-
 """
     MaxActivationSelector()
 
@@ -15,7 +8,7 @@ Neuron selector that picks the output neuron with the highest activation.
 struct MaxActivationSelector <: AbstractNeuronSelector end
 function (::MaxActivationSelector)(out::AbstractArray{T,N}) where {T,N}
     N < 2 && throw(BATCHDIM_MISSING)
-    return Vector{CartesianIndex{N}}([argmax(out; dims=1:(N - 1))...])
+    return vec(argmax(out; dims=1:(N - 1)))
 end
 
 """
@@ -28,11 +21,13 @@ struct IndexSelector{I} <: AbstractNeuronSelector
 end
 function (s::IndexSelector{<:Integer})(out::AbstractArray{T,N}) where {T,N}
     N < 2 && throw(BATCHDIM_MISSING)
-    return CartesianIndex{N}.(s.index, 1:size(out, N))
+    batchsize = size(out, N)
+    return [CartesianIndex{N}(s.index, b) for b in 1:batchsize]
 end
 function (s::IndexSelector{I})(out::AbstractArray{T,N}) where {I,T,N}
     N < 2 && throw(BATCHDIM_MISSING)
-    return CartesianIndex{N}.(s.index..., 1:size(out, N))
+    batchsize = size(out, N)
+    return [CartesianIndex{N}(s.index..., b) for b in 1:batchsize]
 end
 
 """
