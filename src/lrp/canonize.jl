@@ -6,7 +6,7 @@ function fuse_batchnorm(d::Dense, bn::BatchNorm)
     b = if d.bias != false
         scale .* (d.bias - bn.μ) + bn.β
     else
-        - scale .* bn.μ + bn.β
+        -scale .* bn.μ + bn.β
     end
     return Dense(W, b, bn.λ)
 end
@@ -18,7 +18,7 @@ function fuse_batchnorm(c::Conv, bn::BatchNorm)
     b = if c.bias != false
         scale .* (c.bias - bn.μ) + bn.β
     else
-        - scale .* bn.μ + bn.β
+        -scale .* bn.μ + bn.β
     end
     return Conv(bn.λ, W, b, c.stride, c.pad, c.dilation, c.groups)
 end
