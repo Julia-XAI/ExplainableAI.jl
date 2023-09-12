@@ -238,6 +238,21 @@ layers = Dict(
     end
 end
 
+# Test with loaded package extension
+using LoopVectorization
+using Tullio
+@testset "Dense Tullio" begin
+    for (rulename, rule) in RULES
+        @testset "$rulename" begin
+            for (layername, layer) in layers
+                @testset "$layername" begin
+                    run_rule_tests(rule, layer, rulename, layername, aᵏ_dense)
+                end
+            end
+        end
+    end
+end
+
 ## Test ConvLayers and others
 cin, cout = 3, 4
 insize = (6, 6, 3, batchsize)
