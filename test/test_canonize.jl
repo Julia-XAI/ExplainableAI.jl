@@ -113,7 +113,7 @@ model = Chain(
         +,
         Conv((3, 3), 4 => 5, identity),
         Chain(
-            Conv((3, 3), 4 => 5; bias=false, identity), # fuse
+            Conv((3, 3), 4 => 5, identity; bias=false), # fuse
             BatchNorm(5),
         ),
         Chain(
