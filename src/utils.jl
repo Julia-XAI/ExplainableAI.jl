@@ -72,7 +72,7 @@ julia> ones_like(x)
  1.0  1.0  1.0  1.0
 ```
 """
-ones_like(x::AbstractArray) = ones(eltype(x), size(x))
+ones_like(x::AbstractArray) = fill!(similar(x), 1)
 ones_like(x::Number) = oneunit(x)
 
 keep_positive(x::Number) = ifelse(x < 0, zero(x), x) # equivalent to relu
