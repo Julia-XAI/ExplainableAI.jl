@@ -2,7 +2,7 @@ module TullioLRPRulesExt
 
 using ExplainableAI, Flux, Tullio
 import ExplainableAI: lrp!, modify_input, modify_denominator
-import ExplainableAI: ZeroRule, EpsilonRule, GammaRule, WSquareRule, FlatRule
+import ExplainableAI: ZeroRule, EpsilonRule, GammaRule, WSquareRule
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
