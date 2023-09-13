@@ -9,10 +9,13 @@ using Random
 pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 
 @testset "ExplainableAI.jl" begin
-    # Run Aqua.jl quality assurance tests
     @testset "Aqua.jl" begin
         @info "Running Aqua.jl's auto quality assurance tests. These might print warnings from dependencies."
-        Aqua.test_all(ExplainableAI; ambiguities=false)
+        # Package extensions break Project.toml formatting tests on Julia 1.6
+        # https://github.com/JuliaTesting/Aqua.jl/issues/105
+        Aqua.test_all(
+            ExplainableAI; ambiguities=false, project_toml_formatting=VERSION >= v"1.7"
+        )
     end
 
     # Run package tests
