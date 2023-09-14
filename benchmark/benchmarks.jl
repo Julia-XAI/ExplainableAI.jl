@@ -1,5 +1,6 @@
 using BenchmarkTools
 using LoopVectorization
+using Tullio
 using Flux
 using ExplainableAI
 using ExplainableAI: lrp!, modify_layer
