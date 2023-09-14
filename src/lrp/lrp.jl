@@ -46,13 +46,19 @@ LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 # Construct Chain-/ParallelTuple of rules by applying composite
 LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
 
-get_activations(model, input) = [input, Flux.activations(model, input)...]
+get_activations(model, input) = (input, Flux.activations(model, input)...)
 
 function mask_output_neuron!(Rᴺ, aᴺ, ns::AbstractNeuronSelector)
     fill!(Rᴺ, 0)
     idx = ns(aᴺ)
     Rᴺ[idx] .= 1
     return Rᴺ
+function lrp_backward_pass!(Rs, as, rules, layers, modified_layers)
+    # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[k]` = Rᵏ
+    for k in length(layers):-1:1
+        lrp!(Rs[k], rules[k], layers[k], modified_layers[k], as[k], Rs[k + 1])
+    end
+    return Rs
 end
 
 # Call to the LRP analyzer
@@ -63,11 +69,8 @@ function (lrp::LRP)(
     Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
     mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
 
-    # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[k]` = Rᵏ
-    for k in length(lrp.model):-1:1
-        lrp!(Rs[k], lrp.rules[k], lrp.model[k], lrp.modified_layers[k], as[k], Rs[k + 1])
-    end
 
+    lrp_backward_pass!(Rs, as, lrp.rules, lrp.model, lrp.modified_layers)
     extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
     return Explanation(first(Rs), last(as), ns(last(as)), :LRP, extras)
 end
@@ -77,10 +80,7 @@ function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple,
     Rs = similar.(as)
     last(Rs) .= Rᵏ⁺¹
 
-    # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[i]`
-    for i in length(chain):-1:1
-        lrp!(Rs[i], rules[i], chain[i], modified_chain[i], as[i], Rs[i + 1])
-    end
+    lrp_backward_pass!(Rs, as, rules, chain, modified_chain)
     return Rᵏ .= first(Rs)
 end
 
