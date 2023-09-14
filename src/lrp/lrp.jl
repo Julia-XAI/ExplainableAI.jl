@@ -48,11 +48,13 @@ LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwa
 
 get_activations(model, input) = (input, Flux.activations(model, input)...)
 
-function mask_output_neuron!(Rᴺ, aᴺ, ns::AbstractNeuronSelector)
-    fill!(Rᴺ, 0)
-    idx = ns(aᴺ)
-    Rᴺ[idx] .= 1
-    return Rᴺ
+function mask_output_neuron!(R_out, a_out, ns::AbstractNeuronSelector)
+    fill!(R_out, 0)
+    idx = ns(a_out)
+    R_out[idx] .= 1
+    return R_out
+end
+
 function lrp_backward_pass!(Rs, as, rules, layers, modified_layers)
     # Apply LRP rules in backward-pass, inplace-updating relevances `Rs[k]` = Rᵏ
     for k in length(layers):-1:1
@@ -68,7 +70,6 @@ function (lrp::LRP)(
     as = get_activations(lrp.model, input)    # compute activations aᵏ for all layers k
     Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
     mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
-
 
     lrp_backward_pass!(Rs, as, lrp.rules, lrp.model, lrp.modified_layers)
     extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
@@ -91,15 +92,15 @@ function lrp!(
     # according to the contribution aᵏ⁺¹ᵢ of branch i to the output activation aᵏ⁺¹:
     #   Rᵏ⁺¹ᵢ = Rᵏ⁺¹ .* aᵏ⁺¹ᵢ ./ aᵏ⁺¹ = c .* aᵏ⁺¹ᵢ
 
-    aᵏ⁺¹s = [l(aᵏ) for l in parallel.layers]     # aᵏ⁺¹ᵢ for each branch i
-    c = Rᵏ⁺¹ ./ stabilize_denom(sum(aᵏ⁺¹s))
-    Rᵏ⁺¹s = [c .* aᵏ⁺¹ᵢ for aᵏ⁺¹ᵢ in aᵏ⁺¹s]      # Rᵏ⁺¹ᵢ for each branch i
-    Rᵏs = [similar(aᵏ) for _ in parallel.layers] # pre-allocate output Rᵏᵢ for each branch i
+    aᵏ⁺¹_parallel = [layer(aᵏ) for layer in parallel.layers] # aᵏ⁺¹ᵢ for each branch i
+    c = Rᵏ⁺¹ ./ stabilize_denom(sum(aᵏ⁺¹_parallel))
+    Rᵏ⁺¹_parallel = [c .* a for a in aᵏ⁺¹_parallel]          # Rᵏ⁺¹ᵢ for each branch i
+    Rᵏ_parallel = [similar(aᵏ) for _ in parallel.layers]     # pre-allocate output Rᵏᵢ for each branch
 
-    for (Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, Rᵏ⁺¹ᵢ) in
-        zip(Rᵏs, rules, parallel.layers, modified_parallel, Rᵏ⁺¹s)
-        # In-place update Rᵏᵢ (and therefore Rᵏs)
-        lrp!(Rᵏᵢ, ruleᵢ, layerᵢ, modified_layerᵢ, aᵏ, Rᵏ⁺¹ᵢ)
+    for (Rᵏᵢ, rule, layer, modified_layer, Rᵏ⁺¹ᵢ) in
+        zip(Rᵏ_parallel, rules, parallel.layers, modified_parallel, Rᵏ⁺¹_parallel)
+        # In-place update Rᵏᵢ and therefore Rᵏ_parallel
+        lrp!(Rᵏᵢ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹ᵢ)
     end
-    return Rᵏ .= sum(Rᵏs)
+    return Rᵏ .= sum(Rᵏ_parallel)
 end
