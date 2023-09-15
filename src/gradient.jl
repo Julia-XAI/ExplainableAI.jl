@@ -1,18 +1,12 @@
-function gradient_wrt_input(model, input, output_indices)
-    return only(gradient((in) -> model(in)[output_indices], input))
-end
+function gradient_wrt_input(model, input, ns::AbstractNeuronSelector)
+    output, back = Zygote.pullback(model, input)
+    output_indices = ns(output)
 
-function gradients_wrt_batch(model, input::AbstractArray{T,N}, output_indices) where {T,N}
-    # To avoid computing a sparse jacobian, we compute individual gradients
-    # by calling `gradient_wrt_input` on slices of the input along the batch dimension.
-    out = similar(input)
-    inds_before_N = ntuple(Returns(:), N - 1)
-    for (i, ax) in enumerate(axes(input, N))
-        view(out, inds_before_N..., ax, :) .= gradient_wrt_input(
-            model, view(input, inds_before_N..., ax, :), drop_batch_index(output_indices[i])
-        )
-    end
-    return out
+    # Compute VJP w.r.t. full model output, selecting vector s.t. it masks output neurons
+    v = zero(output)
+    v[output_indices] .= 1
+    grad = only(back(v))
+    return grad, output, output_indices
 end
 
 """
@@ -25,9 +19,7 @@ struct Gradient{C<:Chain} <: AbstractXAIMethod
     Gradient(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
 end
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
-    output = analyzer.model(input)
-    output_indices = ns(output)
-    grad = gradients_wrt_batch(analyzer.model, input, output_indices)
+    grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     return Explanation(grad, output, output_indices, :Gradient, nothing)
 end
 
@@ -44,9 +36,8 @@ struct InputTimesGradient{C<:Chain} <: AbstractXAIMethod
     end
 end
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
-    output = analyzer.model(input)
-    output_indices = ns(output)
-    attr = input .* gradients_wrt_batch(analyzer.model, input, output_indices)
+    grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
+    attr = input .* grad
     return Explanation(attr, output, output_indices, :InputTimesGradient, nothing)
 end
 
