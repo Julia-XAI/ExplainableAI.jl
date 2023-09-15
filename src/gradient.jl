@@ -1,6 +1,8 @@
 function gradient_wrt_input(model, input, ns::AbstractNeuronSelector)
     output, back = Zygote.pullback(model, input)
     output_indices = ns(output)
+
+    # Compute VJP w.r.t. full model output, selecting vector s.t. it masks output neurons
     v = zero(output)
     v[output_indices] .= 1
     grad = only(back(v))
