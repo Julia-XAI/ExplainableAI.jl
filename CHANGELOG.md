@@ -1,4 +1,11 @@
 # ExplainableAI.jl
+## Version `v0.6.1`
+This release brings GPU support to all analyzers.
+- ![Feature][badge-feature] Support LRP on GPUs ([#142][pr-142], [#140][pr-140])
+- ![Feature][badge-feature] Support gradient analyzers on GPUs ([#144][pr-144])
+- ![Enhancement][badge-enhancement] Make Tullio optional dependency using package extensions ([#141][pr-141])
+- ![Documentation][badge-docs] Document GPU support ([#145][pr-145])
+
 ## Version `v0.6.0`
 This release brings a large refactor of LRP analyzers, 
 supporting nested "dataflow layers" from Flux.jl like `Chain` and `Parallel` layers. 
@@ -158,6 +165,11 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
+[pr-145]: https://github.com/adrhill/ExplainableAI.jl/pull/145
+[pr-144]: https://github.com/adrhill/ExplainableAI.jl/pull/144
+[pr-142]: https://github.com/adrhill/ExplainableAI.jl/pull/142
+[pr-141]: https://github.com/adrhill/ExplainableAI.jl/pull/141
+[pr-140]: https://github.com/adrhill/ExplainableAI.jl/pull/140
 [pr-138]: https://github.com/adrhill/ExplainableAI.jl/pull/138
 [pr-137]: https://github.com/adrhill/ExplainableAI.jl/pull/137
 [pr-136]: https://github.com/adrhill/ExplainableAI.jl/pull/136
