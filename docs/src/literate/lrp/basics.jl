@@ -118,18 +118,20 @@ expl = analyze(input, analyzer; layerwise_relevances=true)
 expl.extras.layerwise_relevances
 
 # ## [Performance tips](@id docs-lrp-performance)
-# ### Using LRP without a GPU
-# Since ExplainableAI.jl's LRP implementation makes use of
-# [Tullio.jl](https://github.com/mcabbott/Tullio.jl),
-# analysis can be accelerated by loading either
-# - a package from the [JuliaGPU](https://juliagpu.org) ecosystem,
-#   e.g. [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl), if a GPU is available
-# - [LoopVectorization.jl](https://github.com/JuliaSIMD/LoopVectorization.jl)
-#   if only a CPU is available.
+# ### Using LRP with a GPU
+# Like all other analyzers, LRP can be used on GPUs.
+# Follow the instructions on [*GPU support*](@ref gpu-docs).
 #
-# This only requires loading the LoopVectorization.jl package before ExplainableAI.jl:
+# ### Using LRP without a GPU
+# Using Julia's package extension mechanism,
+# ExplainableAI.jl's LRP implementation can optionally make use of
+# [Tullio.jl](https://github.com/mcabbott/Tullio.jl) and
+# [LoopVectorization.jl](https://github.com/JuliaSIMD/LoopVectorization.jl)
+# for faster LRP rules on dense layers.
+#
+# This only requires loading the packages before loading ExplainableAI.jl:
 # ```julia
-# using LoopVectorization
+# using LoopVectorization, Tullio
 # using ExplainableAI
 # ```
 #

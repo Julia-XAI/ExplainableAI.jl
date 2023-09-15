@@ -133,3 +133,36 @@ heatmap(expl)
 
 # For more information on heatmapping batches,
 # refer to the [heatmapping documentation](@ref docs-heatmapping-batches).
+
+# ## [GPU support](@id gpu-docs)
+# All analyzers support GPU backends,
+# building on top of [Flux.jl's GPU support](https://fluxml.ai/Flux.jl/stable/gpu/).
+# Using a GPU only requires moving the input array and model weights to the GPU.
+#
+# For example, using [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl):
+
+# ```julia
+# using CUDA, cuDNN
+# using Flux
+# using ExplainableAI
+#
+# # move input array and model weights to GPU
+# input = input |> gpu # or gpu(input)
+# model = model |> gpu # or gpu(model)
+#
+# # analyzers don't require calling `gpu`
+# analyzer = LRP(model)
+#
+# # explanations are computed on the GPU
+# expl = analyze(input, analyzer)
+# ```
+
+# Some operations, like saving, require moving explanations back to the CPU.
+# This can be done using Flux's `cpu` function:
+
+# ```julia
+# val = expl.val |> cpu # or cpu(expl.val)
+#
+# using BSON
+# BSON.@save "explanation.bson" val
+# ```
