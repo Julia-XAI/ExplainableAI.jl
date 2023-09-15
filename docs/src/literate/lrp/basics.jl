@@ -51,7 +51,11 @@ model = strip_softmax(model)
 # Applying the [`GammaRule`](@ref) to two linear layers in a row will yield different results
 # than first fusing the two layers into one linear layer and then applying the rule.
 # This fusing is called "canonization" and can be done using the [`canonize`](@ref) function:
-model = canonize(model)
+model_canonized = canonize(model)
+
+# After canonization, the first `BatchNorm` layer has been fused into the preceding `Conv` layer.
+# The second `BatchNorm` layer wasn't fused
+# since its preceding `Conv` layer has a ReLU activation function.
 
 # ### [Flattening the model](@id docs-lrp-flatten-model)
 # ExplainableAI.jl's LRP implementation supports nested Flux Chains and Parallel layers.
