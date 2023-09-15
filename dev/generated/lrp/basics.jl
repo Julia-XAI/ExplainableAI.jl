@@ -21,7 +21,7 @@ model = Chain(
 
 model = strip_softmax(model)
 
-model = canonize(model)
+model_canonized = canonize(model)
 
 model_flat = flatten_model(model)
 
