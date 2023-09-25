@@ -33,7 +33,16 @@ function analyze(input::AbstractArray{<:Real}, method::AbstractXAIMethod; kwargs
     return _analyze(input, method, MaxActivationSelector(); kwargs...)
 end
 
-(method::AbstractXAIMethod)(args...; kwargs...) = analyze(args...; kwargs...)
+function (method::AbstractXAIMethod)(
+    input::AbstractArray{<:Real},
+    neuron_selection::Union{Integer,Tuple{<:Integer}};
+    kwargs...,
+)
+    return _analyze(input, method, IndexSelector(neuron_selection); kwargs...)
+end
+function (method::AbstractXAIMethod)(input::AbstractArray{<:Real}; kwargs...)
+    return _analyze(input, method, MaxActivationSelector(); kwargs...)
+end
 
 # lower-level call to method
 function _analyze(
