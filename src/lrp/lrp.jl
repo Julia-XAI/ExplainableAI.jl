@@ -1,3 +1,7 @@
+#=============================#
+# LRP struct and constructors #
+#=============================#
+
 """
     LRP(model, rules)
     LRP(model, composite)
@@ -37,6 +41,7 @@ struct LRP{C<:Chain,R<:ChainTuple,L<:ChainTuple} <: AbstractXAIMethod
         )
     end
 end
+
 # Rules can be passed as vector and will be turned to ChainTuple
 LRP(model, rules::AbstractVector; kwargs...) = LRP(model, ChainTuple(rules...); kwargs...)
 
@@ -45,6 +50,22 @@ LRP(model::Chain; kwargs...) = LRP(model, Composite(ZeroRule()); kwargs...)
 
 # Construct Chain-/ParallelTuple of rules by applying composite
 LRP(model::Chain, c::Composite; kwargs...) = LRP(model, lrp_rules(model, c); kwargs...)
+
+#==========================#
+# Call to the LRP analyzer #
+#==========================#
+
+function (lrp::LRP)(
+    input::AbstractArray, ns::AbstractNeuronSelector; layerwise_relevances=false
+)
+    as = get_activations(lrp.model, input)    # compute activations aᵏ for all layers k
+    Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
+    mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
+
+    lrp_backward_pass!(Rs, as, lrp.rules, lrp.model, lrp.modified_layers)
+    extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
+    return Explanation(first(Rs), last(as), ns(last(as)), :LRP, extras)
+end
 
 get_activations(model, input) = (input, Flux.activations(model, input)...)
 
@@ -63,18 +84,9 @@ function lrp_backward_pass!(Rs, as, rules, layers, modified_layers)
     return Rs
 end
 
-# Call to the LRP analyzer
-function (lrp::LRP)(
-    input::AbstractArray{T}, ns::AbstractNeuronSelector; layerwise_relevances=false
-) where {T}
-    as = get_activations(lrp.model, input)    # compute activations aᵏ for all layers k
-    Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
-    mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
-
-    lrp_backward_pass!(Rs, as, lrp.rules, lrp.model, lrp.modified_layers)
-    extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
-    return Explanation(first(Rs), last(as), ns(last(as)), :LRP, extras)
-end
+#===========================================#
+# Special calls to Flux's "Dataflow layers" #
+#===========================================#
 
 function lrp!(Rᵏ, rules::ChainTuple, chain::Chain, modified_chain::ChainTuple, aᵏ, Rᵏ⁺¹)
     as = get_activations(chain, aᵏ)
