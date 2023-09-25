@@ -25,10 +25,10 @@ end
 @test_throws ArgumentError heatmap(A, rangescale=:bar)
 
 B = reshape(A, 2, 2, 3, 1, 1)
-@test_throws DomainError heatmap(B)
+@test_throws ArgumentError heatmap(B)
 B = reshape(A, 2, 2, 3)
-@test_throws DomainError heatmap(B)
+@test_throws ArgumentError heatmap(B)
 
 A1 = rand(3, 3, 1)
-A2 = ExplainableAI._reduce(A1, :sum)
+A2 = ExplainableAI.reduce_color_channel(A1, :sum)
 @test A1 == A2

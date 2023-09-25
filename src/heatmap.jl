@@ -51,7 +51,7 @@ function heatmap(
     process_batch::Bool=false,
 ) where {T,N}
     N != 4 && throw(
-        ArgumentErrorError(
+        ArgumentError(
             "heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
             Please reshape your explanation to match this format if your model doesn't adhere to this convention.",
         ),
