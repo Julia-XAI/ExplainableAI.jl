@@ -6,7 +6,7 @@
     CRP(lrp_analyzer, layer, concepts)
 
 Use Concept Relevance Propagation to explain the output of a neural network
-with respect to specific neurons in a specific layer.
+with respect to specific neurons in a given layer.
 
 # Arguments
 - `lrp_analyzer::LRP`: LRP analyzer
@@ -29,7 +29,8 @@ struct CRP{L<:LRP,C<:Vector{<:AbstractNeuronSelector}} <: AbstractXAIMethod
         lrp::LRP, layer::Int, concepts::C
     ) where {C<:Vector{<:AbstractNeuronSelector}}
         n = length(lrp.model)
-        layer ∉ 1:n && throw(ArgumentError("Layer index must be between 1 and $n"))
+        layer ≥ n &&
+            throw(ArgumentError("Layer index should be smaller than model length $n"))
         return new{typeof(lrp),typeof(concepts)}(lrp, layer, concepts)
     end
 end
@@ -53,39 +54,39 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
     batchsize = size(input, N)
 
     # Forward pass
-    as = get_activations(lrp.model, input)    # compute activations aᵏ for all layers k
-    Rs = similar.(as)                         # allocate relevances Rᵏ for all layers k
-    mask_output_neuron!(Rs[end], as[end], ns) # compute relevance Rᴺ of output layer N
+    as = get_activations(crp.lrp.model, input) # compute activations aᵏ for all layers k
+    Rs = similar.(as)                          # allocate relevances Rᵏ for all layers k
+    mask_output_neuron!(Rs[end], as[end], ns)  # compute relevance Rᴺ of output layer N
 
     # Allocate array for returned relevance, adding concepts to batch dimension
     R_ret = similar(input, size(input)[1:(end - 1)]..., batchsize * n_concepts)
     colons = ntuple(Returns(:), N - 1)
 
     # Compute regular LRP backward pass until concept layer
-    for k in n_layers:-1:(crp.layer)
+    for k in n_layers:-1:(crp.layer + 1)
         lrp!(Rs[k], rules[k], layers[k], modified_layers[k], as[k], Rs[k + 1])
     end
 
     # Save full relevance at concept layer before masking
-    R_copy = deepcopy(Rs[crp.layer])
+    R_copy = deepcopy(Rs[crp.layer + 1])
 
     # Iterate over concepts
-    for (i, cns) in enumerate(crp.concepts) # Iterate over concepts
-        mask_concept_neuron!(Rs[crp.layer], R_copy, cns)
+    for (i, concept) in enumerate(crp.concepts)
+        mask_concept_neuron!(Rs[crp.layer + 1], R_copy, concept)
 
         # Continue LRP backward pass
-        for k in (crp.layer - 1):-1:1
+        for k in (crp.layer):-1:1
             lrp!(Rs[k], rules[k], layers[k], modified_layers[k], as[k], Rs[k + 1])
         end
 
-        # Save relevance
+        # Write relevance into R_ret
         start = batchsize * (i - 1) + 1
         stop = batchsize * i
-        @view R_ret[colons..., start:stop] .= Rs[1]
+        view(R_ret, colons..., start:stop) .= first(Rs)
 
         # Reset relevance at concept layer
         if i < n_concepts
-            Rs[crp.layer] .= R_copy
+            Rs[crp.layer + 1] .= R_copy
         end
     end
     return Explanation(R_ret, last(as), ns(last(as)), :CRP, nothing)

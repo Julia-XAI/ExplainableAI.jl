@@ -30,6 +30,7 @@ include("lrp/composite.jl")
 include("lrp/lrp.jl")
 include("lrp/show.jl")
 include("lrp/composite_presets.jl") # uses lrp/show.jl
+include("lrp/crp.jl")
 include("heatmap.jl")
 include("preprocessing.jl")
 export analyze
@@ -39,7 +40,7 @@ export AbstractXAIMethod, Explanation
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
-export LRP
+export LRP, CRP
 
 # LRP rules
 export AbstractLRPRule
