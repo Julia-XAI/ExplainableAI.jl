@@ -40,7 +40,7 @@ export AbstractXAIMethod, Explanation
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
-export LRP, CRP
+export LRP
 
 # LRP rules
 export AbstractLRPRule
@@ -61,6 +61,9 @@ export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat
 # Useful type unions
 export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer, NormalizationLayer
+
+# CRP
+export CRP, TopNConcepts, IndexedConcepts
 
 # heatmapping
 export heatmap

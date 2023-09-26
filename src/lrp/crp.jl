@@ -1,3 +1,5 @@
+abstract type AbstractCRPConcepts end
+
 #=============================#
 # CRP struct and constructors #
 #=============================#
@@ -10,35 +12,27 @@ with respect to specific neurons in a given layer.
 
 # Arguments
 - `lrp_analyzer::LRP`: LRP analyzer
-- `layer::Int`: Index of layer in which the concept is located
-- `concepts`: Indices of concept neurons at layer `layer_index`.
-    Either integer, vector of integers or vector of neuron selectors.
+- `layer::Int`: Index of layer after which the concept is located
+- `concepts`: Concept to explain.
 
-See also [`MaxActivationSelector`](@ref) and [`IndexSelector`](@ref).
+See also [`TopNConcepts`](@ref) and [`IndexedConcepts`](@ref).
 
 # References
 [1] R. Achtibat et al., From attribution maps to human-understandable explanations
     through Concept Relevance Propagation
 """
-struct CRP{L<:LRP,C<:Vector{<:AbstractNeuronSelector}} <: AbstractXAIMethod
+struct CRP{L<:LRP,C<:AbstractCRPConcepts} <: AbstractXAIMethod
     lrp::L
     layer::Int
     concepts::C
 
-    function CRP(
-        lrp::LRP, layer::Int, concepts::C
-    ) where {C<:Vector{<:AbstractNeuronSelector}}
+    function CRP(lrp::LRP, layer::Int, concepts::AbstractCRPConcepts)
         n = length(lrp.model)
         layer ≥ n &&
             throw(ArgumentError("Layer index should be smaller than model length $n"))
         return new{typeof(lrp),typeof(concepts)}(lrp, layer, concepts)
     end
 end
-
-# Automatically use IndexSelector when indices are passed
-CRP(lrp, layer, concept::Int)       = CRP(lrp, layer, [IndexSelector(concept)])
-CRP(lrp, layer, cs::NTuple)         = CRP(lrp, layer, [IndexSelector(c) for c in cs])
-CRP(lrp, layer, cs::AbstractVector) = CRP(lrp, layer, [IndexSelector(c) for c in cs])
 
 #======================#
 # Call to CRP analyzer #
@@ -50,7 +44,7 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
     modified_layers = crp.lrp.modified_layers
 
     n_layers = length(layers)
-    n_concepts = length(crp.concepts)
+    n_concepts = number_of_concepts(crp.concepts)
     batchsize = size(input, N)
 
     # Forward pass
@@ -68,11 +62,20 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
     end
 
     # Save full relevance at concept layer before masking
-    R_copy = deepcopy(Rs[crp.layer + 1])
+    R_concept = Rs[crp.layer + 1]
+    R_original = deepcopy(R_concept)
 
-    # Iterate over concepts
-    for (i, concept) in enumerate(crp.concepts)
-        mask_concept_neuron!(Rs[crp.layer + 1], R_copy, concept)
+    # Compute neuron indices based on concept
+    concepts = crp.concepts(R_original)
+
+    # Mask concept neurons...
+    fill!(R_concept, 0)
+
+    for (i, concept) in enumerate(concepts)
+        # ...mask concept neurons
+        for idx in concept
+            @show R_concept[idx] .= R_original[idx]
+        end
 
         # Continue LRP backward pass
         for k in (crp.layer):-1:1
@@ -85,17 +88,123 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
         view(R_ret, colons..., start:stop) .= first(Rs)
 
         # Reset relevance at concept layer
-        if i < n_concepts
-            Rs[crp.layer + 1] .= R_copy
+        for idx in concept
+            R_concept[idx] .= 0
         end
     end
     return Explanation(R_ret, last(as), ns(last(as)), :CRP, nothing)
 end
 
-# similar to mask_output_neuron! in lrp.jl
-function mask_concept_neuron!(R_concept, R, concept_ns::AbstractNeuronSelector)
-    idx = concept_ns(R)
-    fill!(R_concept, 0)
-    R_concept[idx] .= R[idx]
-    return R_concept
+#===================#
+# Concept selectors #
+#===================#
+
+"""
+    IndexedConcepts(indices...)
+
+Select concepts by indices for [`CRP`](@ref).
+
+For outputs of convolutional layers, the index refers to a feature dimension.
+
+See also See also [`IndexedConcepts`](@ref).
+"""
+struct IndexedConcepts{N} <: AbstractCRPConcepts
+    inds::NTuple{N,Int}
+
+    function IndexedConcepts(inds::NTuple{N}) where {N}
+        for i in inds
+            i > 0 || throw(ArgumentError("All indices have to be greater than 0"))
+        end
+        return new{N}(inds)
+    end
 end
+IndexedConcepts(args...) = IndexedConcepts(tuple(args...))
+
+number_of_concepts(c::IndexedConcepts) = length(c.inds)
+
+# Index concepts on 2D arrays, e.g. Dense layers with batch dimension
+function (c::IndexedConcepts)(A::AbstractMatrix)
+    batchsize = size(A, 2)
+    return [[CartesianIndices((i:i, b:b)) for b in 1:batchsize] for i in c.inds]
+end
+
+# Index concepts on 4D arrays, e.g. Conv layers with batch dimension
+function (c::IndexedConcepts)(A::AbstractArray{T,4}) where {T}
+    w, h, _c, batchsize = size(A, 2)
+    return [[CartesianIndices((1:w, 1:h, i:i, b:b)) for b in 1:batchsize] for i in c.inds]
+end
+
+"""
+    TopNConcepts(n)
+
+Select top-n concepts by relevance for [`CRP`](@ref).
+
+For outputs of convolutional layers, the relevance is summed across height and width
+channels for each feature.
+
+See also See also [`IndexedConcepts`](@ref).
+"""
+struct TopNConcepts <: AbstractCRPConcepts
+    n::Int
+
+    function TopNConcepts(n)
+        n > 0 || throw(ArgumentError("n has to be greater than 0"))
+        return new(n)
+    end
+end
+
+number_of_concepts(c::TopNConcepts) = c.n
+
+# Extract top concepts from 2D arrays, e.g. Dense layers with batch dimension
+function (c::TopNConcepts)(A::AbstractMatrix)
+    n_features = size(A, 1)
+    c.n > n_features && throw(TopNDimensionError(c.n, n_features))
+
+    inds = top_n(A, c.n)
+    return [
+        [CartesianIndices((i:i, b:b)) for (b, i) in enumerate(r)] for r in eachrow(inds)
+    ]
+end
+
+# Extract top concepts from 4D array: e.g. Conv layers with batch dimension
+function (c::TopNConcepts)(A::AbstractArray{T,4}) where {T}
+    w, h, n_features, _batchsize = size(A)
+    c.n > n_features && throw(TopNDimensionError(c.n, c))
+
+    features = sum(A; dims=(1, 2))[1, 1, :, :] # reduce width and height channels
+    inds = top_n(features, c.n)
+    return [
+        [CartesianIndices((1:w, 1:h, i:i, b:b)) for (b, i) in enumerate(r)] for
+        r in eachrow(inds)
+    ]
+end
+
+function TopNDimensionError(n, nf)
+    DimensionMismatch(
+        "Attempted to find top $n features, but feature dimensionality is $nf"
+    )
+end
+
+"""
+    top_n(A, n)
+
+For a matrix `A` of size `(rows, batchdims)`, return a matrix of indices of size `(n, batchdims)`
+with sorted indices of the top-n entries.
+
+## Example
+```julia-repl
+julia> A = rand(4, 3)
+4×3 Matrix{Float64}:
+ 0.469809  0.740177  0.100856
+ 0.96932   0.53207   0.954989
+ 0.456456  0.837788  0.313662
+ 0.925512  0.556236  0.0366143
+
+julia> top_n(A, 2)
+2×3 Matrix{Int64}:
+ 2  3  2
+ 4  1  3
+```
+"""
+top_n(A::AbstractMatrix, n) = mapslices(x -> top_n(x, n), A; dims=1)
+top_n(x::AbstractArray, n) = sortperm(x; rev=true)[1:n]
