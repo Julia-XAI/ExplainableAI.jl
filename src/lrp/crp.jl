@@ -53,7 +53,7 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
     mask_output_neuron!(Rs[end], as[end], ns)  # compute relevance Rᴺ of output layer N
 
     # Allocate array for returned relevance, adding concepts to batch dimension
-    R_ret = similar(input, size(input)[1:(end - 1)]..., batchsize * n_concepts)
+    R_return = similar(input, size(input)[1:(end - 1)]..., batchsize * n_concepts)
     colons = ntuple(Returns(:), N - 1)
 
     # Compute regular LRP backward pass until concept layer
@@ -65,16 +65,16 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
     R_concept = Rs[crp.layer + 1]
     R_original = deepcopy(R_concept)
 
-    # Compute neuron indices based on concept
-    concepts = crp.concepts(R_original)
+    # Compute neuron indices based on concepts
+    concepts_indices = crp.concepts(R_original)
 
     # Mask concept neurons...
     fill!(R_concept, 0)
 
-    for (i, concept) in enumerate(concepts)
-        # ...mask concept neurons
+    for (i, concept) in enumerate(concepts_indices)
+        # ...keeping original relevance at concept neurons
         for idx in concept
-            @show R_concept[idx] .= R_original[idx]
+            R_concept[idx] .= R_original[idx]
         end
 
         # Continue LRP backward pass
@@ -82,17 +82,19 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
             lrp!(Rs[k], rules[k], layers[k], modified_layers[k], as[k], Rs[k + 1])
         end
 
-        # Write relevance into R_ret
+        # Write relevance into a slice of R_return
         start = batchsize * (i - 1) + 1
         stop = batchsize * i
-        view(R_ret, colons..., start:stop) .= first(Rs)
+        view(R_return, colons..., start:stop) .= first(Rs)
 
-        # Reset relevance at concept layer
-        for idx in concept
-            R_concept[idx] .= 0
+        # Reset concept neurons for masking in next iteration
+        if i < n_concepts
+            for idx in concept
+                R_concept[idx] .= 0
+            end
         end
     end
-    return Explanation(R_ret, last(as), ns(last(as)), :CRP, nothing)
+    return Explanation(R_return, last(as), ns(last(as)), :CRP, nothing)
 end
 
 #===================#
@@ -169,7 +171,7 @@ end
 # Extract top concepts from 4D array: e.g. Conv layers with batch dimension
 function (c::TopNConcepts)(A::AbstractArray{T,4}) where {T}
     w, h, n_features, _batchsize = size(A)
-    c.n > n_features && throw(TopNDimensionError(c.n, c))
+    c.n > n_features && throw(TopNDimensionError(c.n, n_features))
 
     features = sum(A; dims=(1, 2))[1, 1, :, :] # reduce width and height channels
     inds = top_n(features, c.n)
