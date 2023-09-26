@@ -9,10 +9,9 @@ const LRP_DEFAULT_ALPHA = 2.0f0
 const LRP_DEFAULT_BETA = 1.0f0
 
 # Generic LRP rule. Used by all rules without custom implementations.
-function lrp!(Rᵏ, rule::AbstractLRPRule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
-    layer = isnothing(modified_layer) ? layer : modified_layer
+function lrp!(Rᵏ, rule::AbstractLRPRule, _layer, modified_layer, aᵏ, Rᵏ⁺¹)
     ãᵏ = modify_input(rule, aᵏ)
-    z, back = Zygote.pullback(layer, ãᵏ)
+    z, back = Zygote.pullback(modified_layer, ãᵏ)
     s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
     c = only(back(s))
     Rᵏ .= ãᵏ .* c
@@ -161,7 +160,6 @@ R_j^k = \\sum_i \\frac{W_{ij}a_j^k}{\\sum_l W_{il}a_l^k+b_i} R_i^{k+1}
 - $REF_BACH_LRP
 """
 struct ZeroRule <: AbstractLRPRule end
-modify_layer(::ZeroRule, layer) = nothing # no modified layer needed
 is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
@@ -186,8 +184,6 @@ struct EpsilonRule{T<:Real} <: AbstractLRPRule
     EpsilonRule(epsilon=LRP_DEFAULT_EPSILON) = new{eltype(epsilon)}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
-
-modify_layer(::EpsilonRule, layer) = nothing # no modified layer needed
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """
