@@ -17,8 +17,6 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
             ExplainableAI; ambiguities=false, project_toml_formatting=VERSION >= v"1.7"
         )
     end
-
-    # Run package tests
     @testset "Utilities" begin
         @info "Testing utilities..."
         include("test_utils.jl")
@@ -49,15 +47,15 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
     end
     @testset "LRP composites" begin
         @info "Testing LRP composites..."
-        include("test_composite.jl")
+        include("test_lrp_composite.jl")
     end
     @testset "LRP model checks" begin
         @info "Testing LRP model checks..."
-        include("test_checks.jl")
+        include("test_lrp_checks.jl")
     end
     @testset "LRP rules" begin
         @info "Testing LRP rules..."
-        include("test_rules.jl")
+        include("test_lrp_rules.jl")
     end
     @testset "CRP" begin
         @info "Testing CRP..."
