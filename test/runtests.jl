@@ -59,6 +59,10 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
         @info "Testing LRP rules..."
         include("test_rules.jl")
     end
+    @testset "CRP" begin
+        @info "Testing CRP..."
+        include("test_crp.jl")
+    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")
