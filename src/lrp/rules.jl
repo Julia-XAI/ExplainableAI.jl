@@ -9,9 +9,10 @@ const LRP_DEFAULT_ALPHA = 2.0f0
 const LRP_DEFAULT_BETA = 1.0f0
 
 # Generic LRP rule. Used by all rules without custom implementations.
-function lrp!(Rᵏ, rule::AbstractLRPRule, _layer, modified_layer, aᵏ, Rᵏ⁺¹)
+function lrp!(Rᵏ, rule::AbstractLRPRule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
+    layer = isnothing(modified_layer) ? layer : modified_layer
     ãᵏ = modify_input(rule, aᵏ)
-    z, back = Zygote.pullback(modified_layer, ãᵏ)
+    z, back = Zygote.pullback(layer, ãᵏ)
     s = Rᵏ⁺¹ ./ modify_denominator(rule, z)
     c = only(back(s))
     Rᵏ .= ãᵏ .* c
@@ -126,11 +127,15 @@ function modify_layer(rule, layer; keep_bias=true)
     !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
     !has_weight_and_bias(layer) && return layer
 
-    w = modify_weight(rule, layer.weight)
-    !keep_bias && (return copy_layer(layer, w, zero(layer.bias)))
-    layer.bias == false && (return copy_layer(layer, w, false))
-    b = modify_bias(rule, layer.bias)
-    return copy_layer(layer, w, b)
+    weight = modify_weight(rule, layer.weight)
+    bias = if layer.bias == false
+        false
+    elseif !keep_bias
+        zero(layer.bias)
+    else
+        modify_bias(rule, layer.bias)
+    end
+    return copy_layer(layer, weight, bias)
 end
 
 get_modified_layers(rules, layers) = chainzip(modify_layer, rules, layers)
