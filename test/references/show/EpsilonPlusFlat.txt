@@ -16,6 +16,5 @@ Composite(
     Conv          => FlatRule(),
     ConvTranspose => FlatRule(),
     CrossCor      => FlatRule(),
-    Dense         => FlatRule(),
  ),
 )
