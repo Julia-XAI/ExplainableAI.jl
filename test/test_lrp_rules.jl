@@ -36,7 +36,7 @@ const RULES = Dict(
     Rᵏ = reshape([17 / 90, 316 / 675], 2, 1) # expected output
 
     layer = Dense(W, b, relu)
-    modified_layer = nothing
+    modified_layer = modify_layer(rule, layer)
 
     R̂ᵏ = similar(aᵏ) # will be inplace updated
     @inferred lrp!(R̂ᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
@@ -53,6 +53,8 @@ const RULES = Dict(
     Rᵏ = reshape(repeat(Rᵏ, 1, 3), 3, 3, 3, 1)
 
     layer = MaxPool((2, 2); stride=(1, 1))
+    modified_layer = modify_layer(rule, layer)
+
     R̂ᵏ = similar(aᵏ) # will be inplace updated
     @inferred lrp!(R̂ᵏ, rule, layer, modified_layer, aᵏ, Rᵏ⁺¹)
     @test R̂ᵏ ≈ Rᵏ
