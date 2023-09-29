@@ -84,7 +84,7 @@ function EpsilonPlusFlat(; epsilon=1.0f-6)
             ReshapingLayer     => PassRule(),
             typeof(identity)   => PassRule(),
         ),
-        FirstLayerTypeMap(ConvLayer => FlatRule(), Dense => FlatRule()),
+        FirstLayerTypeMap(ConvLayer => FlatRule()),
     )
 end
 
@@ -107,6 +107,6 @@ function EpsilonAlpha2Beta1Flat(; epsilon=1.0f-6)
             ReshapingLayer     => PassRule(),
             typeof(identity)   => PassRule(),
         ),
-        FirstLayerTypeMap(ConvLayer => FlatRule(), Dense => FlatRule()),
+        FirstLayerTypeMap(ConvLayer => FlatRule()),
     )
 end
