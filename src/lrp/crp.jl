@@ -101,6 +101,12 @@ end
 # Concept selectors #
 #===================#
 
+# Expected interfaces:
+# - Calls to concept selector that return a list of lists of CartesianIndices
+#   - (c::ConceptSelector)(R::AbstractArray{T,N}) where {T,2}
+#   - (c::ConceptSelector)(R::AbstractArray{T,N}) where {T,4}
+# - number_of_concepts(c::ConceptSelector)
+
 """
     IndexedConcepts(indices...)
 
