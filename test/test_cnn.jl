@@ -4,11 +4,11 @@ using Flux
 using JLD2
 
 const GRADIENT_ANALYZERS = Dict(
-    "Gradient"            => Gradient,
     "InputTimesGradient"  => InputTimesGradient,
     "SmoothGrad"          => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
 )
+
 const LRP_ANALYZERS = Dict(
     "LRPZero"                   => LRP,
     "LRPZero_COC"               => m -> LRP(m; flatten=false), # chain of chains
@@ -38,61 +38,56 @@ model = Chain(
 )
 Flux.testmode!(model, true)
 
+@testset "Test API" begin
+    analyzer = LRP(model)
+    println("Timing Gradient...")
+    print("cold:")
+    @time expl = analyze(input, analyzer)
+
+    # Test direct call of analyzer
+    print("warm:")
+    @time expl2 = analyzer(input)
+    @test expl.val ≈ expl2.val
+
+    @test_reference "references/cnn/Gradient_max.jld2" Dict("expl" => expl.val) by =
+        (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+
+    # Test direct call of heatmap
+    h1 = heatmap(expl)
+    h2 = heatmap(input, analyzer)
+    @test h1 ≈ h2
+    @test_reference "references/heatmaps/cnn_Gradient.txt" h1
+
+    # Test neuron selection
+    expl = analyze(input, analyzer, 1)
+    expl2 = analyzer(input, 1)
+    @test expl.val ≈ expl2.val
+    @test_reference "references/cnn/Gradient_ns1.jld2" Dict("expl" => expl.val) by =
+        (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+end
+
 function test_cnn(name, method)
     @testset "$name" begin
-        # Reference test explanation
-        analyzer = method(model)
-        println("Timing $name...")
-        print("cold:")
-        @time expl = analyze(input, analyzer)
-        attr = expl.val
-        @test size(attr) == size(input)
-        if name == "LRPZero_COC"
-            # Output of Chain of Chains should be equal to flattened model
-            @test_reference "references/cnn/LRPZero.jld2" Dict("expl" => attr) by =
-                (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
-        else
-            @test_reference "references/cnn/$(name).jld2" Dict("expl" => attr) by =
+        @testset "Max activation" begin
+            # Reference test explanation
+            analyzer = method(model)
+            println("Timing $name...")
+            print("cold:")
+            @time expl = analyze(input, analyzer)
+
+            @test size(expl.val) == size(input)
+            @test_reference "references/cnn/$(name)_max.jld2" Dict("expl" => expl.val) by =
                 (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
         end
-        # Test direct call of analyzer
-        analyzer = method(model)
-        print("warm:")
-        @time expl2 = analyzer(input)
-        @test expl.val ≈ expl2.val
+        @testset "Neuron selection" begin
+            analyzer = method(model)
+            print("warm:")
+            @time expl = analyze(input, analyzer, 1)
 
-        # Test direct call of heatmap
-        h1 = heatmap(expl)
-        analyzer = method(model)
-        h2 = heatmap(input, analyzer)
-        @test h1 ≈ h2
-        if name == "LRPZero_COC"
-            # Output of Chain of Chains should be equal to flattened model
-            @test_reference "references/heatmaps/cnn_LRPZero.txt" h1
-        elseif !in(name, ("Gradient", "SmoothGrad"))
-            @test_reference "references/heatmaps/cnn_$(name).txt" h1
+            @test size(expl.val) == size(input)
+            @test_reference "references/cnn/$(name)_ns1.jld2" Dict("expl" => expl.val) by =
+                (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
         end
-    end
-    @testset "$name neuron selection" begin
-        analyzer = method(model)
-        neuron_selection = 1
-        expl = analyze(input, analyzer, neuron_selection)
-        attr = expl.val
-
-        @test size(attr) == size(input)
-        if name == "LRPZero_COC"
-            # Output of Chain of Chains should be equal to flattened model
-            @test_reference "references/cnn/LRPZero_neuron_$neuron_selection.jld2" Dict(
-                "expl" => attr
-            ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
-        else
-            @test_reference "references/cnn/$(name)_neuron_$neuron_selection.jld2" Dict(
-                "expl" => attr
-            ) by = (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
-        end
-        analyzer = method(model)
-        expl2 = analyzer(input, neuron_selection)
-        @test expl.val ≈ expl2.val
     end
 end
 
@@ -106,6 +101,32 @@ end
 @testset "Gradient analyzers" begin
     for (name, method) in GRADIENT_ANALYZERS
         test_cnn(name, method)
+    end
+end
+
+@testset "CRP" begin
+    composite = EpsilonPlus()
+    layer_index = 5 # last Conv layer
+    n_concepts = 2
+    concepts = TopNConcepts(n_concepts)
+    analyzer = CRP(LRP(model, composite), layer_index, concepts)
+
+    @testset "Max activation" begin
+        println("Timing CRP...")
+        print("cold:")
+        @time expl = analyze(input, analyzer)
+
+        @test size(expl.val) == size(input) .* (1, 1, 1, n_concepts)
+        @test_reference "references/cnn/CRP_max.jld2" Dict("expl" => expl.val) by =
+            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
+    end
+    @testset "Neuron selection" begin
+        print("warm:")
+        @time expl = analyze(input, analyzer, 1)
+
+        @test size(expl.val) == size(input) .* (1, 1, 1, n_concepts)
+        @test_reference "references/cnn/CRP_ns1.jld2" Dict("expl" => expl.val) by =
+            (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
     end
 end
 
