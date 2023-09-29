@@ -6,11 +6,10 @@ import ExplainableAI: ZeroRule, EpsilonRule, GammaRule, WSquareRule
 
 # Fast implementation for Dense layer using Tullio.jl's einsum notation:
 for R in (ZeroRule, EpsilonRule, GammaRule)
-    @eval function lrp!(Rᵏ, rule::$R, layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
-        layer = isnothing(modified_layer) ? layer : modified_layer
+    @eval function lrp!(Rᵏ, rule::$R, _layer::Dense, modified_layer, aᵏ, Rᵏ⁺¹)
         ãᵏ = modify_input(rule, aᵏ)
-        z = modify_denominator(rule, layer(ãᵏ))
-        @tullio Rᵏ[j, b] = layer.weight[i, j] * ãᵏ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
+        z = modify_denominator(rule, modified_layer(ãᵏ))
+        @tullio Rᵏ[j, b] = modified_layer.weight[i, j] * ãᵏ[j, b] / z[i, b] * Rᵏ⁺¹[i, b]
     end
 end
 

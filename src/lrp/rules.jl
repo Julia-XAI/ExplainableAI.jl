@@ -127,11 +127,15 @@ function modify_layer(rule, layer; keep_bias=true)
     !is_compatible(rule, layer) && throw(LRPCompatibilityError(rule, layer))
     !has_weight_and_bias(layer) && return layer
 
-    w = modify_weight(rule, layer.weight)
-    !keep_bias && (return copy_layer(layer, w, zero(layer.bias)))
-    layer.bias == false && (return copy_layer(layer, w, false))
-    b = modify_bias(rule, layer.bias)
-    return copy_layer(layer, w, b)
+    weight = modify_weight(rule, layer.weight)
+    bias = if layer.bias == false
+        false
+    elseif !keep_bias
+        zero(layer.bias)
+    else
+        modify_bias(rule, layer.bias)
+    end
+    return copy_layer(layer, weight, bias)
 end
 
 get_modified_layers(rules, layers) = chainzip(modify_layer, rules, layers)
@@ -161,7 +165,6 @@ R_j^k = \\sum_i \\frac{W_{ij}a_j^k}{\\sum_l W_{il}a_l^k+b_i} R_i^{k+1}
 - $REF_BACH_LRP
 """
 struct ZeroRule <: AbstractLRPRule end
-modify_layer(::ZeroRule, layer) = nothing # no modified layer needed
 is_compatible(::ZeroRule, layer) = true # compatible with all layer types
 
 """
@@ -186,8 +189,6 @@ struct EpsilonRule{T<:Real} <: AbstractLRPRule
     EpsilonRule(epsilon=LRP_DEFAULT_EPSILON) = new{eltype(epsilon)}(epsilon)
 end
 modify_denominator(r::EpsilonRule, d) = stabilize_denom(d, r.ϵ)
-
-modify_layer(::EpsilonRule, layer) = nothing # no modified layer needed
 is_compatible(::EpsilonRule, layer) = true # compatible with all layer types
 
 """

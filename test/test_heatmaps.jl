@@ -25,10 +25,17 @@ end
 @test_throws ArgumentError heatmap(A, rangescale=:bar)
 
 B = reshape(A, 2, 2, 3, 1, 1)
-@test_throws DomainError heatmap(B)
+@test_throws ArgumentError heatmap(B)
 B = reshape(A, 2, 2, 3)
-@test_throws DomainError heatmap(B)
+@test_throws ArgumentError heatmap(B)
 
 A1 = rand(3, 3, 1)
-A2 = ExplainableAI._reduce(A1, :sum)
+A2 = ExplainableAI.reduce_color_channel(A1, :sum)
 @test A1 == A2
+
+# Test process_batch
+A = reshape(1:(2^4), 2, 2, 2, 2)
+h1 = heatmap(A)
+h2 = heatmap(A; process_batch=true)
+@test_reference "references/heatmaps/process_batch_false.txt" h1
+@test_reference "references/heatmaps/process_batch_true.txt" h2

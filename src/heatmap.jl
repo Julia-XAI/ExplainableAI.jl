@@ -3,6 +3,7 @@
 const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
     # Analyzer => (colorscheme, reduce, rangescale)
     :LRP => (ColorSchemes.seismic, :sum, :centered), # attribution
+    :CRP => (ColorSchemes.seismic, :sum, :centered), # attribution
     :InputTimesGradient => (ColorSchemes.seismic, :sum, :centered), # attribution
     :Gradient => (ColorSchemes.grays, :norm, :extrema), # gradient
 )
@@ -36,70 +37,75 @@ See also [`analyze`](@ref).
 - `permute::Bool`: Whether to flip W&H input channels. Default is `true`.
 - `unpack_singleton::Bool`: When heatmapping a batch with a single sample, setting `unpack_singleton=true`
     will return an image instead of an Vector containing a single image.
-
-**Note:** keyword arguments can't be used when calling `heatmap` with an analyzer.
+- `process_batch::Bool`: When heatmapping a batch, setting `process_batch=true`
+    will apply the color channel reduction and normalization to the entire batch
+    instead of computing it individually for each sample. Defaults to `false`.
 """
 function heatmap(
-    attr::AbstractArray{T,N};
+    val::AbstractArray{T,N};
     cs::ColorScheme=ColorSchemes.seismic,
     reduce::Symbol=:sum,
     rangescale::Symbol=:centered,
     permute::Bool=true,
     unpack_singleton::Bool=true,
+    process_batch::Bool=false,
 ) where {T,N}
     N != 4 && throw(
-        DomainError(
-            N,
-            """heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
-            Please reshape your explanation to match this format if your model doesn't adhere to this convention.""",
+        ArgumentError(
+            "heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
+            Please reshape your explanation to match this format if your model doesn't adhere to this convention.",
         ),
     )
-    if unpack_singleton && size(attr, 4) == 1
-        return _heatmap(attr[:, :, :, 1], cs, reduce, rangescale, permute)
+    if unpack_singleton && size(val, 4) == 1
+        return _heatmap(val[:, :, :, 1], cs, reduce, rangescale, permute)
     end
-    return map(a -> _heatmap(a, cs, reduce, rangescale, permute), eachslice(attr; dims=4))
+    if process_batch
+        hs = _heatmap(val, cs, reduce, rangescale, permute)
+        return [hs[:, :, i] for i in axes(hs, 3)]
+    end
+    return [_heatmap(v, cs, reduce, rangescale, permute) for v in eachslice(val; dims=4)]
 end
 
 # Use HEATMAPPING_PRESETS for default kwargs when dispatching on Explanation
-function heatmap(expl::Explanation; permute::Bool=true, kwargs...)
+function heatmap(expl::Explanation; kwargs...)
     _cs, _reduce, _rangescale = HEATMAPPING_PRESETS[expl.analyzer]
     return heatmap(
         expl.val;
         reduce=get(kwargs, :reduce, _reduce),
         rangescale=get(kwargs, :rangescale, _rangescale),
         cs=get(kwargs, :cs, _cs),
-        permute=permute,
+        kwargs...,
     )
 end
 # Analyze & heatmap in one go
 function heatmap(input, analyzer::AbstractXAIMethod, args...; kwargs...)
-    return heatmap(analyze(input, analyzer, args...; kwargs...))
+    expl = analyze(input, analyzer, args...)
+    return heatmap(expl; kwargs...)
 end
 
-# Lower level function that is mapped along batch dimension
-function _heatmap(
-    attr::AbstractArray{T,3},
-    cs::ColorScheme,
-    reduce::Symbol,
-    rangescale::Symbol,
-    permute::Bool,
-) where {T<:Real}
-    img = dropdims(_reduce(attr, reduce); dims=3)
-    permute && (img = permutedims(img))
+# Lower level function that can be mapped along batch dimension
+function _heatmap(val, cs::ColorScheme, reduce::Symbol, rangescale::Symbol, permute::Bool)
+    img = dropdims(reduce_color_channel(val, reduce); dims=3)
+    permute && (img = flip_wh(img))
     return ColorSchemes.get(cs, img, rangescale)
 end
 
+flip_wh(img::AbstractArray{T,2}) where {T} = permutedims(img, (2, 1))
+flip_wh(img::AbstractArray{T,3}) where {T} = permutedims(img, (2, 1, 3))
+
 # Reduce explanations across color channels into a single scalar – assumes WHCN convention
-function _reduce(attr::AbstractArray{T,3}, method::Symbol) where {T}
-    if size(attr, 3) == 1 # nothing to reduce
-        return attr
+function reduce_color_channel(val::AbstractArray, method::Symbol)
+    init = zero(eltype(val))
+    if size(val, 3) == 1 # nothing to reduce
+        return val
     elseif method == :sum
-        return reduce(+, attr; dims=3)
+        return reduce(+, val; dims=3)
     elseif method == :maxabs
-        return reduce((c...) -> maximum(abs.(c)), attr; dims=3, init=zero(T))
+        return reduce((c...) -> maximum(abs.(c)), val; dims=3, init=init)
     elseif method == :norm
-        return reduce((c...) -> sqrt(sum(c .^ 2)), attr; dims=3, init=zero(T))
+        return reduce((c...) -> sqrt(sum(c .^ 2)), val; dims=3, init=init)
     end
+
     throw(
         ArgumentError(
             "Color channel reducer :$method not supported, `reduce` should be :maxabs, :sum or :norm",

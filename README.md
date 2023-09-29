@@ -33,6 +33,7 @@ using ImageInTerminal             # show heatmap in terminal
 # Load model
 model = VGG(16, pretrain=true).layers
 model = strip_softmax(model)
+model = canonize(model)
 
 # Load input
 url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
@@ -87,30 +88,29 @@ Check out our talk at JuliaCon 2022 for a demonstration of the package.
 ## Methods
 Currently, the following analyzers are implemented:
 
-```
-├── Gradient
-├── InputTimesGradient
-├── SmoothGrad
-├── IntegratedGradients
-└── LRP
-    ├── Rules
-    │   ├── ZeroRule
-    │   ├── EpsilonRule
-    │   ├── GammaRule
-    │   ├── GeneralizedGammaRule
-    │   ├── WSquareRule
-    │   ├── FlatRule
-    │   ├── ZBoxRule
-    │   ├── ZPlusRule
-    │   ├── AlphaBetaRule
-    │   └── PassRule
-    └── Composite
-        ├── EpsilonGammaBox
-        ├── EpsilonPlus
-        ├── EpsilonPlusFlat
-        ├── EpsilonAlpha2Beta1
-        └── EpsilonAlpha2Beta1Flat
-```
+* `Gradient`
+* `InputTimesGradient`
+* `SmoothGrad`
+* `IntegratedGradients`
+* `LRP`
+  * Rules
+    * `ZeroRule`
+    * `EpsilonRule`
+    * `GammaRule`
+    * `GeneralizedGammaRule`
+    * `WSquareRule`
+    * `FlatRule`
+    * `ZBoxRule`
+    * `ZPlusRule`
+    * `AlphaBetaRule`
+    * `PassRule`
+  * Composites
+    * `EpsilonGammaBox`
+    * `EpsilonPlus`
+    * `EpsilonPlusFlat`
+    * `EpsilonAlpha2Beta1`
+    * `EpsilonAlpha2Beta1Flat`
+* `CRP`
 
 One of the design goals of ExplainableAI.jl is extensibility.
 Custom [composites][docs-composites] are easily defined 

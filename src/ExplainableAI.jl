@@ -30,6 +30,7 @@ include("lrp/composite.jl")
 include("lrp/lrp.jl")
 include("lrp/show.jl")
 include("lrp/composite_presets.jl") # uses lrp/show.jl
+include("lrp/crp.jl")
 include("heatmap.jl")
 include("preprocessing.jl")
 export analyze
@@ -60,6 +61,9 @@ export EpsilonGammaBox, EpsilonPlus, EpsilonAlpha2Beta1, EpsilonPlusFlat
 export EpsilonAlpha2Beta1Flat
 # Useful type unions
 export ConvLayer, PoolingLayer, DropoutLayer, ReshapingLayer, NormalizationLayer
+
+# CRP
+export CRP, TopNConcepts, IndexedConcepts
 
 # heatmapping
 export heatmap

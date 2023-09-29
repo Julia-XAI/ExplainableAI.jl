@@ -71,13 +71,14 @@ heatmap(input, analyzer)
 analyzer = IntegratedGradients(model, 50)
 heatmap(input, analyzer)
 
-# To select a different reference input, pass it to the `analyze` or `heatmap` function
+# To select a different reference input, pass it to the `analyze` function
 # using the keyword argument `input_ref`.
 # Note that this is an arbitrary example for the sake of demonstration.
 matrix_of_ones = ones(Float32, size(input))
 
 analyzer = InterpolationAugmentation(Gradient(model), 50)
-heatmap(input, analyzer; input_ref=matrix_of_ones)
+expl = analyzer(input; input_ref=matrix_of_ones)
+heatmap(expl)
 
 # Once again, `InterpolationAugmentation` can be combined with any analyzer type,
 # for example [`LRP`](@ref):
