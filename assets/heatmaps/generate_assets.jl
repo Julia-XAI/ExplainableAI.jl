@@ -1,29 +1,29 @@
 using ExplainableAI
-using Flux
-using Metalhead
-using FileIO
+using Metalhead                   # pre-trained vision models
+using HTTP, FileIO, ImageMagick   # load image from URL
 
 # Load model
 model = VGG(16; pretrain=true).layers
-model = strip_softmax(flatten_chain(model))
+model = strip_softmax(model)
+model = canonize(model)
 
 # Load input
-url = "https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg"
+url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
 img = load(url)
 input = preprocess_imagenet(img)
 input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
 
 # Run XAI methods
 methods = Dict(
-    "InputTimesGradient" => InputTimesGradient,
-    "Gradient" => Gradient,
-    "SmoothGrad" => SmoothGrad,
-    "IntegratedGradients" => IntegratedGradients,
-    "LRP" => LRP,
-    "LRPEpsilonGammaBox" => model -> LRP(model, EpsilonGammaBox(-3.0f0, 3.0f0)),
-    "LRPEpsilonPlus" => model -> LRP(model, EpsilonPlus()),
-    "LRPEpsilonAlpha2Beta1" => model -> LRP(model, EpsilonAlpha2Beta1()),
-    "LRPEpsilonPlusFlat" => model -> LRP(model, EpsilonPlusFlat()),
+    "InputTimesGradient"        => InputTimesGradient,
+    "Gradient"                  => Gradient,
+    "SmoothGrad"                => SmoothGrad,
+    "IntegratedGradients"       => IntegratedGradients,
+    "LRP"                       => LRP,
+    "LRPEpsilonGammaBox"        => model -> LRP(model, EpsilonGammaBox(-3.0f0, 3.0f0)),
+    "LRPEpsilonPlus"            => model -> LRP(model, EpsilonPlus()),
+    "LRPEpsilonAlpha2Beta1"     => model -> LRP(model, EpsilonAlpha2Beta1()),
+    "LRPEpsilonPlusFlat"        => model -> LRP(model, EpsilonPlusFlat()),
     "LRPEpsilonAlpha2Beta1Flat" => model -> LRP(model, EpsilonAlpha2Beta1Flat()),
 )
 

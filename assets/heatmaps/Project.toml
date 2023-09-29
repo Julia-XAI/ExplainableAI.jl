@@ -1,0 +1,6 @@
+[deps]
+ExplainableAI = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
