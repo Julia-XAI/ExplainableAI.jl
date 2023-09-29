@@ -132,7 +132,7 @@ end
 
 # Index concepts on 4D arrays, e.g. Conv layers with batch dimension
 function (c::IndexedConcepts)(A::AbstractArray{T,4}) where {T}
-    w, h, _c, batchsize = size(A, 2)
+    w, h, _c, batchsize = size(A)
     return [[CartesianIndices((1:w, 1:h, i:i, b:b)) for b in 1:batchsize] for i in c.inds]
 end
 
