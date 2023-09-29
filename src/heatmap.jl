@@ -61,7 +61,7 @@ function heatmap(
     end
     if process_batch
         hs = _heatmap(val, cs, reduce, rangescale, permute)
-        return eachslice(hs; dims=3)
+        return [hs[:, :, i] for i in axes(hs, 3)]
     end
     return [_heatmap(v, cs, reduce, rangescale, permute) for v in eachslice(val; dims=4)]
 end
