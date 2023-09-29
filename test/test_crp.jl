@@ -32,6 +32,15 @@
 end
 
 @testset "Concept selectors" begin
+    @testset "API" begin
+        concepts = TopNConcepts(15)
+        @test ExplainableAI.number_of_concepts(concepts) == 15
+        concepts = IndexedConcepts(1:16...)
+        @test ExplainableAI.number_of_concepts(concepts) == 16
+
+        @test_throws DimensionMismatch (TopNConcepts(4))(rand(3, 5))
+        @test_throws DimensionMismatch (TopNConcepts(4))(rand(5, 5, 3, 5))
+    end
     @testset "2D input batches" begin
         R = [
             0.360588  0.180214
