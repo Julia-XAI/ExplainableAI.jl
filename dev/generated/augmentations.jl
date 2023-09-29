@@ -43,7 +43,8 @@ heatmap(input, analyzer)
 matrix_of_ones = ones(Float32, size(input))
 
 analyzer = InterpolationAugmentation(Gradient(model), 50)
-heatmap(input, analyzer; input_ref=matrix_of_ones)
+expl = analyzer(input; input_ref=matrix_of_ones)
+heatmap(expl)
 
 analyzer = InterpolationAugmentation(LRP(model), 50)
 heatmap(input, analyzer)
