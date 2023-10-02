@@ -64,8 +64,8 @@ heatmap(expl; reduce=:norm)
 #-
 heatmap(expl; reduce=:maxabs)
 
-# Since MNIST only has a single color channel, there is no need for reduction
-# and heatmaps look identical.
+# In this example, the heatmaps look identical.
+# Since MNIST only has a single color channel, there is no need for color channel reduction.
 
 # ### [Mapping explanations onto the color scheme](@id docs-heatmap-rangescale)
 # To map a [color-channel-reduced](@ref docs-heatmap-reduce) explanation onto a color scheme,
@@ -102,6 +102,21 @@ heatmaps = heatmap(batch, analyzer)
 
 # Image.jl's `mosaic` function can used to display them in a grid:
 mosaic(heatmaps; nrow=10)
+
+# When heatmapping batches, the mapping to the color scheme is applied per sample.
+# For example, `rangescale=:extrema` will normalize each heatmap
+# to the minimum and maximum value of each sample in the batch.
+# This ensures that heatmaps don't depend on other samples in the batch.
+#
+# If this bevahior is not desired,
+# `heatmap` can be called with the keyword-argument `process_batch=true`:
+heatmaps = heatmap(batch, analyzer; process_batch=true)
+mosaic(heatmaps; nrow=10)
+
+# This can be useful when comparing heatmaps for fixed output neurons:
+heatmaps = heatmap(batch, analyzer, 7; process_batch=true) # heatmaps for digit "6"
+mosaic(heatmaps; nrow=10)
+
 
 #md # !!! note "Output type consistency"
 #md #
