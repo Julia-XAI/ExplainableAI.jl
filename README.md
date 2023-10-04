@@ -5,11 +5,15 @@ ___
 |:----------------- |:---------------- |:------- |
 | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Aqua QA][aqua-img]][aqua-url] | [![][doi-img]][doi-url] |
 
-Explainable AI in Julia using [Flux.jl](https://fluxml.ai).
+Explainable AI in Julia.
 
-This package implements interpretability methods and visualizations for neural networks, 
-similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
-and [iNNvestigate][innvestigate-repo] for Keras models. 
+This package implements interpretability methods for black box models,
+with a focus on local explanations and attribution maps.
+It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
+and [iNNvestigate][innvestigate-repo] for Keras models.
+
+Most of the implemented methods only require the model to be differentiable with [Zygote](https://github.com/FluxML/Zygote.jl).
+Layerwise Relevance Propagation (LRP) is implemented for use with [Flux.jl](https://fluxml.ai) models.
 
 ## Installation 
 This package supports Julia ≥1.6. To install it, open the Julia REPL and run 
@@ -110,7 +114,7 @@ Currently, the following analyzers are implemented:
     * `EpsilonPlusFlat`
     * `EpsilonAlpha2Beta1`
     * `EpsilonAlpha2Beta1Flat`
-* `CRP`
+  * `CRP`
 
 One of the design goals of ExplainableAI.jl is extensibility.
 Custom [composites][docs-composites] are easily defined 
