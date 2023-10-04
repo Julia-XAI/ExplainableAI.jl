@@ -1,4 +1,15 @@
 # ExplainableAI.jl
+## Version `v0.6.2`
+This is first release of ExplainableAI.jl as part of the 
+[Julia-XAI](https://github.com/Julia-XAI) organization ([#149][pr-149])
+and the last release that includes LRP before it is moved to its own separate package.
+
+- ![Feature][badge-feature] Add Concept Relevance Propagation analyzer `CRP` ([#146][pr-146], [#148][pr-148])
+- ![Feature][badge-feature] Add option to process heatmaps batch-wise 
+  using keyword argument `process_batch=true` ([#146][pr-146], [#148][pr-148])
+- ![Bugfix][badge-bugfix] Remove `FlatRule` on dense layers 
+  from `EpsilonPlusFlat` and `EpsilonAlpha2Beta1Flat` composite presets ([#147][pr-147])
+
 ## Version `v0.6.1`
 This release brings GPU support to all analyzers.
 - ![Feature][badge-feature] Support LRP on GPUs ([#142][pr-142], [#140][pr-140])
@@ -165,6 +176,10 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
+[pr-149]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/149
+[pr-148]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/148
+[pr-147]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/147
+[pr-146]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/146
 [pr-145]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/145
 [pr-144]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/144
 [pr-142]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/142

@@ -8,7 +8,7 @@ ___
 Explainable AI in Julia.
 
 This package implements interpretability methods for black box models,
-with a focus on local explanations and attribution maps.
+with a focus on local explanations and attribution maps in input space.
 It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
 and [iNNvestigate][innvestigate-repo] for Keras models.
 
