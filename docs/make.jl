@@ -56,4 +56,4 @@ makedocs(;
     checkdocs=:exports, # only check docstrings in API reference if they are exported
 )
 
-deploydocs(; repo="github.com/adrhill/ExplainableAI.jl")
+deploydocs(; repo="github.com/Julia-XAI/ExplainableAI.jl")

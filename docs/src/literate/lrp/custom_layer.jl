@@ -39,7 +39,7 @@ model = Chain(
 #
 #   LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
 #
-#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
+#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/Julia-XAI/ExplainableAI.jl/issues).
 #
 #   [...]
 #
@@ -100,7 +100,7 @@ model = Chain(
 #
 #   LRP assumes that the model is a deep rectifier network that only contains ReLU-like activation functions.
 #
-#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/adrhill/ExplainableAI.jl/issues).
+#   If you think the missing layer should be supported by default, please submit an issue (https://github.com/Julia-XAI/ExplainableAI.jl/issues).
 #
 #   [...]
 #

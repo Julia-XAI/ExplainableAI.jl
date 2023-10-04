@@ -116,7 +116,7 @@ for all layer types that don't have a more optimized implementation
 We will refer to it as the *"AD fallback"*.
 
 For more background information on automatic differentiation, refer to the 
-[JuML lecture on AD](https://adrhill.github.io/julia-ml-course/L6_Automatic_Differentiation/).
+[JuML lecture on AD](https://Julia-XAI.github.io/julia-ml-course/L6_Automatic_Differentiation/).
 
 ## LRP analyzer struct
 The [`LRP`](@ref) analyzer struct holds three fields:
@@ -211,7 +211,7 @@ but also the internal functions `modify_input` and `modify_denominator`.
 Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
 All LRP rules are implemented in the file
-[`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
+[`/src/lrp/rules.jl`](https://github.com/Julia-XAI/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
 
 ### Specialized implementations
 In other programming languages, LRP is commonly implemented in an object-oriented manner,

@@ -36,7 +36,7 @@ model = strip_softmax(model)
 model = canonize(model)
 
 # Load input
-url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
+url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
 img = load(url)
 input = preprocess_imagenet(img)
 input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
@@ -129,50 +129,50 @@ Contributions are welcome!
 > Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) 
 > for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
-[banner-img]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/banner.png
+[banner-img]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/banner.png
 
-[asset-code]: https://github.com/adrhill/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/generate_assets.jl
-[castle]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
+[asset-code]: https://github.com/Julia-XAI/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/generate_assets.jl
+[castle]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
 
-[castle-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP.png
-[castle-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_InputTimesGradient.png
-[castle-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_Gradient.png
-[castle-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_SmoothGrad.png
-[castle-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_IntegratedGradients.png
-[castle-comp-egb]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonGammaBox.png
-[castle-comp-ep]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlus.png
-[castle-comp-epf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlusFlat.png
-[castle-comp-eab]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1.png
-[castle-comp-eabf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1Flat.png
+[castle-lrp]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRP.png
+[castle-ixg]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_InputTimesGradient.png
+[castle-grad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_Gradient.png
+[castle-smoothgrad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_SmoothGrad.png
+[castle-intgrad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_IntegratedGradients.png
+[castle-comp-egb]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonGammaBox.png
+[castle-comp-ep]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlus.png
+[castle-comp-epf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonPlusFlat.png
+[castle-comp-eab]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1.png
+[castle-comp-eabf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle_LRPEpsilonAlpha2Beta1Flat.png
 
-[streetsign-lrp]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP.png
-[streetsign-ixg]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_InputTimesGradient.png
-[streetsign-grad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_Gradient.png
-[streetsign-smoothgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_SmoothGrad.png
-[streetsign-intgrad]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_IntegratedGradients.png
-[streetsign-comp-egb]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonGammaBox.png
-[streetsign-comp-ep]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlus.png
-[streetsign-comp-epf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlusFlat.png
-[streetsign-comp-eab]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1.png
-[streetsign-comp-eabf]: https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
+[streetsign-lrp]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRP.png
+[streetsign-ixg]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_InputTimesGradient.png
+[streetsign-grad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_Gradient.png
+[streetsign-smoothgrad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_SmoothGrad.png
+[streetsign-intgrad]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_IntegratedGradients.png
+[streetsign-comp-egb]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonGammaBox.png
+[streetsign-comp-ep]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlus.png
+[streetsign-comp-epf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonPlusFlat.png
+[streetsign-comp-eab]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1.png
+[streetsign-comp-eabf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stab-url]: https://adrhill.github.io/ExplainableAI.jl/stable
+[docs-stab-url]: https://Julia-XAI.github.io/ExplainableAI.jl/stable
 
 [docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
-[docs-dev-url]: https://adrhill.github.io/ExplainableAI.jl/dev
+[docs-dev-url]: https://Julia-XAI.github.io/ExplainableAI.jl/dev
 
-[ci-img]: https://github.com/adrhill/ExplainableAI.jl/workflows/CI/badge.svg
-[ci-url]: https://github.com/adrhill/ExplainableAI.jl/actions
+[ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg
+[ci-url]: https://github.com/Julia-XAI/ExplainableAI.jl/actions
 
-[codecov-img]: https://codecov.io/gh/adrhill/ExplainableAI.jl/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/adrhill/ExplainableAI.jl
+[codecov-img]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl
 
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 
-[docs-composites]: https://adrhill.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
-[docs-custom-rules]: https://adrhill.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
+[docs-composites]: https://Julia-XAI.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
+[docs-custom-rules]: https://Julia-XAI.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
 
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
