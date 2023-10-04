@@ -130,6 +130,9 @@ IndexedConcepts(args...) = IndexedConcepts(tuple(args...))
 
 number_of_concepts(c::IndexedConcepts) = length(c.inds)
 
+# Pretty printing
+Base.show(io::IO, c::IndexedConcepts) = print(io, "IndexedConcepts$(c.inds)")
+
 # Index concepts on 2D arrays, e.g. Dense layers with batch dimension
 function (c::IndexedConcepts)(A::AbstractMatrix)
     batchsize = size(A, 2)

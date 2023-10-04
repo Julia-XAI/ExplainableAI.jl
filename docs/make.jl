@@ -35,11 +35,12 @@ makedocs(;
             "Input augmentations"  => "generated/augmentations.md",
         ],
         "LRP" => Any[
-            "Basic usage"                => "generated/lrp/basics.md",
-            "Assigning rules to layers"  => "generated/lrp/composites.md",
-            "Supporting new layer types" => "generated/lrp/custom_layer.md",
-            "Custom LRP rules"           => "generated/lrp/custom_rules.md",
-            "Developer documentation"    => "lrp/developer.md"
+            "Basic usage"                   => "generated/lrp/basics.md",
+            "Assigning rules to layers"     => "generated/lrp/composites.md",
+            "Supporting new layer types"    => "generated/lrp/custom_layer.md",
+            "Custom LRP rules"              => "generated/lrp/custom_rules.md",
+            "Concept Relevance Propagation" => "generated/lrp/crp.md",
+            "Developer documentation"       => "lrp/developer.md"
         ],
         "API Reference" => Any[
             "General" => "api.md",
@@ -48,7 +49,10 @@ makedocs(;
     ],
     #! format: on
     linkcheck=true,
-    linkcheck_ignore=[r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10"],
+    linkcheck_ignore=[
+        r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10",
+        r"https://www.nature.com/articles/s42256-023-00711-8",
+    ],
     checkdocs=:exports, # only check docstrings in API reference if they are exported
 )
 
