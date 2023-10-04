@@ -117,7 +117,6 @@ mosaic(heatmaps; nrow=10)
 heatmaps = heatmap(batch, analyzer, 7; process_batch=true) # heatmaps for digit "6"
 mosaic(heatmaps; nrow=10)
 
-
 #md # !!! note "Output type consistency"
 #md #
 #md #     To obtain a singleton `Vector` containing a single heatmap for non-batched inputs,
