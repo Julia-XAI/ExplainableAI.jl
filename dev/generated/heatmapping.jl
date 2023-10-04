@@ -48,4 +48,10 @@ heatmaps = heatmap(batch, analyzer)
 
 mosaic(heatmaps; nrow=10)
 
+heatmaps = heatmap(batch, analyzer; process_batch=true)
+mosaic(heatmaps; nrow=10)
+
+heatmaps = heatmap(batch, analyzer, 7; process_batch=true) # heatmaps for digit "6"
+mosaic(heatmaps; nrow=10)
+
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
