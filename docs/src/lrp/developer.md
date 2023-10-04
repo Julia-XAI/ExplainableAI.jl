@@ -116,7 +116,7 @@ for all layer types that don't have a more optimized implementation
 We will refer to it as the *"AD fallback"*.
 
 For more background information on automatic differentiation, refer to the 
-[JuML lecture on AD](https://Julia-XAI.github.io/julia-ml-course/L6_Automatic_Differentiation/).
+[JuML lecture on AD](https://adrhill.github.io/julia-ml-course/L6_Automatic_Differentiation/).
 
 ## LRP analyzer struct
 The [`LRP`](@ref) analyzer struct holds three fields:

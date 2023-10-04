@@ -157,10 +157,10 @@ Contributions are welcome!
 [streetsign-comp-eabf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stab-url]: https://Julia-XAI.github.io/ExplainableAI.jl/stable
+[docs-stab-url]: https://julia-xai.github.io/ExplainableAI.jl/stable
 
 [docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
-[docs-dev-url]: https://Julia-XAI.github.io/ExplainableAI.jl/dev
+[docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
 
 [ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg
 [ci-url]: https://github.com/Julia-XAI/ExplainableAI.jl/actions
@@ -171,8 +171,8 @@ Contributions are welcome!
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 
-[docs-composites]: https://Julia-XAI.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
-[docs-custom-rules]: https://Julia-XAI.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
+[docs-composites]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
+[docs-custom-rules]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
 
 [doi-img]: https://zenodo.org/badge/337430397.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/337430397
