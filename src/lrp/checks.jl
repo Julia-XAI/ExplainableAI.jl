@@ -66,7 +66,7 @@ _MD_CHECK_FAILED = md"""# LRP model check failed
     that only contains ReLU-like activation functions.
 
     If you think the missing layer should be supported by default,
-    **please [submit an issue](https://github.com/adrhill/ExplainableAI.jl/issues)**.
+    **please [submit an issue](https://github.com/Julia-XAI/ExplainableAI.jl/issues)**.
 
     ## Using custom layers
 

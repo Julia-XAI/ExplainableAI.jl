@@ -211,7 +211,7 @@ but also the internal functions `modify_input` and `modify_denominator`.
 Unknown layers that are registered in the `LRP_CONFIG` use this exact function.
 
 All LRP rules are implemented in the file
-[`/src/lrp/rules.jl`](https://github.com/adrhill/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
+[`/src/lrp/rules.jl`](https://github.com/Julia-XAI/ExplainableAI.jl/blob/master/src/lrp/rules.jl).
 
 ### Specialized implementations
 In other programming languages, LRP is commonly implemented in an object-oriented manner,

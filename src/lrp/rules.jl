@@ -1,4 +1,4 @@
-# https://adrhill.github.io/ExplainableAI.jl/dev/lrp/developer/
+# https://julia-xai.github.io/ExplainableAI.jl/dev/lrp/developer/
 abstract type AbstractLRPRule end
 
 # Default parameters
