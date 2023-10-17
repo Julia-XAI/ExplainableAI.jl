@@ -4,7 +4,7 @@ abstract type AbstractXAIMethod end
 
 const BATCHDIM_MISSING = ArgumentError(
     """The input is a 1D vector and therefore missing the required batch dimension.
-    Call `analyze` with the keyword argument `add_batch_dim=false`."""
+    Call analyze with the keyword argument add_batch_dim=true."""
 )
 
 """
@@ -46,16 +46,14 @@ end
 
 # lower-level call to method
 function _analyze(
-    input::AbstractArray{T,N},
+    input::AbstractArray,
     method::AbstractXAIMethod,
     sel::AbstractNeuronSelector;
     add_batch_dim::Bool=false,
     kwargs...,
-) where {T<:Real,N}
-    if add_batch_dim
-        return method(batch_dim_view(input), sel; kwargs...)
-    end
-    N < 2 && throw(BATCHDIM_MISSING)
+)
+    add_batch_dim && (input = batch_dim_view(input))
+    ndims(input) < 2 && throw(BATCHDIM_MISSING)
     return method(input, sel; kwargs...)
 end
 

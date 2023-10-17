@@ -42,15 +42,15 @@ See also [`analyze`](@ref).
     instead of computing it individually for each sample. Defaults to `false`.
 """
 function heatmap(
-    val::AbstractArray{T,N};
+    val::AbstractArray;
     cs::ColorScheme=ColorSchemes.seismic,
     reduce::Symbol=:sum,
     rangescale::Symbol=:centered,
     permute::Bool=true,
     unpack_singleton::Bool=true,
     process_batch::Bool=false,
-) where {T,N}
-    N != 4 && throw(
+)
+    ndims(val) != 4 && throw(
         ArgumentError(
             "heatmap assumes Flux's WHCN convention (width, height, color channels, batch size) for the input.
             Please reshape your explanation to match this format if your model doesn't adhere to this convention.",

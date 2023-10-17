@@ -14,10 +14,12 @@ end
 
 Analyze model by calculating the gradient of a neuron activation with respect to the input.
 """
-struct Gradient{C<:Chain} <: AbstractXAIMethod
-    model::C
+struct Gradient{M} <: AbstractXAIMethod
+    model::M
+    Gradient(model) = new{typeof(model)}(model)
     Gradient(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
 end
+
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     return Explanation(grad, output, output_indices, :Gradient, nothing)
@@ -29,12 +31,14 @@ end
 Analyze model by calculating the gradient of a neuron activation with respect to the input.
 This gradient is then multiplied element-wise with the input.
 """
-struct InputTimesGradient{C<:Chain} <: AbstractXAIMethod
-    model::C
+struct InputTimesGradient{M} <: AbstractXAIMethod
+    model::M
+    InputTimesGradient(model) = new{typeof(model)}(model)
     function InputTimesGradient(model::Chain)
-        return new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
+        new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
     end
 end
+
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
