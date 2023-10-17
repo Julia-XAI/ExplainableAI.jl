@@ -161,7 +161,7 @@ and writing relevances $R^k$ into the pre-allocated array `Rs`:
 ```julia
 for k in length(model):-1:1
     #                  └─ loop over layers in reverse
-    lrp!(Rs[k], rules[k], layers[k], modified_layers[i], as[k], Rs[k+1])
+    lrp!(Rs[k], rules[k], layers[k], modified_layers[k], as[k], Rs[k+1])
     #    └─ Rᵏ: modified in-place                        └─ aᵏ  └─ Rᵏ⁺¹
 end
 ```
