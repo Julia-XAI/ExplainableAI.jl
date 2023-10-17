@@ -1,8 +1,12 @@
 # ExplainableAI.jl
+## Version `v0.6.3`
+- ![Enhancement][badge-enhancement] Allow Gradient analyzers on non-Flux models ([#150][pr-150])
+- ![Bugfix][badge-bugfix] Fix typo in `BATCHDIM_MISSING` error ([#150][pr-150])
+
 ## Version `v0.6.2`
 This is first release of ExplainableAI.jl as part of the 
 [Julia-XAI](https://github.com/Julia-XAI) organization ([#149][pr-149])
-and the last release that includes LRP before it is moved to its own separate package.
+and the last minor release that includes LRP before it is moved to its own separate package.
 
 - ![Feature][badge-feature] Add Concept Relevance Propagation analyzer `CRP` ([#146][pr-146], [#148][pr-148])
 - ![Feature][badge-feature] Add option to process heatmaps batch-wise 
@@ -176,6 +180,7 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
+[pr-150]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/150
 [pr-149]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/149
 [pr-148]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/148
 [pr-147]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/147
