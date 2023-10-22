@@ -68,3 +68,37 @@ Analyze model by using the Integrated Gradients method.
 - $REF_SUNDARARAJAN_AXIOMATIC
 """
 IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)
+
+"""
+    GradCam
+
+# 
+""" 
+struct GradCam{C1,C2} <: AbstractXAIMethod
+    analyzed_layer::C1    #layer with activations to be analyzed
+    reversed_layer::C2  #layer on which the heatmap might be created
+    #Empty constructor tbd
+    GradCam(C1,C2) = new{typeof(C1),typeof(C2)}(C1,C2)
+end
+function (analyzer::GradCam)(input, ns::AbstractNeuronSelector)::Explanation
+    # Forward pass
+    activation=analyzer.analyzed_layer(input)
+
+    # Gradient for specificly selected neuron (=class)
+    # Backpropagation
+    grad,output,output_indices=gradient_wrt_input(analyzer.reversed_layer,activation,ns)
+
+    # Paper : "This signal is then backpropagated to the rectified convolutional feature maps of interest, which we combine to compute the coarse Grad-CAM localization (blue heatmap)."
+    
+    # Determine neuron importance α_k^c = 1/Z * ∑_i ∑_j ∂y^c / ∂A_ij^k   via GAP 
+    importance = mean(grad, dims=(1, 2))  # Compute the weights for each feature map
+
+    #ReLU since we are only interested on areas with positive impact on selected class ; or is RELU needed on grad ?
+    activation_relu = max.(activation, 0)
+
+    #calculate GradCam while considering that gradients are set to zero except for the relevant class 
+    relevances = sum(importance .* activation_relu, dims=3)
+
+    #return Explanation
+    return Explanation(relevances, output, output_indices, :GradCam, nothing)
+end
