@@ -37,7 +37,7 @@ export analyze
 
 # Analyzers
 export AbstractXAIMethod, Explanation
-export Gradient, InputTimesGradient
+export Gradient, InputTimesGradient, GradCam, GradCam2
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
 export LRP

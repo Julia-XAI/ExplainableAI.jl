@@ -102,3 +102,39 @@ function (analyzer::GradCam)(input, ns::AbstractNeuronSelector)::Explanation
     #return Explanation
     return Explanation(relevances, output, output_indices, :GradCam, nothing)
 end
+
+function find_gradcam_target_layer(model)
+    for layer in reverse(model.layers)
+        params = Flux.params(layer)
+        if !isempty(params) && length(size(params[1])) == 4  #reversed order: find first layer with 4D Output (WHCB)
+            return layer
+        end
+    end
+    error("No 4D Output found. GradCam cannot be called")
+end
+struct GradCam2{M} <: AbstractXAIMethod
+    model::M
+    GradCam2(model) = new{typeof(model)}(model)
+    GradCam2(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
+end
+function (analyzer::GradCam2)(input, ns::AbstractNeuronSelector)::Explanation
+    # Forward pass
+    analyzed_layer = find_gradcam_target_layer(model)     #Änderung: analyzed_layer berechnen
+    activation=analyzed_layer(input)  #feature maps
+
+    # Gradient for specificly selected neuron (=class)
+    # Backpropagation
+    grad,output,output_indices=gradient_wrt_input(analyzer.model,activation,ns) #Änderung: analyzer.reversed_layer >> analyzer.model
+
+    # Determine neuron importance α_k^c = 1/Z * ∑_i ∑_j ∂y^c / ∂A_ij^k   via GAP 
+    importance = mean(grad, dims=(1, 2))  # Compute the weights for each feature map
+
+    #ReLU since we are only interested on areas with positive impact on selected class ; or is RELU needed on grad ?
+    activation_relu = max.(activation, 0)
+
+    #calculate GradCam while considering that gradients are set to zero except for the relevant class 
+    relevances = sum(importance .* activation_relu, dims=3)
+
+    #return Explanation
+    return Explanation(relevances, output, output_indices, :GradCam2, nothing)
+end
