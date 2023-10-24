@@ -74,7 +74,7 @@ IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)
 
 # 
 """ 
-struct GradCAM{C1,C1} <: AbstractXAIMethod
+struct GradCAM{C1,C2} <: AbstractXAIMethod
     feature_layers::C1
     adaptation_layers::C2
     GradCam(C1,C2) = new{typeof(C1),typeof(C2)}(C1,C2)
