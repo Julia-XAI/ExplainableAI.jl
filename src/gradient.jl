@@ -77,20 +77,17 @@ IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)
 struct GradCAM{C1,C2} <: AbstractXAIMethod
     feature_layers::C1
     adaptation_layers::C2
-    GradCam(C1,C2) = new{typeof(C1),typeof(C2)}(C1,C2)
+    GradCAM(C1,C2) = new{typeof(C1),typeof(C2)}(C1,C2)
 end
-function (analyzer::GradCam)(input, ns::AbstractNeuronSelector)::Explanation
-    # Forward pass
-    A = analyzer.feature_layers(input)
-    # Backpropagation
-    grad,output,output_indices=gradient_wrt_input(analyzer.adaptation_layers,A,ns)
+function (analyzer::GradCAM)(input, ns::AbstractNeuronSelector)
+    A = analyzer.feature_layers(input)    # Forward pass
+    grad,output,output_indices=gradient_wrt_input(analyzer.adaptation_layers,A,ns)   # Backpropagation
 
-    # Determine neuron importance α_k^c = 1/Z * ∑_i ∑_j ∂y^c / ∂A_ij^k   via GAP 
-    αᶜ = mean(grad, dims=(1, 2))
-    #ReLU since we are only interested on areas with positive impact on selected class
+    # Determine neuron importance αₖᶜ = 1/Z * ∑_i ∑_j ∂yᶜ / ∂A_ij^k
+    αᶜ = sum(grad, dims=(1,2)) / (size(grad,1)*size(grad,2))  
     Lᶜ = max.(sum(αᶜ .* A, dims=3),0)
-
-    return Explanation(relevances, output, output_indices, :GradCam, nothing)
+    
+    return Explanation(Lᶜ, output, output_indices, :GradCAM, nothing)
 end
 
 function find_gradcam_target_layer(model)
@@ -102,22 +99,20 @@ function find_gradcam_target_layer(model)
     end
     error("No 4D Output found. GradCam cannot be called")
 end
-struct GradCam2{M} <: AbstractXAIMethod
+struct GradCAM2{M} <: AbstractXAIMethod
     model::M
-    GradCam2(model) = new{typeof(model)}(model)
-    GradCam2(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
+    GradCAM2(model) = new{typeof(model)}(model)
+    GradCAM2(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
 end
-function (analyzer::GradCam2)(input, ns::AbstractNeuronSelector)::Explanation
-    # Forward pass
-    feature_layers = find_gradcam_target_layer(model)     #Änderung: analyzed_layer berechnen
-    activation=feature_layers(input)  #feature maps
-    # Backpropagation
-    grad,output,output_indices=gradient_wrt_input(analyzer.model,activation,ns) #Änderung: analyzer.reversed_layer >> analyzer.model
+function (analyzer::GradCAM2)(input, ns::AbstractNeuronSelector)::Explanation
+    feature_layers = find_gradcam_target_layer(model)     
+    activation=feature_layers(input)  # Forward pass
+    grad,output,output_indices=gradient_wrt_input(analyzer.adaptation_layers,A,ns)   # Backpropagation
 
-    # Determine neuron importance α_k^c = 1/Z * ∑_i ∑_j ∂y^c / ∂A_ij^k   via GAP 
-    αᶜ = mean(grad, dims=(1, 2))  # Compute the weights for each feature map
+    # Determine neuron importance αₖᶜ = 1/Z * ∑_i ∑_j ∂yᶜ / ∂A_ij^k
+    αᶜ = sum(grad, dims=(1,2)) / (size(grad,1)*size(grad,2)) 
     #ReLU since we are only interested on areas with positive impact on selected class 
     Lᶜ = max.(sum(αᶜ .* A, dims=3),0)
 
-    return Explanation(relevances, output, output_indices, :GradCam2, nothing)
+    return Explanation(Lᶜ, output, output_indices, :GradCAM2, nothing)
 end
