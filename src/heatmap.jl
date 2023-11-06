@@ -6,6 +6,7 @@ const HEATMAPPING_PRESETS = Dict{Symbol,Tuple{ColorScheme,Symbol,Symbol}}(
     :CRP => (ColorSchemes.seismic, :sum, :centered), # attribution
     :InputTimesGradient => (ColorSchemes.seismic, :sum, :centered), # attribution
     :Gradient => (ColorSchemes.grays, :norm, :extrema), # gradient
+    :GradCAM => (ColorSchemes.jet1, :norm, :extrema), #gradient
 )
 
 """

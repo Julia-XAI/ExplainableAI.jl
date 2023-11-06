@@ -72,47 +72,20 @@ IntegratedGradients(model, n=50) = InterpolationAugmentation(Gradient(model), n)
 """
     GradCam
 
-# 
+Analyze model by calculating the gradient of a neuron activation with respect to the input.
+This gradient is then used to calculate the Class Activation Map.
 """ 
 struct GradCAM{C1,C2} <: AbstractXAIMethod
     feature_layers::C1
     adaptation_layers::C2
-    GradCAM(C1,C2) = new{typeof(C1),typeof(C2)}(C1,C2)
+    GradCAM(C1,C2) = new{typeof(C1),typeof(C2)}(testmode!(C1),testmode!(C2))
 end
 function (analyzer::GradCAM)(input, ns::AbstractNeuronSelector)
     A = analyzer.feature_layers(input)    # Forward pass
     grad,output,output_indices=gradient_wrt_input(analyzer.adaptation_layers,A,ns)   # Backpropagation
-
-    # Determine neuron importance αₖᶜ = 1/Z * ∑_i ∑_j ∂yᶜ / ∂A_ij^k
+    # Determine neuron importance αₖᶜ = 1/Z * ∑ᵢ ∑ⱼ ∂yᶜ / ∂Aᵢⱼᵏ 
     αᶜ = sum(grad, dims=(1,2)) / (size(grad,1)*size(grad,2))  
     Lᶜ = max.(sum(αᶜ .* A, dims=3),0)
     
     return Explanation(Lᶜ, output, output_indices, :GradCAM, nothing)
-end
-
-function find_gradcam_target_layer(model)
-    for layer in reverse(model.layers)
-        params = Flux.params(layer)
-        if !isempty(params) && length(size(params[1])) == 4  #reversed order: find first layer with 4D Output (WHCB)
-            return layer
-        end
-    end
-    error("No 4D Output found. GradCam cannot be called")
-end
-struct GradCAM2{M} <: AbstractXAIMethod
-    model::M
-    GradCAM2(model) = new{typeof(model)}(model)
-    GradCAM2(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
-end
-function (analyzer::GradCAM2)(input, ns::AbstractNeuronSelector)::Explanation
-    feature_layers = find_gradcam_target_layer(model)     
-    activation=feature_layers(input)  # Forward pass
-    grad,output,output_indices=gradient_wrt_input(analyzer.adaptation_layers,A,ns)   # Backpropagation
-
-    # Determine neuron importance αₖᶜ = 1/Z * ∑_i ∑_j ∂yᶜ / ∂A_ij^k
-    αᶜ = sum(grad, dims=(1,2)) / (size(grad,1)*size(grad,2)) 
-    #ReLU since we are only interested on areas with positive impact on selected class 
-    Lᶜ = max.(sum(αᶜ .* A, dims=3),0)
-
-    return Explanation(Lᶜ, output, output_indices, :GradCAM2, nothing)
 end
