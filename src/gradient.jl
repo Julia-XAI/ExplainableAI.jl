@@ -22,7 +22,7 @@ end
 
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
-    return Explanation(grad, output, output_indices, :Gradient, nothing)
+    return Explanation(grad, output, output_indices, :Gradient, :sensitivity, nothing)
 end
 
 """
@@ -42,7 +42,7 @@ end
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
-    return Explanation(attr, output, output_indices, :InputTimesGradient, nothing)
+    return Explanation(attr, output, output_indices, :InputTimesGradient, :attribution, nothing)
 end
 
 """

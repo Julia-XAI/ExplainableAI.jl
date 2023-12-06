@@ -2,7 +2,7 @@ using Flux
 using Flux: flatten
 using ExplainableAI: flatten_model
 using ExplainableAI: has_output_softmax, check_output_softmax, activation_fn
-using ExplainableAI: stabilize_denom, batch_dim_view, drop_batch_index, masked_copy
+using ExplainableAI: stabilize_denom, drop_batch_index, masked_copy
 using Random
 
 # Test `activation_fn`
@@ -52,12 +52,6 @@ S = @inferred stabilize_denom(A, 1e-3)
 @test S ≈ [1.001 1e-3 1e-3; -1.001 1e-3 -1e-3]
 S = @inferred stabilize_denom(Float32.(A), 1e-2)
 @test S ≈ [1.01 1.0f-2 1.0f-2; -1.01 1.0f-2 -1.0f-2]
-
-# batch_dim_view
-A = [1 2; 3 4]
-V = @inferred batch_dim_view(A)
-@test size(V) == (2, 2, 1)
-@test V[:, :, 1] == A
 
 # drop_batch_index
 I1 = CartesianIndex(5, 3, 2)

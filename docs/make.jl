@@ -1,6 +1,6 @@
-using ExplainableAI
 using Documenter
 using Literate
+using ExplainableAI
 
 LITERATE_DIR = joinpath(@__DIR__, "src/literate")
 OUT_DIR = joinpath(@__DIR__, "src/generated")
@@ -22,7 +22,7 @@ end
 convert_literate(LITERATE_DIR, OUT_DIR)
 
 makedocs(;
-    modules=[ExplainableAI],
+    modules=[XAIBase, ExplainableAI],
     authors="Adrian Hill",
     sitename="ExplainableAI.jl",
     format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),

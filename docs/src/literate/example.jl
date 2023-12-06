@@ -48,12 +48,14 @@ analyzer = LRP(model)
 expl = analyze(input, analyzer);
 
 # The return value `expl` is of type [`Explanation`](@ref) and bundles the following data:
-# * `expl.val`: the numerical output of the analyzer, e.g. an attribution or gradient
-# * `expl.output`: the model output for the given analyzer input
-# * `expl.neuron_selection`: the neuron index used for the explanation
-# * `expl.analyzer`: a symbol corresponding the used analyzer, e.g. `:LRP`
-# * `expl.extras`: an optional named tuple that can be used by analyzers
-#   to return additional information.
+# * `expl.val`: numerical output of the analyzer, e.g. an attribution or gradient
+# * `expl.output`: model output for the given analyzer input
+# * `expl.output_selection`: index of the output used for the explanation
+# * `expl.analyzer`: symbol corresponding the used analyzer, e.g. `:Gradient` or `:LRP`
+# * `expl.heatmap`: symbol indicating a preset heatmapping style,
+#     e.g. `:attibution`, `:sensitivity` or `:cam`
+# * `expl.extras`: optional named tuple that can be used by analyzers
+#     to return additional information.
 #
 # We used an LRP analyzer, so `expl.analyzer` is `:LRP`.
 expl.analyzer
@@ -61,7 +63,7 @@ expl.analyzer
 # By default, the explanation is computed for the maximally activated output neuron.
 # Since our digit is a 9 and Julia's indexing is 1-based,
 # the output neuron at index `10` of our trained model is maximally activated.
-expl.neuron_selection
+expl.output_selection
 
 # Finally, we obtain the result of the analyzer in form of an array.
 expl.val

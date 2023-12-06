@@ -64,7 +64,7 @@ function (lrp::LRP)(
 
     lrp_backward_pass!(Rs, as, lrp.rules, lrp.model, lrp.modified_layers)
     extras = layerwise_relevances ? (layerwise_relevances=Rs,) : nothing
-    return Explanation(first(Rs), last(as), ns(last(as)), :LRP, extras)
+    return Explanation(first(Rs), last(as), ns(last(as)), :LRP, :attribution, extras)
 end
 
 get_activations(model, input) = (input, Flux.activations(model, input)...)

@@ -1,5 +1,8 @@
 module ExplainableAI
 
+using Reexport
+@reexport using XAIBase
+
 using Base.Iterators
 using MacroTools: @forward
 using Distributions: Distribution, Sampleable, Normal
@@ -15,8 +18,6 @@ using ColorSchemes
 
 include("compat.jl")
 include("bibliography.jl")
-include("neuron_selection.jl")
-include("analyze_api.jl")
 include("flux_types.jl")
 include("flux_layer_utils.jl")
 include("flux_chain_utils.jl")
@@ -31,7 +32,6 @@ include("lrp/lrp.jl")
 include("lrp/show.jl")
 include("lrp/composite_presets.jl") # uses lrp/show.jl
 include("lrp/crp.jl")
-include("heatmap.jl")
 include("preprocessing.jl")
 export analyze
 

@@ -94,7 +94,7 @@ function (crp::CRP)(input::AbstractArray{T,N}, ns::AbstractNeuronSelector) where
             end
         end
     end
-    return Explanation(R_return, last(as), ns(last(as)), :CRP, nothing)
+    return Explanation(R_return, last(as), ns(last(as)), :CRP, :attribution, nothing)
 end
 
 #===================#

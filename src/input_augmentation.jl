@@ -1,4 +1,14 @@
 """
+    AugmentationSelector(index)
+
+Neuron selector that passes through an augmented neuron selection.
+"""
+struct AugmentationSelector{I} <: AbstractNeuronSelector
+    indices::I
+end
+(s::AugmentationSelector)(out) = s.indices
+
+"""
     augment_batch_dim(input, n)
 
 Repeat each sample in input batch n-times along batch dimension.
@@ -109,6 +119,7 @@ function (aug::NoiseAugmentation)(input, ns::AbstractNeuronSelector)
         output,
         output_indices,
         augmented_expl.analyzer,
+        augmented_expl.heatmap,
         nothing,
     )
 end
@@ -148,7 +159,7 @@ function (aug::InterpolationAugmentation)(
     # Average gradients and compute explanation
     expl = (input - input_ref) .* reduce_augmentation(augmented_expl.val, aug.n)
 
-    return Explanation(expl, output, output_indices, augmented_expl.analyzer, nothing)
+    return Explanation(expl, output, output_indices, augmented_expl.analyzer, augmented_expl.heatmap, nothing)
 end
 
 """
