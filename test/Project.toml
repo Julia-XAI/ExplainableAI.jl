@@ -14,7 +14,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
-Aqua = "0.7"
+Aqua = "0.8"
 Distributions = "0.25"
 Flux = "0.13, 0.14"
 ImageCore = "0.9, 0.10"
