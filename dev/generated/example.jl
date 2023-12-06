@@ -22,7 +22,7 @@ expl = analyze(input, analyzer);
 
 expl.analyzer
 
-expl.neuron_selection
+expl.output_selection
 
 expl.val
 

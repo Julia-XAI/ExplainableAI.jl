@@ -39,9 +39,9 @@ heatmap(input, analyzer)
 using ColorSchemes
 
 expl = analyze(input, analyzer)
-heatmap(expl; cs=ColorSchemes.jet)
+heatmap(expl; colorscheme=:jet)
 #-
-heatmap(expl; cs=ColorSchemes.inferno)
+heatmap(expl; colorscheme=:inferno)
 
 # Refer to the [ColorSchemes.jl catalogue](https://juliagraphics.github.io/ColorSchemes.jl/stable/basics/)
 # for a gallery of available color schemes.
@@ -84,9 +84,9 @@ heatmap(expl; rangescale=:centered)
 heatmap(expl; rangescale=:extrema)
 # However, for the `inferno` color scheme, which is not centered around zero,
 # `:extrema` leads to a heatmap with higher contrast.
-heatmap(expl; rangescale=:centered, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:centered, colorscheme=:inferno)
 #-
-heatmap(expl; rangescale=:extrema, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:extrema, colorscheme=:inferno)
 
 # For the full list of `heatmap` keyword arguments, refer to the [`heatmap`](@ref) documentation.
 
@@ -110,11 +110,13 @@ mosaic(heatmaps; nrow=10)
 #
 # If this bevahior is not desired,
 # `heatmap` can be called with the keyword-argument `process_batch=true`:
-heatmaps = heatmap(batch, analyzer; process_batch=true)
+expl = analyze(batch, analyzer)
+heatmaps = heatmap(expl; process_batch=true)
 mosaic(heatmaps; nrow=10)
 
 # This can be useful when comparing heatmaps for fixed output neurons:
-heatmaps = heatmap(batch, analyzer, 7; process_batch=true) # heatmaps for digit "6"
+expl = analyze(batch, analyzer, 7) # explain digit "6"
+heatmaps = heatmap(expl; process_batch=true)
 mosaic(heatmaps; nrow=10)
 
 #md # !!! note "Output type consistency"

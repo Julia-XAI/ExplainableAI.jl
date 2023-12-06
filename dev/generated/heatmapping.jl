@@ -23,9 +23,9 @@ heatmap(input, analyzer)
 using ColorSchemes
 
 expl = analyze(input, analyzer)
-heatmap(expl; cs=ColorSchemes.jet)
+heatmap(expl; colorscheme=:jet)
 
-heatmap(expl; cs=ColorSchemes.inferno)
+heatmap(expl; colorscheme=:inferno)
 
 heatmap(expl; reduce=:sum)
 
@@ -37,9 +37,9 @@ heatmap(expl; rangescale=:centered)
 
 heatmap(expl; rangescale=:extrema)
 
-heatmap(expl; rangescale=:centered, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:centered, colorscheme=:inferno)
 
-heatmap(expl; rangescale=:extrema, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:extrema, colorscheme=:inferno)
 
 xs, ys = MNIST(Float32, :test)[1:100]
 batch = reshape(xs, 28, 28, 1, :); # reshape to WHCN format
@@ -48,10 +48,12 @@ heatmaps = heatmap(batch, analyzer)
 
 mosaic(heatmaps; nrow=10)
 
-heatmaps = heatmap(batch, analyzer; process_batch=true)
+expl = analyze(batch, analyzer)
+heatmaps = heatmap(expl; process_batch=true)
 mosaic(heatmaps; nrow=10)
 
-heatmaps = heatmap(batch, analyzer, 7; process_batch=true) # heatmaps for digit "6"
+expl = analyze(batch, analyzer, 7) # explain digit "6"
+heatmaps = heatmap(expl; process_batch=true)
 mosaic(heatmaps; nrow=10)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
