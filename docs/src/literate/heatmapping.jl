@@ -39,9 +39,9 @@ heatmap(input, analyzer)
 using ColorSchemes
 
 expl = analyze(input, analyzer)
-heatmap(expl; cs=ColorSchemes.jet)
+heatmap(expl; colorscheme=:jet)
 #-
-heatmap(expl; cs=ColorSchemes.inferno)
+heatmap(expl; colorscheme=:inferno)
 
 # Refer to the [ColorSchemes.jl catalogue](https://juliagraphics.github.io/ColorSchemes.jl/stable/basics/)
 # for a gallery of available color schemes.
@@ -84,9 +84,9 @@ heatmap(expl; rangescale=:centered)
 heatmap(expl; rangescale=:extrema)
 # However, for the `inferno` color scheme, which is not centered around zero,
 # `:extrema` leads to a heatmap with higher contrast.
-heatmap(expl; rangescale=:centered, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:centered, colorscheme=:inferno)
 #-
-heatmap(expl; rangescale=:extrema, cs=ColorSchemes.inferno)
+heatmap(expl; rangescale=:extrema, colorscheme=:inferno)
 
 # For the full list of `heatmap` keyword arguments, refer to the [`heatmap`](@ref) documentation.
 
