@@ -1,4 +1,14 @@
 """
+    AugmentationSelector(index)
+
+Neuron selector that passes through an augmented neuron selection.
+"""
+struct AugmentationSelector{I} <: AbstractNeuronSelector
+    indices::I
+end
+(s::AugmentationSelector)(out) = s.indices
+
+"""
     augment_batch_dim(input, n)
 
 Repeat each sample in input batch n-times along batch dimension.
