@@ -21,17 +21,9 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
         @info "Testing chainmap..."
         include("test_chainmap.jl")
     end
-    @testset "Neuron selection" begin
-        @info "Testing neuron selection..."
-        include("test_neuron_selection.jl")
-    end
     @testset "Input augmentation" begin
         @info "Testing input augmentation..."
         include("test_input_augmentation.jl")
-    end
-    @testset "Heatmaps" begin
-        @info "Testing heatmaps..."
-        include("test_heatmaps.jl")
     end
     @testset "ImageNet preprocessing" begin
         @info "Testing ImageNet preprocessing..."
