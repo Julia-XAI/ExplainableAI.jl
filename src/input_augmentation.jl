@@ -159,7 +159,14 @@ function (aug::InterpolationAugmentation)(
     # Average gradients and compute explanation
     expl = (input - input_ref) .* reduce_augmentation(augmented_expl.val, aug.n)
 
-    return Explanation(expl, output, output_indices, augmented_expl.analyzer, augmented_expl.heatmap, nothing)
+    return Explanation(
+        expl,
+        output,
+        output_indices,
+        augmented_expl.analyzer,
+        augmented_expl.heatmap,
+        nothing,
+    )
 end
 
 """

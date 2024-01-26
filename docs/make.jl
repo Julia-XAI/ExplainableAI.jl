@@ -34,18 +34,7 @@ makedocs(;
             "Heatmapping"          => "generated/heatmapping.md",
             "Input augmentations"  => "generated/augmentations.md",
         ],
-        "LRP" => Any[
-            "Basic usage"                   => "generated/lrp/basics.md",
-            "Assigning rules to layers"     => "generated/lrp/composites.md",
-            "Supporting new layer types"    => "generated/lrp/custom_layer.md",
-            "Custom LRP rules"              => "generated/lrp/custom_rules.md",
-            "Concept Relevance Propagation" => "generated/lrp/crp.md",
-            "Developer documentation"       => "lrp/developer.md"
-        ],
-        "API Reference" => Any[
-            "General" => "api.md",
-            "LRP"     => "lrp/api.md"
-        ],
+        "API Reference" => "api.md",
     ],
     #! format: on
     linkcheck=true,

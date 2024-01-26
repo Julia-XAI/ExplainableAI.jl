@@ -24,8 +24,9 @@ convert2image(MNIST, x)
 # ## Automatic heatmap presets
 # The function [`heatmap`](@ref) automatically applies common presets for each method.
 #
-# Since [`InputTimesGradient`](@ref) and [`LRP`](@ref) both compute attributions,
-# their presets are similar. Gradient methods however are typically shown in grayscale:
+# Since [`InputTimesGradient`](@ref) computes attributions,
+# heatmaps are shown in a blue-white-red color scheme.
+# Gradient methods however are typically shown in grayscale:
 analyzer = Gradient(model)
 heatmap(input, analyzer)
 #-
@@ -35,7 +36,7 @@ heatmap(input, analyzer)
 # ## Custom heatmap settings
 # ### Color schemes
 # We can partially or fully override presets by passing keyword arguments to [`heatmap`](@ref).
-# For example, we can use a custom color scheme from ColorSchemes.jl using the keyword argument `cs`:
+# For example, we can use a custom color scheme from ColorSchemes.jl using the keyword argument `colorscheme`:
 using ColorSchemes
 
 expl = analyze(input, analyzer)
