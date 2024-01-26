@@ -1,8 +1,7 @@
 using Flux
 using Flux: flatten
-using ExplainableAI: flatten_model
-using ExplainableAI: has_output_softmax, check_output_softmax, activation_fn
-using ExplainableAI: stabilize_denom, drop_batch_index, masked_copy
+using ExplainableAI: activation_fn, has_output_softmax, check_output_softmax
+using ExplainableAI: drop_batch_index, masked_copy
 using Random
 
 # Test `activation_fn`
@@ -10,10 +9,6 @@ using Random
 @test activation_fn(Conv((5, 5), 3 => 2, softplus)) == softplus
 @test activation_fn(BatchNorm(5, selu)) == selu
 @test isnothing(activation_fn(flatten))
-
-# flatten_model
-@test flatten_model(Chain(Chain(Chain(abs)), sqrt, Chain(relu))) == Chain(abs, sqrt, relu)
-@test flatten_model(Chain(abs, sqrt, relu)) == Chain(abs, sqrt, relu)
 
 # has_output_softmax
 @test has_output_softmax(Chain(abs, sqrt, relu, softmax)) == true
