@@ -1,25 +1,4 @@
 """
-    stabilize_denom(d, [eps = 1f-9])
-
-Replace zero terms of a matrix `d` with `eps`.
-"""
-function stabilize_denom(d::T, eps=T(1.0f-9)) where {T}
-    iszero(d) && (return T(eps))
-    return d + sign(d) * T(eps)
-end
-stabilize_denom(D::AbstractArray{T}, eps=T(1.0f-9)) where {T} = stabilize_denom.(D, eps)
-
-"""
-    safedivide(a, b, [eps = 1f-6])
-
-Elementwise division of two matrices avoiding near zero terms
-in the denominator by replacing them with `± eps`.
-"""
-function safedivide(a::AbstractArray{T}, b::AbstractArray{T}, eps=T(1.0f-9)) where {T}
-    return a ./ stabilize_denom(b, T(eps))
-end
-
-"""
     drop_batch_index(I)
 
 Drop batch dimension index (last value) from CartesianIndex.
@@ -52,11 +31,6 @@ julia> ones_like(x)
 """
 ones_like(x::AbstractArray) = fill!(similar(x), 1)
 ones_like(x::Number) = oneunit(x)
-
-keep_positive(x::Number) = ifelse(x < 0, zero(x), x) # equivalent to relu
-keep_negative(x::Number) = ifelse(x > 0, zero(x), x)
-keep_positive(xs::AbstractArray) = keep_positive.(xs)
-keep_negative(xs::AbstractArray) = keep_negative.(xs)
 
 """
     masked_copy(A, mask)
