@@ -17,7 +17,6 @@ Analyze model by calculating the gradient of a neuron activation with respect to
 struct Gradient{M} <: AbstractXAIMethod
     model::M
     Gradient(model) = new{typeof(model)}(model)
-    Gradient(model::Chain) = new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
 end
 
 function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
@@ -34,9 +33,6 @@ This gradient is then multiplied element-wise with the input.
 struct InputTimesGradient{M} <: AbstractXAIMethod
     model::M
     InputTimesGradient(model) = new{typeof(model)}(model)
-    function InputTimesGradient(model::Chain)
-        new{typeof(model)}(Flux.testmode!(check_output_softmax(model)))
-    end
 end
 
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)

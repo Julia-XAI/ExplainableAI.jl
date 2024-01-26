@@ -7,7 +7,6 @@ using Base.Iterators
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
 using Zygote
-using Flux
 using ImageCore
 using ImageTransformations: imresize
 
