@@ -23,11 +23,6 @@ NoiseAugmentation
 InterpolationAugmentation
 ```
 
-# Input preprocessing
-```@docs
-preprocess_imagenet
-```
-
 # Index
 ```@index
 ```

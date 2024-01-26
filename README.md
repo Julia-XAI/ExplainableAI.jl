@@ -40,10 +40,7 @@ model = strip_softmax(model)
 model = canonize(model)
 
 # Load input
-url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
-img = load(url)
-input = preprocess_imagenet(img)
-input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
+input = ...                       # input in WHCN format
 
 # Run XAI method
 composite = EpsilonPlusFlat()
