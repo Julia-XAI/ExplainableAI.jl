@@ -15,11 +15,9 @@ include("bibliography.jl")
 include("utils.jl")
 include("input_augmentation.jl")
 include("gradient.jl")
-include("preprocessing.jl")
 
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
-export preprocess_imagenet
 
 end # module
