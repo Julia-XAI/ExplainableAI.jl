@@ -38,7 +38,9 @@ end
 function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
-    return Explanation(attr, output, output_indices, :InputTimesGradient, :attribution, nothing)
+    return Explanation(
+        attr, output, output_indices, :InputTimesGradient, :attribution, nothing
+    )
 end
 
 """
