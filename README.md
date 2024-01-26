@@ -161,7 +161,7 @@ Contributions are welcome!
 [streetsign-comp-eabf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stab-url]: https://julia-xai.github.io/ExplainableAI.jl/stable
+[docs-stab-url]: https://julia-xai.github.io/XAIDocs/ExplainableAI/stable/
 
 [docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
 [docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
