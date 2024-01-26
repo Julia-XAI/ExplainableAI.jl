@@ -5,8 +5,6 @@ using BSON # hide
 model = BSON.load("../model.bson", @__MODULE__)[:model] # hide
 model
 
-model = strip_softmax(model);
-
 using MLDatasets
 using ImageCore, ImageIO, ImageShow
 
@@ -17,12 +15,10 @@ convert2image(MNIST, x)
 
 input = reshape(x, 28, 28, 1, :);
 
-analyzer = LRP(model)
+analyzer = InputTimesGradient(model)
 expl = analyze(input, analyzer);
 
 expl.analyzer
-
-expl.output_selection
 
 expl.val
 
