@@ -160,7 +160,7 @@ Contributions are welcome!
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://julia-xai.github.io/XAIDocs/ExplainableAI/stable/
 
-[docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
 
 [ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg

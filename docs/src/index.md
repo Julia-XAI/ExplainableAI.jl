@@ -4,7 +4,12 @@ CurrentModule = ExplainableAI
 
 # ExplainableAI.jl
 
-Explainable AI in Julia.
+Explainable AI methods in Julia.
+
+!!! note
+    This package is part of a wider [Julia XAI ecosystem](https://github.com/Julia-XAI).
+    For an introduction to this ecosystem, please refer to the 
+    [Getting started guide](https://julia-xai.github.io/XAIDocs/).
 
 ## Installation 
 To install this package and its dependencies, open the Julia REPL and run 
@@ -13,7 +18,6 @@ julia> ]add ExplainableAI
 ```
 
 ## Manual
-### General usage
 ```@contents
 Pages = [
     "generated/example.md",
