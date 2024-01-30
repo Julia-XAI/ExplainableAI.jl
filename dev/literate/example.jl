@@ -1,4 +1,10 @@
 # # [Getting started](@id docs-getting-started)
+
+#md # !!! note
+#md #     This package is part of a wider [Julia XAI ecosystem](https://github.com/Julia-XAI).
+#md #     For an introduction to this ecosystem, please refer to the
+#md #     [Getting started guide](https://julia-xai.github.io/XAIDocs/).
+
 # For this first example, we already have loaded a pre-trained LeNet5 model
 # to look at explanations on the MNIST dataset.
 using ExplainableAI
