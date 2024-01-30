@@ -22,7 +22,7 @@ julia> ]add ExplainableAI
 ```
 
 ## Example
-Let's explain why an image of a castle gets classified as such by a vision model:
+Let's explain why an image of a castle is classified as such by a vision model:
 
 ![][castle]
 
@@ -44,17 +44,13 @@ heatmap(expl)
 heatmap(input, analyzer)
 ```
 
-We can also get an explanation for the activation of the output neuron 
-corresponding to the "street sign" class by specifying the corresponding output neuron position `920`:
+By default, explanations are computed for the class with the highest activation.
+We can also compute explanations for a specific class, e.g. the one at output index 5:
 
 ```julia
-analyze(input, analyzer, 920)  # for explanation 
-heatmap(input, analyzer, 920)  # for heatmap
+analyze(input, analyzer, 5)  # for explanation 
+heatmap(input, analyzer, 5)  # for heatmap
 ```
-
-Heatmaps for all implemented analyzers are shown in the following table. 
-Red color indicate regions of positive relevance towards the selected class, 
-whereas regions in blue are of negative relevance.
 
 | **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
 |:--------------------------------------------- |:------------------------------:|:----------------------------------:|
@@ -63,7 +59,21 @@ whereas regions in blue are of negative relevance.
 | `SmoothGrad`                                  | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
 | `IntegratedGradients`                         | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
 
-The code used to generate these heatmaps can be found [here][asset-code].
+> [!TIP]
+> The heatmaps shown above were created using a VGG-16 vision model 
+> from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl)
+> that was pre-trained on the [ImageNet](http://www.image-net.org/) dataset.
+>
+> Since ExplainableAI.jl can be used outside of Deep Learning models and [Flux.jl](https://github.com/FluxML/Flux.jl),
+> we have omitted specific models and inputs from the code snippet above. 
+> The full code used to generate the heatmaps can be found [here][asset-code].
+
+Depending on the method, the applied heatmapping defaults differ:
+sensitivity-based methods (e.g. `Gradient`) default to a grayscale color scheme,
+whereas attribution-based methods (e.g. `InputTimesGradient`) default to a red-white-blue color scheme.
+Red color indicates regions of positive relevance towards the selected class, 
+whereas regions in blue are of negative relevance.
+More information on heatmapping presets can be found in the [Julia-XAI documentation](https://julia-xai.github.io/XAIDocs/XAIDocs/dev/generated/heatmapping/).
 
 > [!WARNING]
 > ExplainableAI.jl used to contain Layer-wise Relevance Propagation (LRP).
