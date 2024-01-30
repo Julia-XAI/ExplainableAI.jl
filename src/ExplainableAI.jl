@@ -7,8 +7,6 @@ using Base.Iterators
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
 using Zygote
-using ImageCore
-using ImageTransformations: imresize
 
 include("compat.jl")
 include("bibliography.jl")
