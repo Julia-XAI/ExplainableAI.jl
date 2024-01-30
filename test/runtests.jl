@@ -13,10 +13,6 @@ pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
         @info "Running Aqua.jl's auto quality assurance tests. These might print warnings from dependencies."
         Aqua.test_all(ExplainableAI; ambiguities=false)
     end
-    @testset "Utilities" begin
-        @info "Testing utilities..."
-        include("test_utils.jl")
-    end
     @testset "Input augmentation" begin
         @info "Testing input augmentation..."
         include("test_input_augmentation.jl")

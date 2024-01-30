@@ -12,7 +12,6 @@ using ImageTransformations: imresize
 
 include("compat.jl")
 include("bibliography.jl")
-include("utils.jl")
 include("input_augmentation.jl")
 include("gradient.jl")
 
