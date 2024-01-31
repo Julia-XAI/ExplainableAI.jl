@@ -12,6 +12,7 @@ include("compat.jl")
 include("bibliography.jl")
 include("input_augmentation.jl")
 include("gradient.jl")
+include("gradcam.jl")
 
 export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
