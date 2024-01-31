@@ -12,6 +12,7 @@ Gradient
 InputTimesGradient
 SmoothGrad
 IntegratedGradients
+GradCAM
 ```
 
 # Input augmentations
