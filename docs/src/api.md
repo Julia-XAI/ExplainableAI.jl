@@ -8,7 +8,6 @@ heatmap
 
 # Analyzers
 ```@docs
-LRP
 Gradient
 InputTimesGradient
 SmoothGrad
@@ -22,18 +21,6 @@ which can be applied as a wrapper to any analyzer:
 ```@docs
 NoiseAugmentation
 InterpolationAugmentation
-```
-
-# Model preparation
-```@docs
-strip_softmax
-canonize
-flatten_model
-```
-
-# Input preprocessing
-```@docs
-preprocess_imagenet
 ```
 
 # Index

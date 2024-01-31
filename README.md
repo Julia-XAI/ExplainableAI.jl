@@ -7,13 +7,13 @@ ___
 
 Explainable AI in Julia.
 
-This package implements interpretability methods for black box models,
-with a focus on local explanations and attribution maps in input space.
+This package implements interpretability methods for black-box classifiers,
+with an emphasis on local explanations and attribution maps in input space.
+The only requirement for the model is that it is differentiable[^1].
 It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
 and [iNNvestigate][innvestigate-repo] for Keras models.
 
-Most of the implemented methods only require the model to be differentiable with [Zygote](https://github.com/FluxML/Zygote.jl).
-Layerwise Relevance Propagation (LRP) is implemented for use with [Flux.jl](https://fluxml.ai) models.
+[^1]: More specifically, models currently have to be differentiable with [Zygote.jl](https://github.com/FluxML/Zygote.jl).
 
 ## Installation 
 This package supports Julia ≥1.6. To install it, open the Julia REPL and run 
@@ -22,33 +22,20 @@ julia> ]add ExplainableAI
 ```
 
 ## Example
-Let's use LRP to explain why an image of a castle gets classified as such 
-using a pre-trained VGG16 model from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl):
+Let's explain why an image of a castle is classified as such by a vision model:
 
 ![][castle]
 
 ```julia
 using ExplainableAI
-using Flux
-using Metalhead                   # pre-trained vision models
-using HTTP, FileIO, ImageMagick   # load image from URL
-using ImageInTerminal             # show heatmap in terminal
 
-# Load model
-model = VGG(16, pretrain=true).layers
-model = strip_softmax(model)
-model = canonize(model)
-
-# Load input
-url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
-img = load(url)
-input = preprocess_imagenet(img)
-input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
+# Load model and input
+model = ...                      # load classifier model
+input = ...                      # input in batch-dimension-last format
 
 # Run XAI method
-composite = EpsilonPlusFlat()
-analyzer = LRP(model, composite)
-expl = analyze(input, analyzer)         # or: expl = analyzer(input)
+analyzer = SmoothGrad(model)
+expl = analyze(input, analyzer)  # or: analyzer(input)
 
 # Show heatmap
 heatmap(expl)
@@ -57,32 +44,50 @@ heatmap(expl)
 heatmap(input, analyzer)
 ```
 
-We can also get an explanation for the activation of the output neuron 
-corresponding to the "street sign" class by specifying the corresponding output neuron position `920`:
+By default, explanations are computed for the class with the highest activation.
+We can also compute explanations for a specific class, e.g. the one at output index 5:
 
 ```julia
-analyze(input, analyzer, 920)  # for explanation 
-heatmap(input, analyzer, 920)  # for heatmap
+analyze(input, analyzer, 5)  # for explanation 
+heatmap(input, analyzer, 5)  # for heatmap
 ```
-
-Heatmaps for all implemented analyzers are shown in the following table. 
-Red color indicate regions of positive relevance towards the selected class, 
-whereas regions in blue are of negative relevance.
 
 | **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
 |:--------------------------------------------- |:------------------------------:|:----------------------------------:|
-| `LRP` with `EpsilonPlus` composite            | ![][castle-comp-ep]            | ![][streetsign-comp-ep]            |
-| `LRP` with `EpsilonPlusFlat` composite        | ![][castle-comp-epf]           | ![][streetsign-comp-epf]           |
-| `LRP` with `EpsilonAlpha2Beta1` composite     | ![][castle-comp-eab]           | ![][streetsign-comp-eab]           |
-| `LRP` with `EpsilonAlpha2Beta1Flat` composite | ![][castle-comp-eabf]          | ![][streetsign-comp-eabf]          |
-| `LRP` with `EpsilonGammaBox` composite        | ![][castle-comp-egb]           | ![][streetsign-comp-egb]           |
-| `LRP`                                         | ![][castle-lrp]                | ![][streetsign-lrp]                |
 | `InputTimesGradient`                          | ![][castle-ixg]                | ![][streetsign-ixg]                |
 | `Gradient`                                    | ![][castle-grad]               | ![][streetsign-grad]               |
 | `SmoothGrad`                                  | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
 | `IntegratedGradients`                         | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
 
-The code used to generate these heatmaps can be found [here][asset-code].
+> [!TIP]
+> The heatmaps shown above were created using a VGG-16 vision model 
+> from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl)
+> that was pre-trained on the [ImageNet](http://www.image-net.org/) dataset.
+>
+> Since ExplainableAI.jl can be used outside of Deep Learning models and [Flux.jl](https://github.com/FluxML/Flux.jl),
+> we have omitted specific models and inputs from the code snippet above. 
+> The full code used to generate the heatmaps can be found [here][asset-code].
+
+Depending on the method, the applied heatmapping defaults differ:
+sensitivity-based methods (e.g. `Gradient`) default to a grayscale color scheme,
+whereas attribution-based methods (e.g. `InputTimesGradient`) default to a red-white-blue color scheme.
+Red color indicates regions of positive relevance towards the selected class, 
+whereas regions in blue are of negative relevance.
+More information on heatmapping presets can be found in the [Julia-XAI documentation](https://julia-xai.github.io/XAIDocs/XAIDocs/dev/generated/heatmapping/).
+
+> [!WARNING]
+> ExplainableAI.jl used to contain Layer-wise Relevance Propagation (LRP).
+> Since version `v0.7.0`, LRP is now available as part of a separate package in the Julia-XAI ecosystem,
+> called [RelevancePropagation.jl](https://github.com/Julia-XAI/RelevancePropagation.jl).
+>
+> | **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
+> |:--------------------------------------------- |:------------------------------:|:----------------------------------:|
+> | `LRP` with `EpsilonPlus` composite            | ![][castle-comp-ep]            | ![][streetsign-comp-ep]            |
+> | `LRP` with `EpsilonPlusFlat` composite        | ![][castle-comp-epf]           | ![][streetsign-comp-epf]           |
+> | `LRP` with `EpsilonAlpha2Beta1` composite     | ![][castle-comp-eab]           | ![][streetsign-comp-eab]           |
+> | `LRP` with `EpsilonAlpha2Beta1Flat` composite | ![][castle-comp-eabf]          | ![][streetsign-comp-eabf]          |
+> | `LRP` with `EpsilonGammaBox` composite        | ![][castle-comp-egb]           | ![][streetsign-comp-egb]           |
+> | `LRP`                                         | ![][castle-lrp]                | ![][streetsign-lrp]                |
 
 ## Video demonstration
 Check out our talk at JuliaCon 2022 for a demonstration of the package.
@@ -96,29 +101,10 @@ Currently, the following analyzers are implemented:
 * `InputTimesGradient`
 * `SmoothGrad`
 * `IntegratedGradients`
-* `LRP`
-  * Rules
-    * `ZeroRule`
-    * `EpsilonRule`
-    * `GammaRule`
-    * `GeneralizedGammaRule`
-    * `WSquareRule`
-    * `FlatRule`
-    * `ZBoxRule`
-    * `ZPlusRule`
-    * `AlphaBetaRule`
-    * `PassRule`
-  * Composites
-    * `EpsilonGammaBox`
-    * `EpsilonPlus`
-    * `EpsilonPlusFlat`
-    * `EpsilonAlpha2Beta1`
-    * `EpsilonAlpha2Beta1Flat`
-  * `CRP`
 
-One of the design goals of ExplainableAI.jl is extensibility.
-Custom [composites][docs-composites] are easily defined 
-and the package is easily extended by [custom rules][docs-custom-rules].
+One of the design goals of the [Julia-XAI ecosystem][juliaxai-docs] is extensibility.
+To implement an XAI method, take a look at the [common interface
+defined in XAIBase.jl][xaibase-docs].
 
 ## Roadmap
 In the future, we would like to include:
@@ -134,6 +120,9 @@ Contributions are welcome!
 > for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
 [banner-img]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/banner.png
+[juliaxai-docs]: https://julia-xai.github.io/XAIDocs/
+[xaibase-docs]: https://julia-xai.github.io/XAIDocs/XAIBase/
+
 
 [asset-code]: https://github.com/Julia-XAI/ExplainableAI.jl/blob/gh-pages/assets/heatmaps/generate_assets.jl
 [castle]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg
@@ -161,9 +150,9 @@ Contributions are welcome!
 [streetsign-comp-eabf]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/streetsign_LRPEpsilonAlpha2Beta1Flat.png
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stab-url]: https://julia-xai.github.io/ExplainableAI.jl/stable
+[docs-stab-url]: https://julia-xai.github.io/XAIDocs/ExplainableAI/stable/
 
-[docs-dev-img]: https://img.shields.io/badge/docs-main-blue.svg
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
 
 [ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg

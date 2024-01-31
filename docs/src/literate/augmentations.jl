@@ -56,9 +56,8 @@ heatmap(input, analyzer)
 
 # Is is also possible to define your own distributions or mixture distributions.
 #
-# `NoiseAugmentation` can be combined with any analyzer type, for example [`LRP`](@ref):
-analyzer = NoiseAugmentation(LRP(model), 50)
-heatmap(input, analyzer)
+# `NoiseAugmentation` can be combined with any analyzer type from the Julia-XAI ecosystem,
+# for example `LRP` from [RelevancePropagation.jl](https://github.com/Julia-XAI/RelevancePropagation.jl).
 
 # ## Integration augmentation
 # The [`InterpolationAugmentation`](@ref) wrapper computes explanations
@@ -80,7 +79,5 @@ analyzer = InterpolationAugmentation(Gradient(model), 50)
 expl = analyzer(input; input_ref=matrix_of_ones)
 heatmap(expl)
 
-# Once again, `InterpolationAugmentation` can be combined with any analyzer type,
-# for example [`LRP`](@ref):
-analyzer = InterpolationAugmentation(LRP(model), 50)
-heatmap(input, analyzer)
+# Once again, `InterpolationAugmentation` can be combined with any analyzer type from the Julia-XAI ecosystem,
+# for example `LRP` from [RelevancePropagation.jl](https://github.com/Julia-XAI/RelevancePropagation.jl).

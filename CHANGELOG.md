@@ -1,4 +1,19 @@
 # ExplainableAI.jl
+## Version `v0.7.0`
+This release moves the core interface (`Explanation`, `heatmap`, `analyze`) 
+into a separate package called [XAIBase.jl](https://github.com/Julia-XAI/XAIBase.jl).
+Developers can make use of the [XAIBase.jl interface](https://julia-xai.github.io/XAIDocs/XAIBase/)
+to quickly implement or prototype new methods without having to write boilerplate code.
+
+As announced with version `v0.6.2`, this is first release without LRP, which has been moved to a separate package called [RelevancePropagation.jl](https://github.com/Julia-XAI/RelevancePropagation.jl). This separation is enabled by the new common XAIBase.jl interface.
+
+- ![BREAKING][badge-breaking] Move core interface into XAIBase.jl package ([#154][pr-154]).
+  - Renamed `Explanation` field `neuron_selection` to `output_selection`
+  - Added `Explanation` field `heatmap` for heatmapping presets
+- ![BREAKING][badge-breaking] Move LRP into RelevancePropagation.jl ([#157][pr-157])
+- ![BREAKING][badge-breaking] Remove ImageNet preprocessing utilities ([#159][pr-159])
+- ![Documentation][badge-docs] Partially move documentation into the [Julia-XAI ecosystem documentation](https://github.com/Julia-XAI/XAIDocs)
+
 ## Version `v0.6.3`
 - ![Enhancement][badge-enhancement] Allow Gradient analyzers on non-Flux models ([#150][pr-150])
 - ![Bugfix][badge-bugfix] Fix typo in `BATCHDIM_MISSING` error ([#150][pr-150])
@@ -180,6 +195,9 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
+[pr-159]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/159
+[pr-157]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/157
+[pr-154]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/154
 [pr-150]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/150
 [pr-149]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/149
 [pr-148]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/148

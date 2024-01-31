@@ -1,6 +1,6 @@
-using ExplainableAI
 using Documenter
 using Literate
+using ExplainableAI
 
 LITERATE_DIR = joinpath(@__DIR__, "src/literate")
 OUT_DIR = joinpath(@__DIR__, "src/generated")
@@ -22,7 +22,7 @@ end
 convert_literate(LITERATE_DIR, OUT_DIR)
 
 makedocs(;
-    modules=[ExplainableAI],
+    modules=[XAIBase, ExplainableAI],
     authors="Adrian Hill",
     sitename="ExplainableAI.jl",
     format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),
@@ -34,18 +34,7 @@ makedocs(;
             "Heatmapping"          => "generated/heatmapping.md",
             "Input augmentations"  => "generated/augmentations.md",
         ],
-        "LRP" => Any[
-            "Basic usage"                   => "generated/lrp/basics.md",
-            "Assigning rules to layers"     => "generated/lrp/composites.md",
-            "Supporting new layer types"    => "generated/lrp/custom_layer.md",
-            "Custom LRP rules"              => "generated/lrp/custom_rules.md",
-            "Concept Relevance Propagation" => "generated/lrp/crp.md",
-            "Developer documentation"       => "lrp/developer.md"
-        ],
-        "API Reference" => Any[
-            "General" => "api.md",
-            "LRP"     => "lrp/api.md"
-        ],
+        "API Reference" => "api.md",
     ],
     #! format: on
     linkcheck=true,
@@ -53,6 +42,7 @@ makedocs(;
         r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10",
         r"https://www.nature.com/articles/s42256-023-00711-8",
     ],
+    warnonly=[:missing_docs],
     checkdocs=:exports, # only check docstrings in API reference if they are exported
 )
 
