@@ -8,7 +8,7 @@ ins = 20
 outs = 10
 batchsize = 15
 
-model = Chain(Dense(ins, outs, relu; init=pseudorand))
+model = Chain(Dense(ins, 15, relu; init=pseudorand), Dense(15, outs, relu; init=pseudorand))
 
 # Input 1 w/o batch dimension
 input1_no_bd = rand(MersenneTwister(1), Float32, ins)
@@ -24,6 +24,7 @@ ANALYZERS = Dict(
     "InputTimesGradient"  => InputTimesGradient,
     "SmoothGrad"          => m -> SmoothGrad(m, 5, 0.1, MersenneTwister(123)),
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
+    "GradCAM"             => m -> GradCAM(m[1], m[2]),
 )
 
 for (name, method) in ANALYZERS
