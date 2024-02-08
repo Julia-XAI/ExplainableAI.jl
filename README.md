@@ -101,6 +101,7 @@ Currently, the following analyzers are implemented:
 * `InputTimesGradient`
 * `SmoothGrad`
 * `IntegratedGradients`
+* `GradCAM`
 
 One of the design goals of the [Julia-XAI ecosystem][juliaxai-docs] is extensibility.
 To implement an XAI method, take a look at the [common interface
