@@ -1,8 +1,19 @@
 """
-    GradCAM
+    GradCAM(feature_layers, adaptation_layers)
 
-Analyze model by calculating the gradient of a neuron activation with respect to the input.
-This gradient is then used to calculate the Class Activation Map.
+Calculates the Gradient-weighted Class Activation Map (GradCAM).
+GradCAM provides a visual explanation of the regions with significant neuron importance for the model's classification decision.
+
+# Parameters
+- `feature_layers`: The layers of a convolutional neural network (CNN) responsible for extracting feature maps.
+- `adaptation_layers`: The layers of the CNN used for adaptation and classification.
+
+# Note
+Flux is not required for GradCAM. 
+GradCAM is compatible with a wide variety of CNN model-families.
+
+# References
+- $REF_SELVARAJU_GRADCAM
 """
 struct GradCAM{F,A} <: AbstractXAIMethod
     feature_layers::F
