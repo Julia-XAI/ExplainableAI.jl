@@ -25,7 +25,11 @@ makedocs(;
     modules=[XAIBase, ExplainableAI],
     authors="Adrian Hill",
     sitename="ExplainableAI.jl",
-    format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true", assets=String[]),
+    format=Documenter.HTML(;
+        prettyurls=get(ENV, "CI", "false") == "true",
+        size_threshold=300_000,
+        assets=String[],
+    ),
     #! format: off
     pages=[
         "Home" => "index.md",

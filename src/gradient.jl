@@ -1,4 +1,4 @@
-function gradient_wrt_input(model, input, ns::AbstractNeuronSelector)
+function gradient_wrt_input(model, input, ns::AbstractOutputSelector)
     output, back = Zygote.pullback(model, input)
     output_indices = ns(output)
 
@@ -19,7 +19,7 @@ struct Gradient{M} <: AbstractXAIMethod
     Gradient(model) = new{typeof(model)}(model)
 end
 
-function (analyzer::Gradient)(input, ns::AbstractNeuronSelector)
+function (analyzer::Gradient)(input, ns::AbstractOutputSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     return Explanation(grad, output, output_indices, :Gradient, :sensitivity, nothing)
 end
@@ -35,7 +35,7 @@ struct InputTimesGradient{M} <: AbstractXAIMethod
     InputTimesGradient(model) = new{typeof(model)}(model)
 end
 
-function (analyzer::InputTimesGradient)(input, ns::AbstractNeuronSelector)
+function (analyzer::InputTimesGradient)(input, ns::AbstractOutputSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
     return Explanation(

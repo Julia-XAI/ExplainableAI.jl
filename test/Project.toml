@@ -10,11 +10,3 @@ Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
 
-[compat]
-Aqua = "0.8"
-Distributions = "0.25"
-Flux = "0.13, 0.14"
-JLD2 = "0.4"
-ReferenceTests = "0.10"
-Suppressor = "0.2"
-XAIBase = "1.2"

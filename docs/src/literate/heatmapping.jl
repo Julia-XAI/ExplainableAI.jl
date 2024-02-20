@@ -1,11 +1,15 @@
 # # [Heatmapping](@id docs-heatmapping)
 # Since numerical explanations are not very informative at first sight,
-# we can visualize them by computing a [`heatmap`](@ref).
+# we can visualize them by computing a `heatmap`, using either
+# [VisionHeatmaps.jl](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/) or
+# [TextHeatmaps.jl](https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/).
+#
 # This page showcases different options and preset for heatmapping,
 # building on the basics shown in the [*Getting started*](@ref docs-getting-started) section.
 #
 # We start out by loading the same pre-trained LeNet5 model and MNIST input data:
 using ExplainableAI
+using VisionHeatmaps
 using Flux
 
 using BSON # hide
@@ -19,10 +23,10 @@ index = 10
 x, y = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :)
 
-convert2image(MNIST, x)
+img = convert2image(MNIST, x)
 
 # ## Automatic heatmap presets
-# The function [`heatmap`](@ref) automatically applies common presets for each method.
+# The function `heatmap` automatically applies common presets for each method.
 #
 # Since [`InputTimesGradient`](@ref) computes attributions,
 # heatmaps are shown in a blue-white-red color scheme.
@@ -35,7 +39,7 @@ heatmap(input, analyzer)
 
 # ## Custom heatmap settings
 # ### Color schemes
-# We can partially or fully override presets by passing keyword arguments to [`heatmap`](@ref).
+# We can partially or fully override presets by passing keyword arguments to `heatmap`.
 # For example, we can use a custom color scheme from ColorSchemes.jl using the keyword argument `colorscheme`:
 using ColorSchemes
 
@@ -89,20 +93,32 @@ heatmap(expl; rangescale=:centered, colorscheme=:inferno)
 #-
 heatmap(expl; rangescale=:extrema, colorscheme=:inferno)
 
-# For the full list of `heatmap` keyword arguments, refer to the [`heatmap`](@ref) documentation.
+# For the full list of `heatmap` keyword arguments, refer to the `heatmap` documentation.
+
+# ## [Heatmap overlays](@id overlay)
+# Heatmaps can be overlaid onto the input image using the `heatmap_overlay` function
+# from VisionHeatmaps.jl.
+# This can be useful for visualizing the relevance of specific regions of the input:
+heatmap_overlay(expl, img)
+
+# The alpha value of the heatmap can be adjusted using the `alpha` keyword argument:
+heatmap_overlay(expl, img; alpha=0.3)
+
+# All previously discussed keyword arguments for `heatmap` can also be used with `heatmap_overlay`:
+heatmap_overlay(expl, img; alpha=0.7, colorscheme=:inferno, rangescale=:extrema)
 
 # ## [Heatmapping batches](@id docs-heatmapping-batches)
 # Heatmapping also works with input batches.
-# Let's demonstrate this by using a batch of 100 images from the MNIST dataset:
-xs, ys = MNIST(Float32, :test)[1:100]
+# Let's demonstrate this by using a batch of 25 images from the MNIST dataset:
+xs, ys = MNIST(Float32, :test)[1:25]
 batch = reshape(xs, 28, 28, 1, :); # reshape to WHCN format
 
-# The [`heatmap`](@ref) function automatically recognizes
+# The `heatmap` function automatically recognizes
 # that the explanation is batched and returns a `Vector` of images:
 heatmaps = heatmap(batch, analyzer)
 
 # Image.jl's `mosaic` function can used to display them in a grid:
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 # When heatmapping batches, the mapping to the color scheme is applied per sample.
 # For example, `rangescale=:extrema` will normalize each heatmap
@@ -113,12 +129,12 @@ mosaic(heatmaps; nrow=10)
 # `heatmap` can be called with the keyword-argument `process_batch=true`:
 expl = analyze(batch, analyzer)
 heatmaps = heatmap(expl; process_batch=true)
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 # This can be useful when comparing heatmaps for fixed output neurons:
 expl = analyze(batch, analyzer, 7) # explain digit "6"
 heatmaps = heatmap(expl; process_batch=true)
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 #md # !!! note "Output type consistency"
 #md #

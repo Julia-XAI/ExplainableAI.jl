@@ -1,7 +1,7 @@
 name = "ExplainableAI"
 uuid = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 authors = ["Adrian Hill <gh@adrianhill.de>"]
-version = "0.7.0"
+version = "0.8.0-DEV"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -16,6 +16,6 @@ Distributions = "0.25"
 Random = "1"
 Reexport = "1"
 Statistics = "1"
-XAIBase = "1.2"
+XAIBase = "3"
 Zygote = "0.6"
 julia = "1.6"

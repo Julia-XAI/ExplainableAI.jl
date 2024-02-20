@@ -19,7 +19,7 @@ struct GradCAM{F,A} <: AbstractXAIMethod
     feature_layers::F
     adaptation_layers::A
 end
-function (analyzer::GradCAM)(input, ns::AbstractNeuronSelector)
+function (analyzer::GradCAM)(input, ns::AbstractOutputSelector)
     A = analyzer.feature_layers(input)  # feature map
     feature_map_size = size(A, 1) * size(A, 2)
 

@@ -10,3 +10,7 @@ ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+VisionHeatmaps = "27106da1-f8bc-4ca8-8c66-9b8289f1e035"
+
+[compat]
+VisionHeatmaps = "1.4"

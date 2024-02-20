@@ -3,7 +3,7 @@
 
 Neuron selector that passes through an augmented neuron selection.
 """
-struct AugmentationSelector{I} <: AbstractNeuronSelector
+struct AugmentationSelector{I} <: AbstractOutputSelector
     indices::I
 end
 (s::AugmentationSelector)(out) = s.indices
@@ -103,7 +103,7 @@ function NoiseAugmentation(analyzer, n, σ::Real=0.1f0, args...)
     return NoiseAugmentation(analyzer, n, Normal(0.0f0, Float32(σ)^2), args...)
 end
 
-function (aug::NoiseAugmentation)(input, ns::AbstractNeuronSelector)
+function (aug::NoiseAugmentation)(input, ns::AbstractOutputSelector)
     # Regular forward pass of model
     output = aug.analyzer.model(input)
     output_indices = ns(output)
@@ -142,7 +142,7 @@ struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
 end
 
 function (aug::InterpolationAugmentation)(
-    input, ns::AbstractNeuronSelector; input_ref=zero(input)
+    input, ns::AbstractOutputSelector; input_ref=zero(input)
 )
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))

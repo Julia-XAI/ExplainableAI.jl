@@ -46,12 +46,6 @@ Flux.testmode!(model, true)
     @test_reference "references/cnn/Gradient_max.jld2" Dict("expl" => expl.val) by =
         (r, a) -> isapprox(r["expl"], a["expl"]; rtol=0.05)
 
-    # Test direct call of heatmap
-    h1 = heatmap(expl)
-    h2 = heatmap(input, analyzer)
-    @test h1 ≈ h2
-    @test_reference "references/heatmaps/cnn_Gradient.txt" h1
-
     # Test neuron selection
     expl = analyze(input, analyzer, 1)
     expl2 = analyzer(input, 1)
