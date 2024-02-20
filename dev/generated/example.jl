@@ -22,6 +22,8 @@ expl.analyzer
 
 expl.val
 
+using VisionHeatmaps
+
 heatmap(expl)
 
 heatmap(input, analyzer)

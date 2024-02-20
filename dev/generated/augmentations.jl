@@ -1,4 +1,5 @@
 using ExplainableAI
+using VisionHeatmaps
 using Flux
 
 using BSON # hide

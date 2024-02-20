@@ -68,7 +68,11 @@ expl.val
 
 # ## Heatmapping basics
 # Since the array `expl.val` is not very informative at first sight,
-# we can visualize `Explanation`s by computing a [`heatmap`](@ref):
+# we can visualize `Explanation`s by computing a `heatmap` using either
+# [VisionHeatmaps.jl](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/) or
+# [TextHeatmaps.jl](https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/).
+using VisionHeatmaps
+
 heatmap(expl)
 
 # If we are only interested in the heatmap, we can combine analysis and heatmapping
@@ -92,7 +96,7 @@ heatmap(expl)
 
 #md # !!! note
 #md #
-#md #     The output neuron can also be specified when calling [`heatmap`](@ref):
+#md #     The output neuron can also be specified when calling `heatmap`:
 #md #     ```julia
 #md #     heatmap(input, analyzer, 5)
 #md #     ```
