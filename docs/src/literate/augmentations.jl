@@ -7,6 +7,7 @@
 # We build on the basics shown in the [*Getting started*](@ref docs-getting-started) section
 # and start out by loading the same pre-trained LeNet5 model and MNIST input data:
 using ExplainableAI
+using VisionHeatmaps
 using Flux
 
 using BSON # hide
