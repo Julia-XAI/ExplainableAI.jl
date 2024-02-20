@@ -23,7 +23,7 @@ index = 10
 x, y = MNIST(Float32, :test)[10]
 input = reshape(x, 28, 28, 1, :)
 
-convert2image(MNIST, x)
+img = convert2image(MNIST, x)
 
 # ## Automatic heatmap presets
 # The function `heatmap` automatically applies common presets for each method.
@@ -95,10 +95,22 @@ heatmap(expl; rangescale=:extrema, colorscheme=:inferno)
 
 # For the full list of `heatmap` keyword arguments, refer to the `heatmap` documentation.
 
+# ## [Heatmap overlays](@id overlay)
+# Heatmaps can be overlaid onto the input image using the `heatmap_overlay` function
+# from VisionHeatmaps.jl.
+# This can be useful for visualizing the relevance of specific regions of the input:
+heatmap_overlay(expl, img)
+
+# The alpha value of the heatmap can be adjusted using the `alpha` keyword argument:
+heatmap_overlay(expl, img; alpha=0.3)
+
+# All previously discussed keyword arguments for `heatmap` can also be used with `heatmap_overlay`:
+heatmap_overlay(expl, img; alpha=0.7, colorscheme=:inferno, rangescale=:extrema)
+
 # ## [Heatmapping batches](@id docs-heatmapping-batches)
 # Heatmapping also works with input batches.
-# Let's demonstrate this by using a batch of 100 images from the MNIST dataset:
-xs, ys = MNIST(Float32, :test)[1:100]
+# Let's demonstrate this by using a batch of 25 images from the MNIST dataset:
+xs, ys = MNIST(Float32, :test)[1:25]
 batch = reshape(xs, 28, 28, 1, :); # reshape to WHCN format
 
 # The `heatmap` function automatically recognizes
@@ -106,7 +118,7 @@ batch = reshape(xs, 28, 28, 1, :); # reshape to WHCN format
 heatmaps = heatmap(batch, analyzer)
 
 # Image.jl's `mosaic` function can used to display them in a grid:
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 # When heatmapping batches, the mapping to the color scheme is applied per sample.
 # For example, `rangescale=:extrema` will normalize each heatmap
@@ -117,12 +129,12 @@ mosaic(heatmaps; nrow=10)
 # `heatmap` can be called with the keyword-argument `process_batch=true`:
 expl = analyze(batch, analyzer)
 heatmaps = heatmap(expl; process_batch=true)
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 # This can be useful when comparing heatmaps for fixed output neurons:
 expl = analyze(batch, analyzer, 7) # explain digit "6"
 heatmaps = heatmap(expl; process_batch=true)
-mosaic(heatmaps; nrow=10)
+mosaic(heatmaps; nrow=5)
 
 #md # !!! note "Output type consistency"
 #md #
