@@ -1,4 +1,15 @@
 # ExplainableAI.jl
+## Version `v0.8.0`
+This release removes the automatic reexport of heatmapping functionality.
+Users are now required to manually load 
+[VisionHeatmaps.jl][VisionHeatmaps] and/or [TextHeatmaps.jl][TextHeatmaps].
+
+This reduces the maintenance burden for new heatmapping features 
+and the amount of dependencies for users who don't need heatmapping functionality.
+
+* ![BREAKING][badge-breaking] Removed reexport of heatmapping functionality by updating XAIBase dependency to `v3.0.0` ([#162][pr-162]).
+* ![Feature][badge-feature] Added `GradCAM` analyzer ([#155][pr-155]). Try it with [VisionHeatmaps.jl][VisionHeatmaps]'s new `heatmap_overlay` feature.
+
 ## Version `v0.7.0`
 This release moves the core interface (`Explanation`, `heatmap`, `analyze`) 
 into a separate package called [XAIBase.jl](https://github.com/Julia-XAI/XAIBase.jl).
@@ -195,8 +206,14 @@ Performance improvements:
 ![Maintenance][badge-maintenance]
 ![Documentation][badge-docs]
 -->
+
+[VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
+[TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
+
+[pr-162]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/162
 [pr-159]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/159
 [pr-157]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/157
+[pr-155]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/155
 [pr-154]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/154
 [pr-150]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/150
 [pr-149]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/149
