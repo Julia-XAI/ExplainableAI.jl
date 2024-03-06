@@ -87,9 +87,9 @@ More information on heatmapping presets can be found in the [Julia-XAI documenta
 > | `LRP` with `EpsilonAlpha2Beta1` composite     | ![][castle-comp-eab]           | ![][streetsign-comp-eab]           |
 > | `LRP` with `EpsilonAlpha2Beta1Flat` composite | ![][castle-comp-eabf]          | ![][streetsign-comp-eabf]          |
 > | `LRP` with `EpsilonGammaBox` composite        | ![][castle-comp-egb]           | ![][streetsign-comp-egb]           |
-> | `LRP`                                         | ![][castle-lrp]                | ![][streetsign-lrp]                |
+> | `LRP` with `ZeroRule` (discouraged)           | ![][castle-lrp]                | ![][streetsign-lrp]                |
 
-## Video demonstration
+## Video Demonstration
 Check out our talk at JuliaCon 2022 for a demonstration of the package.
 
 [![][juliacon-img]][juliacon-url]
