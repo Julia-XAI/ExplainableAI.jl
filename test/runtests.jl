@@ -1,11 +1,7 @@
 using ExplainableAI
-using Flux
-using Test
-using ReferenceTests
-using Aqua
-using Random
 
-pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
+using Test
+using Aqua
 
 @testset "ExplainableAI.jl" begin
     @testset "Aqua.jl" begin

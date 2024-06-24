@@ -1,5 +1,6 @@
 using ExplainableAI: augment_batch_dim, augment_indices, reduce_augmentation
 using ExplainableAI: interpolate_batch
+using Test
 
 # augment_batch_dim
 A = [1 2; 3 4]

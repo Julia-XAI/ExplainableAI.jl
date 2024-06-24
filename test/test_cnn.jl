@@ -1,5 +1,9 @@
 using ExplainableAI
+using Test
+using ReferenceTests
+
 using Flux
+using Random
 using JLD2
 
 const GRADIENT_ANALYZERS = Dict(
@@ -8,6 +12,8 @@ const GRADIENT_ANALYZERS = Dict(
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
     "GradCAM"             => m -> GradCAM(m[1], m[2]),
 )
+
+pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 
 input_size = (32, 32, 3, 1)
 input = pseudorand(input_size)
