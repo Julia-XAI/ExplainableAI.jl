@@ -6,18 +6,22 @@ using Aqua
 using JET
 
 @testset "ExplainableAI.jl" begin
-    @testset "Code formatting" begin
-        @info "Testing code formatting with JuliaFormatter..."
-        @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)
+    @info "Testing formalities..."
+    if VERSION >= v"1.10"
+        @testset "Code formatting" begin
+            @info "- Testing code formatting with JuliaFormatter..."
+            @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)
+        end
+        @testset "Aqua.jl" begin
+            @info "- Running Aqua.jl tests. These might print warnings from dependencies..."
+            Aqua.test_all(ExplainableAI; ambiguities=false)
+        end
+        @testset "JET tests" begin
+            @info "- Testing type stability with JET..."
+            JET.test_package(ExplainableAI; target_defined_modules=true)
+        end
     end
-    @testset "Aqua.jl" begin
-        @info "Running Aqua.jl's auto quality assurance tests. These might print warnings from dependencies..."
-        Aqua.test_all(ExplainableAI; ambiguities=false)
-    end
-    @testset "JET tests" begin
-        @info "Testing type stability with JET..."
-        JET.test_package(ExplainableAI; target_defined_modules=true)
-    end
+
     @testset "Input augmentation" begin
         @info "Testing input augmentation..."
         include("test_input_augmentation.jl")
