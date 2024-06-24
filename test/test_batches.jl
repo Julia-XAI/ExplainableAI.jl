@@ -1,7 +1,11 @@
-using Flux
 using ExplainableAI
+using Test
+
+using Flux
 using Random
 using Distributions: Laplace
+
+pseudorand(dims...) = rand(MersenneTwister(123), Float32, dims...)
 
 ## Test `fuse_batchnorm` on Dense and Conv layers
 ins = 20

@@ -3,7 +3,7 @@ ___
 
 | **Documentation** | **Build Status** | **DOI** |
 |:----------------- |:---------------- |:------- |
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Aqua QA][aqua-img]][aqua-url] | [![][doi-img]][doi-url] |
+| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Aqua][aqua-img]][aqua-url] [![JET][jet-img]][jet-url] | [![][doi-img]][doi-url] |
 
 Explainable AI in Julia.
 
@@ -164,6 +164,9 @@ Contributions are welcome!
 
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
+
+[jet-img]: https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a
+[jet-url]: https://github.com/aviatesk/JET.jl
 
 [docs-composites]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
 [docs-custom-rules]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
