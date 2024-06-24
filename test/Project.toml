@@ -2,11 +2,12 @@
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceTests = "324d217c-45ce-50fc-942e-d289b448e8cf"
 Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
-

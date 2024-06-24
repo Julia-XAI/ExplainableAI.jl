@@ -1,12 +1,22 @@
 using ExplainableAI
 
 using Test
+using JuliaFormatter
 using Aqua
+using JET
 
 @testset "ExplainableAI.jl" begin
+    @testset "Code formatting" begin
+        @info "Testing code formatting with JuliaFormatter..."
+        @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)
+    end
     @testset "Aqua.jl" begin
-        @info "Running Aqua.jl's auto quality assurance tests. These might print warnings from dependencies."
+        @info "Running Aqua.jl's auto quality assurance tests. These might print warnings from dependencies..."
         Aqua.test_all(ExplainableAI; ambiguities=false)
+    end
+    @testset "JET tests" begin
+        @info "Testing type stability with JET..."
+        JET.test_package(ExplainableAI; target_defined_modules=true)
     end
     @testset "Input augmentation" begin
         @info "Testing input augmentation..."
