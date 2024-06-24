@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Hill"
+    given-names: "Adrian"
+    orcid: "https://orcid.org/0009-0009-5977-301X"
+title: "ExplainableAI.jl"
+version: 0.1.0
+date-released: 2021-10-30
+url: "https://github.com/Julia-XAI/ExplainableAI.jl"
