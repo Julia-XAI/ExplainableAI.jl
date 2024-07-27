@@ -116,6 +116,7 @@ function (aug::NoiseAugmentation)(input, ns::AbstractOutputSelector)
     # Average explanation
     return Explanation(
         reduce_augmentation(augmented_expl.val, aug.n),
+        input,
         output,
         output_indices,
         augmented_expl.analyzer,
@@ -161,6 +162,7 @@ function (aug::InterpolationAugmentation)(
 
     return Explanation(
         expl,
+        input,
         output,
         output_indices,
         augmented_expl.analyzer,

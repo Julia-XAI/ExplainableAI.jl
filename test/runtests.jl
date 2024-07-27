@@ -6,8 +6,8 @@ using Aqua
 using JET
 
 @testset "ExplainableAI.jl" begin
-    @info "Testing formalities..."
     if VERSION >= v"1.10"
+        @info "Testing formalities..."
         @testset "Code formatting" begin
             @info "- Testing code formatting with JuliaFormatter..."
             @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)

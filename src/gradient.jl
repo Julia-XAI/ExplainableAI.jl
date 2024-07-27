@@ -21,7 +21,9 @@ end
 
 function (analyzer::Gradient)(input, ns::AbstractOutputSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
-    return Explanation(grad, output, output_indices, :Gradient, :sensitivity, nothing)
+    return Explanation(
+        grad, input, output, output_indices, :Gradient, :sensitivity, nothing
+    )
 end
 
 """
@@ -39,7 +41,7 @@ function (analyzer::InputTimesGradient)(input, ns::AbstractOutputSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
     return Explanation(
-        attr, output, output_indices, :InputTimesGradient, :attribution, nothing
+        attr, input, output, output_indices, :InputTimesGradient, :attribution, nothing
     )
 end
 
