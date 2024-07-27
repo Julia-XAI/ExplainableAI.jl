@@ -2,6 +2,7 @@ module ExplainableAI
 
 using Reexport
 @reexport using XAIBase
+import XAIBase: call_analyzer
 
 using Base.Iterators
 using Distributions: Distribution, Sampleable, Normal

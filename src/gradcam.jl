@@ -19,7 +19,7 @@ struct GradCAM{F,A} <: AbstractXAIMethod
     feature_layers::F
     adaptation_layers::A
 end
-function (analyzer::GradCAM)(input, ns::AbstractOutputSelector)
+function call_analyzer(input, analyzer::GradCAM, ns::AbstractOutputSelector; kwargs...)
     A = analyzer.feature_layers(input)  # feature map
     feature_map_size = size(A, 1) * size(A, 2)
 
@@ -27,5 +27,5 @@ function (analyzer::GradCAM)(input, ns::AbstractOutputSelector)
     grad, output, output_indices = gradient_wrt_input(analyzer.adaptation_layers, A, ns)
     αᶜ = sum(grad; dims=(1, 2)) / feature_map_size
     Lᶜ = max.(sum(αᶜ .* A; dims=3), 0)
-    return Explanation(Lᶜ, output, output_indices, :GradCAM, :cam, nothing)
+    return Explanation(Lᶜ, input, output, output_indices, :GradCAM, :cam, nothing)
 end
