@@ -1,6 +1,7 @@
 # ExplainableAI.jl
-## Version `v0.8.1`
+## Version `v0.9.0`
 - ![Feature][badge-feature] Support selection of AD backend via DifferentiationInterface.jl ([#167])
+  - `Gradient`, `InputTimesGradient` and `GradCAM` analyzers now have an additional `backend` field and type parameter
 - ![Maintenance][badge-maintenance] Update XAIBase interface to v4 ([#166])
 
 ## Version `v0.8.0`
