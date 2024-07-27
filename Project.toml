@@ -4,6 +4,8 @@ authors = ["Adrian Hill <gh@adrianhill.de>"]
 version = "0.8.1"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
@@ -12,6 +14,8 @@ XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+ADTypes = "1"
+DifferentiationInterface = "0.5"
 Distributions = "0.25"
 Random = "<0.0.1, 1"
 Reexport = "1"
