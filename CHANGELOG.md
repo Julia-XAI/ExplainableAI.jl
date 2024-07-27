@@ -1,4 +1,8 @@
 # ExplainableAI.jl
+## Version `v0.8.1`
+- ![Feature][badge-feature] Support selection of AD backend via DifferentiationInterface.jl ([#167])
+- ![Maintenance][badge-maintenance] Update XAIBase interface to v4 ([#166])
+
 ## Version `v0.8.0`
 This release removes the automatic reexport of heatmapping functionality.
 Users are now required to manually load 
@@ -210,6 +214,8 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#167]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/167
+[#166]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/166
 [#162]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/162
 [#159]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/159
 [#157]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/157
