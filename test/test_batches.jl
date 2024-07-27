@@ -14,14 +14,12 @@ batchsize = 15
 
 model = Chain(Dense(ins, 15, relu; init=pseudorand), Dense(15, outs, relu; init=pseudorand))
 
-# Input 1 w/o batch dimension
-input1_no_bd = rand(MersenneTwister(1), Float32, ins)
 # Input 1 with batch dimension
-input1_bd = reshape(input1_no_bd, ins, 1)
+input1 = rand(MersenneTwister(1), Float32, ins, 1)
 # Input 2 with batch dimension
-input2_bd = rand(MersenneTwister(2), Float32, ins, 1)
+input2 = rand(MersenneTwister(2), Float32, ins, 1)
 # Batch containing inputs 1 & 2
-input_batch = cat(input1_bd, input2_bd; dims=2)
+input_batch = cat(input1, input2; dims=2)
 
 ANALYZERS = Dict(
     "Gradient"            => Gradient,
@@ -33,25 +31,21 @@ ANALYZERS = Dict(
 
 for (name, method) in ANALYZERS
     @testset "$name" begin
-        # Using `add_batch_dim=true` should result in same explanation
-        # as input reshaped to have a batch dimension
         analyzer = method(model)
-        expl1_no_bd = analyzer(input1_no_bd; add_batch_dim=true)
-        analyzer = method(model)
-        expl1_bd = analyzer(input1_bd)
-        @test expl1_bd.val ≈ expl1_no_bd.val
+        expl1 = analyzer(input1)
+        @test expl1.val ≈ expl1.val
 
         # Analyzing a batch should have the same result
         # as analyzing inputs in batch individually
         analyzer = method(model)
-        expl2_bd = analyzer(input2_bd)
+        expl2 = analyzer(input2)
         analyzer = method(model)
         expl_batch = analyzer(input_batch)
-        @test expl1_bd.val ≈ expl_batch.val[:, 1]
+        @test expl1.val ≈ expl_batch.val[:, 1]
         if !(analyzer isa NoiseAugmentation)
             # NoiseAugmentation methods generate random numbers for the entire batch.
             # therefore explanations don't match except for the first input in the batch.
-            @test expl2_bd.val ≈ expl_batch.val[:, 2]
+            @test expl2.val ≈ expl_batch.val[:, 2]
         end
     end
 end
