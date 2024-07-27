@@ -103,7 +103,7 @@ function NoiseAugmentation(analyzer, n, σ::Real=0.1f0, args...)
     return NoiseAugmentation(analyzer, n, Normal(0.0f0, Float32(σ)^2), args...)
 end
 
-function (aug::NoiseAugmentation)(input, ns::AbstractOutputSelector)
+function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector; kwargs...)
     # Regular forward pass of model
     output = aug.analyzer.model(input)
     output_indices = ns(output)
@@ -142,8 +142,8 @@ struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
     n::Int
 end
 
-function (aug::InterpolationAugmentation)(
-    input, ns::AbstractOutputSelector; input_ref=zero(input)
+function call_analyzer(
+    input, aug::InterpolationAugmentation, ns::AbstractOutputSelector; input_ref=zero(input)
 )
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))

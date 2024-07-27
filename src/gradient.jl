@@ -19,7 +19,7 @@ struct Gradient{M} <: AbstractXAIMethod
     Gradient(model) = new{typeof(model)}(model)
 end
 
-function (analyzer::Gradient)(input, ns::AbstractOutputSelector)
+function call_analyzer(input, analyzer::Gradient, ns::AbstractOutputSelector; kwargs...)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     return Explanation(
         grad, input, output, output_indices, :Gradient, :sensitivity, nothing
@@ -37,7 +37,9 @@ struct InputTimesGradient{M} <: AbstractXAIMethod
     InputTimesGradient(model) = new{typeof(model)}(model)
 end
 
-function (analyzer::InputTimesGradient)(input, ns::AbstractOutputSelector)
+function call_analyzer(
+    input, analyzer::InputTimesGradient, ns::AbstractOutputSelector; kwargs...
+)
     grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
     attr = input .* grad
     return Explanation(
