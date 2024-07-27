@@ -1,12 +1,25 @@
-function gradient_wrt_input(model, input, ns::AbstractOutputSelector)
-    output, back = Zygote.pullback(model, input)
-    output_indices = ns(output)
+function forward_with_output_selection(model, input, selector::AbstractOutputSelector)
+    output = model(input)
+    sel = selector(output)
+    return output[sel]
+end
 
-    # Compute VJP w.r.t. full model output, selecting vector s.t. it masks output neurons
-    v = zero(output)
-    v[output_indices] .= 1
-    grad = only(back(v))
-    return grad, output, output_indices
+function gradient_wrt_input(
+    model, input, output_selector::AbstractOutputSelector, backend::AbstractADType
+)
+    output = model(input)
+    return gradient_wrt_input(model, input, output, output_selector, backend)
+end
+
+function gradient_wrt_input(
+    model, input, output, output_selector::AbstractOutputSelector, backend::AbstractADType
+)
+    output_selection = output_selector(output)
+    dy = zero(output)
+    dy[output_selection] .= 1
+
+    output, grad = value_and_pullback(model, backend, input, dy)
+    return grad, output, output_selection
 end
 
 """
@@ -14,13 +27,19 @@ end
 
 Analyze model by calculating the gradient of a neuron activation with respect to the input.
 """
-struct Gradient{M} <: AbstractXAIMethod
+struct Gradient{M,B<:AbstractADType} <: AbstractXAIMethod
     model::M
-    Gradient(model) = new{typeof(model)}(model)
+    backend::B
+
+    function Gradient(model::M, backend::B=DEFAULT_AD_BACKEND) where {M,B<:AbstractADType}
+        new{M,B}(model, backend)
+    end
 end
 
 function call_analyzer(input, analyzer::Gradient, ns::AbstractOutputSelector; kwargs...)
-    grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
+    grad, output, output_indices = gradient_wrt_input(
+        analyzer.model, input, ns, analyzer.backend
+    )
     return Explanation(
         grad, input, output, output_indices, :Gradient, :sensitivity, nothing
     )
@@ -32,15 +51,23 @@ end
 Analyze model by calculating the gradient of a neuron activation with respect to the input.
 This gradient is then multiplied element-wise with the input.
 """
-struct InputTimesGradient{M} <: AbstractXAIMethod
+struct InputTimesGradient{M,B<:AbstractADType} <: AbstractXAIMethod
     model::M
-    InputTimesGradient(model) = new{typeof(model)}(model)
+    backend::B
+
+    function InputTimesGradient(
+        model::M, backend::B=DEFAULT_AD_BACKEND
+    ) where {M,B<:AbstractADType}
+        new{M,B}(model, backend)
+    end
 end
 
 function call_analyzer(
     input, analyzer::InputTimesGradient, ns::AbstractOutputSelector; kwargs...
 )
-    grad, output, output_indices = gradient_wrt_input(analyzer.model, input, ns)
+    grad, output, output_indices = gradient_wrt_input(
+        analyzer.model, input, ns, analyzer.backend
+    )
     attr = input .* grad
     return Explanation(
         attr, input, output, output_indices, :InputTimesGradient, :attribution, nothing

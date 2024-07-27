@@ -7,7 +7,12 @@ import XAIBase: call_analyzer
 using Base.Iterators
 using Distributions: Distribution, Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG
+
+# Automatic differentiation
+using ADTypes: AbstractADType, AutoZygote
+using DifferentiationInterface: value_and_pullback
 using Zygote
+const DEFAULT_AD_BACKEND = AutoZygote()
 
 include("compat.jl")
 include("bibliography.jl")
