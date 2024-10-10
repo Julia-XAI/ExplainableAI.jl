@@ -6,7 +6,7 @@ using Aqua
 using JET
 
 @testset "ExplainableAI.jl" begin
-    @testset verbose=true "Linting" begin
+    @testset verbose = true "Linting" begin
         @testset "Code formatting" begin
             @info "- running JuliaFormatter code formatting tests..."
             @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)
