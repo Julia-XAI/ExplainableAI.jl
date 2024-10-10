@@ -3,6 +3,7 @@ using Test
 
 using Flux
 using Random
+using StableRNGs: StableRNG
 using Distributions: Laplace
 
 pseudorand(dims...) = rand(StableRNG(123), Float32, dims...)
