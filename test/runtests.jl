@@ -6,14 +6,13 @@ using Aqua
 using JET
 
 @testset "ExplainableAI.jl" begin
-    if VERSION >= v"1.10"
-        @info "Testing formalities..."
+    @testset verbose = true "Linting" begin
         @testset "Code formatting" begin
             @info "- running JuliaFormatter code formatting tests..."
             @test JuliaFormatter.format(ExplainableAI; verbose=false, overwrite=false)
         end
         @testset "Aqua.jl" begin
-            @info "- running Aqua.jl tests. These might print warnings from dependencies..."
+            @info "- running Aqua.jl tests..."
             Aqua.test_all(ExplainableAI; ambiguities=false)
         end
         @testset "JET tests" begin

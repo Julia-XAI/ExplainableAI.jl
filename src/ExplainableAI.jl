@@ -14,7 +14,6 @@ using DifferentiationInterface: value_and_pullback
 using Zygote
 const DEFAULT_AD_BACKEND = AutoZygote()
 
-include("compat.jl")
 include("bibliography.jl")
 include("input_augmentation.jl")
 include("gradient.jl")

@@ -16,7 +16,7 @@ and [iNNvestigate][innvestigate-repo] for Keras models.
 [^1]: More specifically, models currently have to be differentiable with [Zygote.jl](https://github.com/FluxML/Zygote.jl).
 
 ## Installation 
-This package supports Julia ≥1.6. To install it, open the Julia REPL and run 
+This package supports Julia ≥1.10. To install it, open the Julia REPL and run 
 ```julia-repl
 julia> ]add ExplainableAI
 ```
