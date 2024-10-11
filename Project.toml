@@ -15,7 +15,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "1"
-DifferentiationInterface = "0.5"
+DifferentiationInterface = "0.5, 0.6"
 Distributions = "0.25"
 Random = "<0.0.1, 1"
 Reexport = "1"
