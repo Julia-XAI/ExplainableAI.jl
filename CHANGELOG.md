@@ -1,8 +1,14 @@
 # ExplainableAI.jl
+
 ## Version `v0.9.0`
-- ![Feature][badge-feature] Support selection of AD backend via DifferentiationInterface.jl ([#167])
-  - `Gradient`, `InputTimesGradient` and `GradCAM` analyzers now have an additional `backend` field and type parameter
-- ![Maintenance][badge-maintenance] Update XAIBase interface to v4 ([#166])
+- ![Feature][badge-feature] Support selection of AD backends via DifferentiationInterface.jl. ([#167])
+- ![BREAKING][badge-breaking] For gradient-based XAI methods, an AD backend must now be manually loaded. 
+  To keep using the default Zygote backend, this simply requires adding `using Zygote` to your code. ([#177]) 
+- ![BREAKING][badge-breaking] `Gradient`, `InputTimesGradient` and `GradCAM` analyzers now have an additional `backend` field and type parameter. ([#167])
+- ![BREAKING][badge-breaking] Update XAIBase interface to `v4`. 
+  This adds a field to the `Explanation` return type and removes the `add_batch_dim` keyword argument.
+  Refer to the [XAIBase.jl changelog](https://github.com/Julia-XAI/XAIBase.jl/blob/main/CHANGELOG.md#version-v400) for more information. ([#174])
+
 
 ## Version `v0.8.0`
 This release removes the automatic reexport of heatmapping functionality.
@@ -215,6 +221,8 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#177]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/177
+[#174]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/174
 [#167]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/167
 [#166]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/166
 [#162]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/162
