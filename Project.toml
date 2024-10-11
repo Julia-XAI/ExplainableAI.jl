@@ -11,7 +11,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "1"
@@ -21,5 +20,4 @@ Random = "<0.0.1, 1"
 Reexport = "1"
 Statistics = "<0.0.1, 1"
 XAIBase = "4"
-Zygote = "0.6"
 julia = "1.10"

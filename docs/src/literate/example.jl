@@ -7,7 +7,6 @@
 
 # For this first example, we already have loaded a pre-trained LeNet5 model
 # to look at explanations on the MNIST dataset.
-using ExplainableAI
 using Flux
 
 using BSON # hide
@@ -41,8 +40,11 @@ input = reshape(x, 28, 28, 1, :);
 #md #     (width, height, channels, batch), which is Flux.jl's convention.
 
 # ## Explanations
-# We can now select an analyzer of our choice and call [`analyze`](@ref)
-# to get an [`Explanation`](@ref):
+# We can now select an analyzer of our choice and call [`analyze`](@ref) to get an [`Explanation`](@ref).
+# Note that for gradient-based optimizers, a backend for automatic differentiation must be loaded, by default [Zygote.jl](https://github.com/FluxML/Zygote.jl):
+using ExplainableAI
+using Zygote
+
 analyzer = InputTimesGradient(model)
 expl = analyze(input, analyzer);
 

@@ -1,4 +1,5 @@
 using ExplainableAI
+using Zygote
 using Test
 
 using Flux
