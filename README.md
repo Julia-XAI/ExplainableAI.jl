@@ -17,7 +17,7 @@ The only requirement for the model is that it is differentiable[^1].
 It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
 and [iNNvestigate][innvestigate-repo] for Keras models.
 
-[^1]: More specifically, models currently have to be differentiable with [Zygote.jl](https://github.com/FluxML/Zygote.jl).
+[^1]: The automatic differentiation backend can be selected using [ADTypes.jl](https://github.com/SciML/ADTypes.jl).
 
 ## Installation 
 This package supports Julia ≥1.10. To install it, open the Julia REPL and run 
