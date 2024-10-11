@@ -4,6 +4,7 @@ ExplainableAI = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
 PkgJogger = "10150987-6cc1-4b76-abee-b1c1cbd91c01"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 BenchmarkTools = "1"

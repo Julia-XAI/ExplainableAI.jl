@@ -8,6 +8,7 @@
 # and start out by loading the same pre-trained LeNet5 model and MNIST input data:
 using ExplainableAI
 using VisionHeatmaps
+using Zygote
 using Flux
 
 using BSON # hide
