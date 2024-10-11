@@ -1,5 +1,6 @@
 using ExplainableAI
 using VisionHeatmaps
+using Zygote
 using Flux
 
 using BSON # hide

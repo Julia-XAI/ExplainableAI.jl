@@ -1,4 +1,3 @@
-using ExplainableAI
 using Flux
 
 using BSON # hide
@@ -14,6 +13,9 @@ x, y = MNIST(Float32, :test)[10]
 convert2image(MNIST, x)
 
 input = reshape(x, 28, 28, 1, :);
+
+using ExplainableAI
+using Zygote
 
 analyzer = InputTimesGradient(model)
 expl = analyze(input, analyzer);
