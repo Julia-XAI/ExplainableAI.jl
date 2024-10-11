@@ -1,9 +1,13 @@
 ![ExplainableAI.jl][banner-img]
 ___
 
-| **Documentation** | **Build Status** | **DOI** |
-|:----------------- |:---------------- |:------- |
-| [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url] [![Aqua][aqua-img]][aqua-url] [![JET][jet-img]][jet-url] | [![][doi-img]][doi-url] |
+|               |                                                                                                           |
+|:--------------|:----------------------------------------------------------------------------------------------------------|
+| Documentation | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] [![][changelog-img]][changelog-url] |
+| Build Status  | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url]                                                     |
+| Testing       | [![Aqua][aqua-img]][aqua-url] [![JET][jet-img]][jet-url]                                                  |
+| Code Style    | [![Code Style: Blue][blue-img]][blue-url] [![ColPrac][colprac-img]][colprac-url]                          |
+| Citation      | [![][doi-img]][doi-url]                                                                                   |
 
 Explainable AI in Julia.
 
@@ -163,21 +167,26 @@ Contributions are welcome!
 
 [docs-stab-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stab-url]: https://julia-xai.github.io/XAIDocs/ExplainableAI/stable/
-
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
+[changelog-img]: https://img.shields.io/badge/news-changelog-yellow.svg
+[changelog-url]: https://github.com/Julia-XAI/ExplainableAI.jl/blob/master/CHANGELOG.md
 
 [ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg
 [ci-url]: https://github.com/Julia-XAI/ExplainableAI.jl/actions
-
 [codecov-img]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl
 
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
-
 [jet-img]: https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a
 [jet-url]: https://github.com/aviatesk/JET.jl
+
+
+[blue-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
+[blue-url]: https://github.com/invenia/BlueStyle
+[colprac-img]: https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet
+[colprac-url]: https://github.com/SciML/ColPrac
 
 [docs-composites]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
 [docs-custom-rules]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
