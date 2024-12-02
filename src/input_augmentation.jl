@@ -90,7 +90,7 @@ end
 A wrapper around analyzers that augments the input with `n` samples of additive noise sampled from a scalar `distribution`.
 This input augmentation is then averaged to return an `Explanation`.
 
-Defaults to the normal distribution `Normal(0, std^2)` with `std=1`.
+Defaults to the normal distribution `Normal(0, std^2)` with `std=1.0f0`.
 For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
 e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 
