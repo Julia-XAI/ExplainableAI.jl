@@ -56,7 +56,7 @@ end
 """
     augment_indices(indices, n)
 
-Strip batch indices and return inidices for batch augmented by n samples.
+Strip batch indices and return indices for batch augmented by n samples.
 
 ## Example
 ```julia-repl
@@ -83,11 +83,20 @@ function augment_indices(inds::Vector{CartesianIndex{N}}, n) where {N}
 end
 
 """
-    NoiseAugmentation(analyzer, n, [std=1, rng=GLOBAL_RNG])
-    NoiseAugmentation(analyzer, n, distribution, [rng=GLOBAL_RNG])
+    NoiseAugmentation(analyzer, n)
+    NoiseAugmentation(analyzer, n, std::Real)
+    NoiseAugmentation(analyzer, n, distribution::Sampleable)
 
-A wrapper around analyzers that augments the input with `n` samples of additive noise sampled from `distribution`.
+A wrapper around analyzers that augments the input with `n` samples of additive noise sampled from a scalar `distribution`.
 This input augmentation is then averaged to return an `Explanation`.
+
+Defaults to the normal distribution `Normal(0, std^2)` with `std=1.0f0`.
+For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
+e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
+
+## Keyword arguments
+- `rng::AbstractRNG`: Specify the random number generator that is used to sample noise from the `distribution`. 
+  Defaults to `GLOBAL_RNG`. 
 """
 struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
        AbstractXAIMethod
@@ -96,11 +105,11 @@ struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
     distribution::D
     rng::R
 end
-function NoiseAugmentation(analyzer, n, distr::Sampleable, rng=GLOBAL_RNG)
-    return NoiseAugmentation(analyzer, n, distr::Sampleable, rng)
+function NoiseAugmentation(analyzer, n, distribution::Sampleable, rng=GLOBAL_RNG)
+    return NoiseAugmentation(analyzer, n, distribution::Sampleable, rng)
 end
-function NoiseAugmentation(analyzer, n, σ::Real=0.1f0, args...)
-    return NoiseAugmentation(analyzer, n, Normal(0.0f0, Float32(σ)^2), args...)
+function NoiseAugmentation(analyzer, n, std::T=1.0f0, rng=GLOBAL_RNG) where {T<:Real}
+    return NoiseAugmentation(analyzer, n, Normal(zero(T), std^2), rng)
 end
 
 function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector; kwargs...)
