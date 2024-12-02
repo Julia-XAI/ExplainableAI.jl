@@ -75,8 +75,8 @@ function call_analyzer(
 end
 
 """
-    SmoothGrad(analyzer, [n=50, std=0.1, rng=GLOBAL_RNG])
-    SmoothGrad(analyzer, [n=50, distribution=Normal(0, σ²=0.01), rng=GLOBAL_RNG])
+    SmoothGrad(analyzer, [n=50, std=1.0, rng=GLOBAL_RNG])
+    SmoothGrad(analyzer, [n=50, distribution=Normal(0, 1), rng=GLOBAL_RNG])
 
 Analyze model by calculating a smoothed sensitivity map.
 This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
