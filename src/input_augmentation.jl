@@ -56,7 +56,7 @@ end
 """
     augment_indices(indices, n)
 
-Strip batch indices and return inidices for batch augmented by n samples.
+Strip batch indices and return indices for batch augmented by n samples.
 
 ## Example
 ```julia-repl
