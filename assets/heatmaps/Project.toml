@@ -1,6 +1,13 @@
 [deps]
+DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
 ExplainableAI = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
+ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
+RelevancePropagation = "0be6dd02-ae9e-43eb-b318-c6e81d6890d8"
+VisionHeatmaps = "27106da1-f8bc-4ca8-8c66-9b8289f1e035"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"

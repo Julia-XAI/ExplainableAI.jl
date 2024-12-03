@@ -1,17 +1,28 @@
-using ExplainableAI
-using Metalhead                   # pre-trained vision models
-using HTTP, FileIO, ImageMagick   # load image from URL
+using Pkg
+Pkg.activate(@__DIR__)
 
-# Load model
-model = VGG(16; pretrain=true).layers
-model = strip_softmax(model)
-model = canonize(model)
+using ExplainableAI
+using RelevancePropagation
+using VisionHeatmaps
+using Zygote                 # load autodiff backend for gradient-based methods
+using Flux, Metalhead        # pre-trained vision models in Flux
+using DataAugmentation       # input preprocessing
+using HTTP, FileIO, ImageIO  # load image from URL
+using ImageInTerminal        # show heatmap in terminal
+
+# Load & prepare model
+model = VGG(16, pretrain=true).layers
 
 # Load input
-url = HTTP.URI("https://raw.githubusercontent.com/adrhill/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
-img = load(url)
-input = preprocess_imagenet(img)
-input = reshape(input, 224, 224, 3, :)  # reshape to WHCN format
+url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
+img = load(url) 
+
+# Preprocess input
+mean = (0.485f0, 0.456f0, 0.406f0)
+std  = (0.229f0, 0.224f0, 0.225f0)
+tfm = CenterResizeCrop((224, 224)) |> ImageToTensor() |> Normalize(mean, std)
+input = apply(tfm, Image(img))               # apply DataAugmentation transform
+input = reshape(input.data, 224, 224, 3, :)  # unpack data and add batch dimension
 
 # Run XAI methods
 methods = Dict(
