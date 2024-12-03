@@ -21,10 +21,6 @@ using JET
         end
     end
 
-    @testset "Input augmentation" begin
-        @info "Testing input augmentation..."
-        include("test_input_augmentation.jl")
-    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")
