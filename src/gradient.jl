@@ -18,7 +18,8 @@ function gradient_wrt_input(
     dy = zero(output)
     dy[output_selection] .= 1
 
-    output, grad = value_and_pullback(model, backend, input, dy)
+    output, pbs = value_and_pullback(model, backend, input, tuple(dy))
+    grad = only(pbs)
     return grad, output, output_selection
 end
 
