@@ -40,4 +40,12 @@ expl = analyze(batch, analyzer);
 
 heatmap(expl)
 
+# Custom heatmaps
+
+analyzer = Gradient(model)
+heatmap(input, analyzer)
+
+analyzer = InputTimesGradient(model)
+heatmap(input, analyzer)
+
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
