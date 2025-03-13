@@ -1,5 +1,9 @@
 # ExplainableAI.jl
 
+## Version `v0.10.0`
+- ![BREAKING][badge-breaking] Fix default noise level for `NoiseAugmentation` ([#179])
+- ![Enhancement][badge-enhancement] Constant memory input augmentations ([#180])
+
 ## Version `v0.9.0`
 - ![Feature][badge-feature] Support selection of AD backends via DifferentiationInterface.jl. ([#167])
 - ![BREAKING][badge-breaking] For gradient-based XAI methods, an AD backend must now be manually loaded. 
@@ -8,7 +12,6 @@
 - ![BREAKING][badge-breaking] Update XAIBase interface to `v4`. 
   This adds a field to the `Explanation` return type and removes the `add_batch_dim` keyword argument.
   Refer to the [XAIBase.jl changelog](https://github.com/Julia-XAI/XAIBase.jl/blob/main/CHANGELOG.md#version-v400) for more information. ([#174])
-
 
 ## Version `v0.8.0`
 This release removes the automatic reexport of heatmapping functionality.
@@ -221,6 +224,8 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180
+[#179]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/179
 [#177]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/177
 [#174]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/174
 [#167]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/167
