@@ -35,7 +35,6 @@ makedocs(;
         "Home" => "index.md",
         "Getting started" => "generated/example.md",
         "General usage" => Any[
-            "Heatmapping"          => "generated/heatmapping.md",
             "Input augmentations"  => "generated/augmentations.md",
         ],
         "API Reference" => "api.md",

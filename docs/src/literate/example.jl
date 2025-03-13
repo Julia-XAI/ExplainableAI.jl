@@ -81,11 +81,6 @@ heatmap(expl)
 # into a single function call:
 heatmap(input, analyzer)
 
-# For a more detailed explanation of the `heatmap` function,
-# refer to the [heatmapping section](@ref docs-heatmapping).
-
-# ## [List of analyzers](@id docs-analyzers-list)
-
 # ## Neuron selection
 # By passing an additional index to our call to [`analyze`](@ref),
 # we can compute an explanation with respect to a specific output neuron.
@@ -114,5 +109,19 @@ expl = analyze(batch, analyzer);
 # Calling `heatmap` on `expl` will detect the batch dimension and return a vector of heatmaps.
 heatmap(expl)
 
-# For more information on heatmapping batches,
-# refer to the [heatmapping documentation](@ref docs-heatmapping-batches).
+## Custom heatmaps
+
+# The function `heatmap` automatically applies common presets for each method.
+#
+# Since [`InputTimesGradient`](@ref) computes attributions,
+# heatmaps are shown in a blue-white-red color scheme.
+# Gradient methods however are typically shown in grayscale:
+analyzer = Gradient(model)
+heatmap(input, analyzer)
+#-
+analyzer = InputTimesGradient(model)
+heatmap(input, analyzer)
+
+# Using [VisionHeatmaps.jl](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/),
+# heatmaps can be heavily customized. 
+# Check out the [heatmapping documentation](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/) for more information.

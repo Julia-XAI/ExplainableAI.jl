@@ -21,7 +21,6 @@ julia> ]add ExplainableAI
 ```@contents
 Pages = [
     "generated/example.md",
-    "generated/heatmapping.md",
     "generated/augmentations.md",
 ]
 Depth = 3
