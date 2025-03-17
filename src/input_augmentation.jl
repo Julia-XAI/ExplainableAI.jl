@@ -33,8 +33,7 @@ struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
     function NoiseAugmentation(
         analyzer::A, n::Int, distribution::D, rng::R=GLOBAL_RNG
     ) where {A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG}
-        n < 1 &&
-            throw(ArgumentError("Number of samples `n` needs to be larger than zero."))
+        n < 1 && throw(ArgumentError("Number of samples `n` needs to be larger than zero."))
         return new{A,D,R}(analyzer, n, distribution, rng)
     end
 end
