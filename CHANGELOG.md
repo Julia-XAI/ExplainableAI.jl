@@ -1,5 +1,8 @@
 # ExplainableAI.jl
 
+## Version `v0.10.1`
+- ![Bugfix][badge-bugfix] Fix bug in `NoiseAugmentation` constructor ([#183])
+
 ## Version `v0.10.0`
 - ![BREAKING][badge-breaking] Fix default noise level for `NoiseAugmentation` ([#179])
 - ![Enhancement][badge-enhancement] Constant memory input augmentations ([#180])
@@ -224,6 +227,7 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#183]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/183
 [#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180
 [#179]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/179
 [#177]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/177
