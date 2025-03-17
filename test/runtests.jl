@@ -21,6 +21,10 @@ using JET
         end
     end
 
+    @testset "Constructors" begin
+        @info "Testing constructors..."
+        include("test_constructors.jl")
+    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")

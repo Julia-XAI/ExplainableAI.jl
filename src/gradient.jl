@@ -76,12 +76,17 @@ function call_analyzer(
 end
 
 """
-    SmoothGrad(analyzer, [n=50, std=1.0f0, rng=GLOBAL_RNG])
-    SmoothGrad(analyzer, [n=50, distribution=Normal(0.0f0, 1.0f0), rng=GLOBAL_RNG])
+    SmoothGrad(analyzer)
+    SmoothGrad(analyzer, [n, std, rng]])
+    SmoothGrad(analyzer, [n, distribution, rng])
 
 Analyze model by calculating a smoothed sensitivity map.
 This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
-in a neighborhood of the input, typically by adding Gaussian noise with mean 0.
+in a neighborhood of the input.
+Defaults to 50 samples from the normal distribution with zero mean and `std=1.0f0`.
+
+For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
+e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 
 # References
 - $REF_SMILKOV_SMOOTHGRAD

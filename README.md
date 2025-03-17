@@ -69,10 +69,10 @@ heatmap(input, analyzer, 5)  # for heatmap
 
 | **Analyzer**                                  | **Heatmap for class "castle"** |**Heatmap for class "street sign"** |
 |:--------------------------------------------- |:------------------------------:|:----------------------------------:|
-| `InputTimesGradient`                          | ![][castle-ixg]                | ![][streetsign-ixg]                |
 | `Gradient`                                    | ![][castle-grad]               | ![][streetsign-grad]               |
 | `SmoothGrad`                                  | ![][castle-smoothgrad]         | ![][streetsign-smoothgrad]         |
 | `IntegratedGradients`                         | ![][castle-intgrad]            | ![][streetsign-intgrad]            |
+| `InputTimesGradient`                          | ![][castle-ixg]                | ![][streetsign-ixg]                |
 
 > [!TIP]
 > The heatmaps shown above were created using a VGG-16 vision model 

@@ -9,14 +9,13 @@ end
 (s::AugmentationSelector)(out) = s.indices
 
 """
-    NoiseAugmentation(analyzer, n)
-    NoiseAugmentation(analyzer, n, std::Real)
-    NoiseAugmentation(analyzer, n, distribution::Sampleable)
+    NoiseAugmentation(analyzer, n, [std::Real, rng])
+    NoiseAugmentation(analyzer, n, [distribution::Sampleable, rng])
 
 A wrapper around analyzers that augments the input with `n` samples of additive noise sampled from a scalar `distribution`.
 This input augmentation is then averaged to return an `Explanation`.
+Defaults to the normal distribution with zero mean and `std=1.0f0`.
 
-Defaults to the normal distribution `Normal(0, std^2)` with `std=1.0f0`.
 For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
 e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 
@@ -32,17 +31,15 @@ struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
     rng::R
 
     function NoiseAugmentation(
-        analyzer::A, n::Int, distribution::D, rng::R
+        analyzer::A, n::Int, distribution::D, rng::R=GLOBAL_RNG
     ) where {A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG}
         n < 2 &&
             throw(ArgumentError("Number of noise samples `n` needs to be larger than one."))
         return new{A,D,R}(analyzer, n, distribution, rng)
     end
 end
-function NoiseAugmentation(analyzer, n, std::T=1.0f0, rng=GLOBAL_RNG) where {T<:Real}
-    return NoiseAugmentation(analyzer, n, Normal(zero(T), std^2), rng)
-end
-function NoiseAugmentation(analyzer, n, distribution::Sampleable, rng=GLOBAL_RNG)
+function NoiseAugmentation(analyzer, n::Int, std::T=1.0f0, rng=GLOBAL_RNG) where {T<:Real}
+    distribution = Normal(zero(T), std^2)
     return NoiseAugmentation(analyzer, n, distribution, rng)
 end
 
