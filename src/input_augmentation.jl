@@ -123,9 +123,9 @@ function call_analyzer(
     # Further augmentations
     input_delta = (input - input_ref) / (aug.n - 1)
     for _ in 1:(aug.n)
-        input_aug += input_delta
+        input_aug .+= input_delta
         expl_aug = aug.analyzer(input_aug, output_selector)
-        sum_val += expl_aug.val
+        sum_val .+= expl_aug.val
     end
 
     # Average gradients and compute explanation

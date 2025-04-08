@@ -20,7 +20,7 @@ model_gpu = device(model)
 input_gpu = device(input)
 @test_nowarn model_gpu(input_gpu)
 
-analyzer_types = (Gradient, SmoothGrad, InputTimesGradient)
+analyzer_types = (Gradient, SmoothGrad, InputTimesGradient, IntegratedGradients)
 
 @testset "Run analyzer (CPU)" begin
     @testset "$A" for A in analyzer_types
