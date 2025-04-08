@@ -52,18 +52,19 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output_selector = AugmentationSelector(output_indices)
 
     p = Progress(aug.n; desc="Sampling NoiseAugmentation...", showspeed=aug.show_progress)
+
     # First augmentation
-    input_aug = similar(input)
-    input_aug = sample_noise!(input_aug, input, aug)
-    expl_aug = aug.analyzer(input_aug, output_selector)
+    noisy_input = similar(input)
+    noisy_input = sample_noise!(noisy_input, input, aug)
+    expl_aug = aug.analyzer(noisy_input, output_selector)
     sum_val = expl_aug.val
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
-        input_aug = sample_noise!(input_aug, input, aug)
-        expl_aug = aug.analyzer(input_aug, output_selector)
-        sum_val += expl_aug.val
+        noisy_input = sample_noise!(noisy_input, input, aug)
+        expl_aug = aug.analyzer(noisy_input, output_selector)
+        sum_val .+= expl_aug.val
         next!(p)
     end
 
@@ -78,7 +79,9 @@ end
 function sample_noise!(
     out::A, input::A, aug::NoiseAugmentation
 ) where {T,A<:AbstractArray{T}}
-    out .= input .+ rand(aug.rng, aug.distribution, size(input))
+    out = rand!(aug.rng, aug.distribution, out)
+    out .+= input
+    return out
 end
 
 """
