@@ -52,7 +52,7 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
 
-    p = Progress(aug.n; desc="Sampling NoiseAugmentation...", showspeed=aug.show_progress)
+    p = Progress(aug.n; desc="Sampling NoiseAugmentation...", enabled=aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
