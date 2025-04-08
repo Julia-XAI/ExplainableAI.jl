@@ -29,17 +29,20 @@ struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
     n::Int
     distribution::D
     rng::R
+    show_progress::Bool
 
     function NoiseAugmentation(
-        analyzer::A, n::Int, distribution::D, rng::R=GLOBAL_RNG
+        analyzer::A, n::Int, distribution::D, rng::R=GLOBAL_RNG, show_progress=true
     ) where {A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG}
         n < 1 && throw(ArgumentError("Number of samples `n` needs to be larger than zero."))
-        return new{A,D,R}(analyzer, n, distribution, rng)
+        return new{A,D,R}(analyzer, n, distribution, rng, show_progress)
     end
 end
-function NoiseAugmentation(analyzer, n::Int, std::T=1.0f0, rng=GLOBAL_RNG) where {T<:Real}
+function NoiseAugmentation(
+    analyzer, n::Int, std::T=1.0f0, rng=GLOBAL_RNG, show_progress=true
+) where {T<:Real}
     distribution = Normal(zero(T), std^2)
-    return NoiseAugmentation(analyzer, n, distribution, rng)
+    return NoiseAugmentation(analyzer, n, distribution, rng, show_progress)
 end
 
 function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector; kwargs...)
@@ -48,17 +51,20 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
 
+    p = Progress(aug.n; desc="Sampling NoiseAugmentation...", showspeed=aug.show_progress)
     # First augmentation
     input_aug = similar(input)
     input_aug = sample_noise!(input_aug, input, aug)
     expl_aug = aug.analyzer(input_aug, output_selector)
     sum_val = expl_aug.val
+    next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
         input_aug = sample_noise!(input_aug, input, aug)
         expl_aug = aug.analyzer(input_aug, output_selector)
         sum_val += expl_aug.val
+        next!(p)
     end
 
     # Average explanation
