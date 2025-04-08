@@ -22,6 +22,7 @@ e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 ## Keyword arguments
 - `rng::AbstractRNG`: Specify the random number generator that is used to sample noise from the `distribution`. 
   Defaults to `GLOBAL_RNG`. 
+- `show_progress:Bool`: Show progress meter while sampling augmentations. Defaults to `true`.
 """
 struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
        AbstractXAIMethod
