@@ -33,6 +33,9 @@ using JET
         @info "Testing analyzers on batches..."
         include("test_batches.jl")
     end
+    @testset "GPU tests" begin
+        include("test_gpu.jl")
+    end
     @testset "Benchmark correctness" begin
         @info "Testing whether benchmarks are up-to-date..."
         include("test_benchmarks.jl")
