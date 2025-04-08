@@ -1,8 +1,8 @@
 # ExplainableAI.jl
 
 ## Version `v0.10.2`
-- ![Feature][badge-feature] Tested GPU support for `Gradient`, `InputTimesGradient`, `SmoothGrad`, `IntegratedGradients`
-- ![Feature][badge-feature] `NoiseAugmentation` and `SmoothGrad` show a progress meter by default.
+- ![Feature][badge-feature] Tested GPU support for `Gradient`, `InputTimesGradient`, `SmoothGrad`, `IntegratedGradients` ([#184])
+- ![Feature][badge-feature] `NoiseAugmentation`s show a progress meter by default. Turn off via `show_progress=false` ([#184])
 
 ## Version `v0.10.1`
 - ![Bugfix][badge-bugfix] Fix bug in `NoiseAugmentation` constructor ([#183])
@@ -231,6 +231,7 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#184]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/184
 [#183]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/183
 [#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180
 [#179]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/179
