@@ -15,7 +15,7 @@ using JET
             @info "- running Aqua.jl tests..."
             Aqua.test_all(ExplainableAI; ambiguities=false)
         end
-        if VERSION <= v"1.12" # TODO: remove. As of PR #184, JET fails on pre-release builds.
+        if VERSION < v"1.12" # TODO: remove. As of PR #184, JET fails on pre-release builds.
             @testset "JET tests" begin
                 @info "- running JET.jl type stability tests..."
                 JET.test_package(ExplainableAI; target_defined_modules=true)
