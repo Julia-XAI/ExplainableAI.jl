@@ -22,7 +22,7 @@ jobs:
         version:
           - 'lts'
           - '1'
-          # - 'pre'
+          - 'pre'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
