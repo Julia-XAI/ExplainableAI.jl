@@ -170,11 +170,11 @@ Contributions are welcome!
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://julia-xai.github.io/ExplainableAI.jl/dev
 [changelog-img]: https://img.shields.io/badge/news-changelog-yellow.svg
-[changelog-url]: https://github.com/Julia-XAI/ExplainableAI.jl/blob/master/CHANGELOG.md
+[changelog-url]: https://github.com/Julia-XAI/ExplainableAI.jl/blob/main/CHANGELOG.md
 
 [ci-img]: https://github.com/Julia-XAI/ExplainableAI.jl/workflows/CI/badge.svg
 [ci-url]: https://github.com/Julia-XAI/ExplainableAI.jl/actions
-[codecov-img]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl/branch/master/graph/badge.svg
+[codecov-img]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl/branch/main/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/Julia-XAI/ExplainableAI.jl
 
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
