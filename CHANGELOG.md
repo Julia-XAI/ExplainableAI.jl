@@ -1,5 +1,8 @@
 # ExplainableAI.jl
 
+## Version `v0.10.3`
+- ![Maintenance][badge-maintenance] Update dependencies
+
 ## Version `v0.10.2`
 - ![Feature][badge-feature] GPU support for `Gradient`, `InputTimesGradient`, `SmoothGrad`, `IntegratedGradients` ([#184])
 - ![Feature][badge-feature] `NoiseAugmentation` shows a progress meter by default. Turn off via `show_progress=false` ([#184])

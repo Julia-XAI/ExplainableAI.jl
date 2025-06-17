@@ -1,7 +1,7 @@
 name = "ExplainableAI"
 uuid = "4f1bc3e1-d60d-4ed0-9367-9bdff9846d3b"
 authors = ["Adrian Hill <gh@adrianhill.de>"]
-version = "0.10.2"
+version = "0.10.3"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
