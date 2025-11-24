@@ -42,7 +42,7 @@ heatmap(input, analyzer)
 matrix_of_ones = ones(Float32, size(input))
 
 analyzer = InterpolationAugmentation(Gradient(model), 50)
-expl = analyzer(input; input_ref=matrix_of_ones)
+expl = analyzer(input; input_ref = matrix_of_ones)
 heatmap(expl)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

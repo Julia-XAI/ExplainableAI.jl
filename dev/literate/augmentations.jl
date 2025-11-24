@@ -78,7 +78,7 @@ heatmap(input, analyzer)
 matrix_of_ones = ones(Float32, size(input))
 
 analyzer = InterpolationAugmentation(Gradient(model), 50)
-expl = analyzer(input; input_ref=matrix_of_ones)
+expl = analyzer(input; input_ref = matrix_of_ones)
 heatmap(expl)
 
 # Once again, `InterpolationAugmentation` can be combined with any analyzer type from the Julia-XAI ecosystem,
