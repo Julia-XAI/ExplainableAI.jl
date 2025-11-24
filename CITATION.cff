@@ -1,10 +1,24 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-authors:
-  - family-names: "Hill"
-    given-names: "Adrian"
-    orcid: "https://orcid.org/0009-0009-5977-301X"
-title: "ExplainableAI.jl"
+message: If you use this software, please cite it as below.
+title: ExplainableAI.jl
 version: 0.1.0
 date-released: 2021-10-30
+type: software
+authors:
+  - given-names: Adrian
+    family-names: Hill
+    email: hill@tu-berlin.de
+    affiliation: 'BIFOLD, Machine Learning Group, TU Berlin'
+    orcid: 'https://orcid.org/0009-0009-5977-301X'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.6035829
+    description: Zenodo DOI
 url: "https://github.com/Julia-XAI/ExplainableAI.jl"
+repository-code: "https://github.com/Julia-XAI/ExplainableAI.jl"
+abstract: Explainable AI in Julia.
+keywords:
+  - Explainable AI
+  - Interpretability
+  - Feature attribution
+  - Julia

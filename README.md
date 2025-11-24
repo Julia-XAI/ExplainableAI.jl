@@ -185,8 +185,8 @@ Contributions are welcome!
 [docs-composites]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
 [docs-custom-rules]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/
 
-[doi-img]: https://zenodo.org/badge/337430397.svg
-[doi-url]: https://zenodo.org/badge/latestdoi/337430397
+[doi-img]: https://zenodo.org/badge/DOI/10.5281/zenodo.6035829.svg
+[doi-url]: https://doi.org/10.5281/zenodo.6035829
 
 [juliacon-img]: http://img.youtube.com/vi/p5dg3vdmlvI/0.jpg
 [juliacon-url]: https://www.youtube.com/watch?v=p5dg3vdmlvI
