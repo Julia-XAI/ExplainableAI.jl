@@ -1,7 +1,6 @@
 using ExplainableAI
 
 using Test
-using JuliaFormatter
 using Aqua
 using JET
 
