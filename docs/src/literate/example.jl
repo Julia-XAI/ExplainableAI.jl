@@ -123,5 +123,5 @@ analyzer = InputTimesGradient(model)
 heatmap(input, analyzer)
 
 # Using [VisionHeatmaps.jl](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/),
-# heatmaps can be heavily customized. 
+# heatmaps can be heavily customized.
 # Check out the [heatmapping documentation](https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/) for more information.

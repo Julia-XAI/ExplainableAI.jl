@@ -6,7 +6,7 @@ ___
 | Documentation | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] [![][changelog-img]][changelog-url] |
 | Build Status  | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url]                                                     |
 | Testing       | [![Aqua][aqua-img]][aqua-url] [![JET][jet-img]][jet-url]                                                  |
-| Code Style    | [![Code Style: Blue][blue-img]][blue-url] [![ColPrac][colprac-img]][colprac-url]                          |
+| Code Style    | [![Code Style: Runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl) [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac) | 
 | Citation      | [![][doi-img]][doi-url]                                                                                   |
 
 Explainable AI in Julia.
@@ -181,12 +181,6 @@ Contributions are welcome!
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 [jet-img]: https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a
 [jet-url]: https://github.com/aviatesk/JET.jl
-
-
-[blue-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
-[blue-url]: https://github.com/invenia/BlueStyle
-[colprac-img]: https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet
-[colprac-url]: https://github.com/SciML/ColPrac
 
 [docs-composites]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/composites/
 [docs-custom-rules]: https://julia-xai.github.io/ExplainableAI.jl/stable/generated/lrp/custom_rules/

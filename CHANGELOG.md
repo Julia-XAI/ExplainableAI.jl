@@ -1,5 +1,8 @@
 # ExplainableAI.jl
 
+## Version `v0.10.4-DEV`
+- ![Maintenance][badge-maintenance] Switch from JuliaFormatter to Runic, update JET ([#188])
+
 ## Version `v0.10.3`
 - ![Maintenance][badge-maintenance] Update dependencies
 
@@ -234,6 +237,7 @@ Performance improvements:
 [VisionHeatmaps]: https://julia-xai.github.io/XAIDocs/VisionHeatmaps/stable/
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
+[#188]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/188
 [#184]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/184
 [#183]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/183
 [#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180
