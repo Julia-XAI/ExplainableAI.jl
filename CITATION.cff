@@ -1,7 +1,6 @@
 cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: ExplainableAI.jl
-version: 0.1.0
 date-released: 2021-10-30
 type: software
 authors:
@@ -18,7 +17,7 @@ url: "https://github.com/Julia-XAI/ExplainableAI.jl"
 repository-code: "https://github.com/Julia-XAI/ExplainableAI.jl"
 abstract: Explainable AI in Julia.
 keywords:
-  - Explainable AI
-  - Interpretability
-  - Feature attribution
-  - Julia
+  - explainable ai
+  - interpretability
+  - feature attribution
+  - julia
