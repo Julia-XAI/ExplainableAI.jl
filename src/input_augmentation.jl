@@ -24,8 +24,8 @@ e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
   Defaults to `GLOBAL_RNG`. 
 - `show_progress:Bool`: Show progress meter while sampling augmentations. Defaults to `true`.
 """
-struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
-       AbstractXAIMethod
+struct NoiseAugmentation{A <: AbstractXAIMethod, D <: Sampleable, R <: AbstractRNG} <:
+    AbstractXAIMethod
     analyzer::A
     n::Int
     distribution::D
@@ -33,15 +33,15 @@ struct NoiseAugmentation{A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG} <:
     show_progress::Bool
 
     function NoiseAugmentation(
-        analyzer::A, n::Int, distribution::D, rng::R=GLOBAL_RNG, show_progress=true
-    ) where {A<:AbstractXAIMethod,D<:Sampleable,R<:AbstractRNG}
+            analyzer::A, n::Int, distribution::D, rng::R = GLOBAL_RNG, show_progress = true
+        ) where {A <: AbstractXAIMethod, D <: Sampleable, R <: AbstractRNG}
         n < 1 && throw(ArgumentError("Number of samples `n` needs to be larger than zero."))
-        return new{A,D,R}(analyzer, n, distribution, rng, show_progress)
+        return new{A, D, R}(analyzer, n, distribution, rng, show_progress)
     end
 end
 function NoiseAugmentation(
-    analyzer, n::Int, std::T=1.0f0, rng=GLOBAL_RNG, show_progress=true
-) where {T<:Real}
+        analyzer, n::Int, std::T = 1.0f0, rng = GLOBAL_RNG, show_progress = true
+    ) where {T <: Real}
     distribution = Normal(zero(T), std^2)
     return NoiseAugmentation(analyzer, n, distribution, rng, show_progress)
 end
@@ -52,7 +52,7 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
 
-    p = Progress(aug.n; desc="Sampling NoiseAugmentation...", enabled=aug.show_progress)
+    p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
@@ -78,8 +78,8 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
 end
 
 function sample_noise!(
-    out::A, input::A, aug::NoiseAugmentation
-) where {T,A<:AbstractArray{T}}
+        out::A, input::A, aug::NoiseAugmentation
+    ) where {T, A <: AbstractArray{T}}
     out = rand!(aug.rng, aug.distribution, out)
     out .+= input
     return out
@@ -93,11 +93,11 @@ between the input and a reference input (typically `zero(input)`).
 The gradients w.r.t. this augmented input are then averaged and multiplied with the
 difference between the input and the reference input.
 """
-struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
+struct InterpolationAugmentation{A <: AbstractXAIMethod} <: AbstractXAIMethod
     analyzer::A
     n::Int
 
-    function InterpolationAugmentation(analyzer::A, n::Int) where {A<:AbstractXAIMethod}
+    function InterpolationAugmentation(analyzer::A, n::Int) where {A <: AbstractXAIMethod}
         n < 2 && throw(
             ArgumentError("Number of interpolation steps `n` needs to be larger than one."),
         )
@@ -106,8 +106,8 @@ struct InterpolationAugmentation{A<:AbstractXAIMethod} <: AbstractXAIMethod
 end
 
 function call_analyzer(
-    input, aug::InterpolationAugmentation, ns::AbstractOutputSelector; input_ref=zero(input)
-)
+        input, aug::InterpolationAugmentation, ns::AbstractOutputSelector; input_ref = zero(input)
+    )
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))
 

@@ -14,21 +14,21 @@ ins = 20
 outs = 10
 batchsize = 15
 
-model = Chain(Dense(ins, 15, relu; init=pseudorand), Dense(15, outs, relu; init=pseudorand))
+model = Chain(Dense(ins, 15, relu; init = pseudorand), Dense(15, outs, relu; init = pseudorand))
 
 # Input 1 with batch dimension
 input1 = rand(StableRNG(1), Float32, ins, 1)
 # Input 2 with batch dimension
 input2 = rand(StableRNG(2), Float32, ins, 1)
 # Batch containing inputs 1 & 2
-input_batch = cat(input1, input2; dims=2)
+input_batch = cat(input1, input2; dims = 2)
 
 ANALYZERS = Dict(
-    "Gradient"            => Gradient,
-    "InputTimesGradient"  => InputTimesGradient,
-    "SmoothGrad"          => m -> SmoothGrad(m, 5, 0.1, StableRNG(123)),
+    "Gradient" => Gradient,
+    "InputTimesGradient" => InputTimesGradient,
+    "SmoothGrad" => m -> SmoothGrad(m, 5, 0.1, StableRNG(123)),
     "IntegratedGradients" => m -> IntegratedGradients(m, 5),
-    "GradCAM"             => m -> GradCAM(m[1], m[2]),
+    "GradCAM" => m -> GradCAM(m[1], m[2]),
 )
 
 for (name, method) in ANALYZERS

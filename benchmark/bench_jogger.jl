@@ -11,11 +11,11 @@ input = rand(T, input_size)
 
 model = Chain(
     Chain(
-        Conv((3, 3), 3 => 8, relu; pad=1),
-        Conv((3, 3), 8 => 8, relu; pad=1),
+        Conv((3, 3), 3 => 8, relu; pad = 1),
+        Conv((3, 3), 8 => 8, relu; pad = 1),
         MaxPool((2, 2)),
-        Conv((3, 3), 8 => 16, relu; pad=1),
-        Conv((3, 3), 16 => 16, relu; pad=1),
+        Conv((3, 3), 8 => 16, relu; pad = 1),
+        Conv((3, 3), 16 => 16, relu; pad = 1),
         MaxPool((2, 2)),
     ),
     Chain(
@@ -29,9 +29,9 @@ Flux.testmode!(model, true)
 
 # Use one representative algorithm of each type
 METHODS = Dict(
-    "Gradient"            => Gradient,
-    "InputTimesGradient"  => InputTimesGradient,
-    "SmoothGrad"          => model -> SmoothGrad(model, 5),
+    "Gradient" => Gradient,
+    "InputTimesGradient" => InputTimesGradient,
+    "SmoothGrad" => model -> SmoothGrad(model, 5),
     "IntegratedGradients" => model -> IntegratedGradients(model, 5),
 )
 
