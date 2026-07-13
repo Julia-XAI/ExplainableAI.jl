@@ -6,7 +6,7 @@ Neuron selector that passes through an augmented neuron selection.
 struct AugmentationSelector{I} <: AbstractOutputSelector
     indices::I
 end
-(s::AugmentationSelector)(out) = s.indices
+(s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
 """
     NoiseAugmentation(analyzer, n, [std::Real, rng])
