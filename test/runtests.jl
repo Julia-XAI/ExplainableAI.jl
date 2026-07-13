@@ -1,21 +1,11 @@
 using ExplainableAI
 
 using Test
-using Aqua
-using JET
 
 @testset "ExplainableAI.jl" begin
     @testset verbose = true "Linting" begin
-        @testset "Aqua.jl" begin
-            @info "- running Aqua.jl tests..."
-            Aqua.test_all(ExplainableAI; ambiguities = false)
-        end
-        if VERSION > v"1.11" # JET v0.10 requires Julia v1.12
-            @testset "JET tests" begin
-                @info "- running JET.jl type stability tests..."
-                JET.test_package(ExplainableAI; target_defined_modules = true)
-            end
-        end
+        @info "Running linting tests..."
+        include("linting.jl")
     end
 
     @testset "Constructors" begin
