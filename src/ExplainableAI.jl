@@ -5,7 +5,7 @@ using Reexport
 import XAIBase: call_analyzer
 
 using Base.Iterators
-using Distributions: Distribution, Sampleable, Normal
+using Distributions: Sampleable, Normal
 using Random: AbstractRNG, GLOBAL_RNG, rand!
 using ProgressMeter: Progress, next!
 

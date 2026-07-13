@@ -19,26 +19,26 @@
 
 ## Version `v0.9.0`
 - ![Feature][badge-feature] Support selection of AD backends via DifferentiationInterface.jl. ([#167])
-- ![BREAKING][badge-breaking] For gradient-based XAI methods, an AD backend must now be manually loaded. 
-  To keep using the default Zygote backend, this simply requires adding `using Zygote` to your code. ([#177]) 
+- ![BREAKING][badge-breaking] For gradient-based XAI methods, an AD backend must now be manually loaded.
+  To keep using the default Zygote backend, this simply requires adding `using Zygote` to your code. ([#177])
 - ![BREAKING][badge-breaking] `Gradient`, `InputTimesGradient` and `GradCAM` analyzers now have an additional `backend` field and type parameter. ([#167])
-- ![BREAKING][badge-breaking] Update XAIBase interface to `v4`. 
+- ![BREAKING][badge-breaking] Update XAIBase interface to `v4`.
   This adds a field to the `Explanation` return type and removes the `add_batch_dim` keyword argument.
   Refer to the [XAIBase.jl changelog](https://github.com/Julia-XAI/XAIBase.jl/blob/main/CHANGELOG.md#version-v400) for more information. ([#174])
 
 ## Version `v0.8.0`
 This release removes the automatic reexport of heatmapping functionality.
-Users are now required to manually load 
+Users are now required to manually load
 [VisionHeatmaps.jl][VisionHeatmaps] and/or [TextHeatmaps.jl][TextHeatmaps].
 
-This reduces the maintenance burden for new heatmapping features 
+This reduces the maintenance burden for new heatmapping features
 and the amount of dependencies for users who don't need heatmapping functionality.
 
 - ![BREAKING][badge-breaking] Removed reexport of heatmapping functionality by updating XAIBase dependency to `v3.0.0` ([#162]).
 - ![Feature][badge-feature] Added `GradCAM` analyzer ([#155]). Try it with [VisionHeatmaps.jl][VisionHeatmaps]'s new `heatmap_overlay` feature.
 
 ## Version `v0.7.0`
-This release moves the core interface (`Explanation`, `heatmap`, `analyze`) 
+This release moves the core interface (`Explanation`, `heatmap`, `analyze`)
 into a separate package called [XAIBase.jl](https://github.com/Julia-XAI/XAIBase.jl).
 Developers can make use of the [XAIBase.jl interface](https://julia-xai.github.io/XAIDocs/XAIBase/)
 to quickly implement or prototype new methods without having to write boilerplate code.
@@ -57,14 +57,14 @@ As announced with version `v0.6.2`, this is first release without LRP, which has
 - ![Bugfix][badge-bugfix] Fix typo in `BATCHDIM_MISSING` error ([#150])
 
 ## Version `v0.6.2`
-This is first release of ExplainableAI.jl as part of the 
+This is first release of ExplainableAI.jl as part of the
 [Julia-XAI](https://github.com/Julia-XAI) organization ([#149])
 and the last minor release that includes LRP before it is moved to its own separate package.
 
 - ![Feature][badge-feature] Add Concept Relevance Propagation analyzer `CRP` ([#146], [#148])
-- ![Feature][badge-feature] Add option to process heatmaps batch-wise 
+- ![Feature][badge-feature] Add option to process heatmaps batch-wise
   using keyword argument `process_batch=true` ([#146], [#148])
-- ![Bugfix][badge-bugfix] Remove `FlatRule` on dense layers 
+- ![Bugfix][badge-bugfix] Remove `FlatRule` on dense layers
   from `EpsilonPlusFlat` and `EpsilonAlpha2Beta1Flat` composite presets ([#147])
 
 ## Version `v0.6.1`
@@ -75,26 +75,26 @@ This release brings GPU support to all analyzers.
 - ![Documentation][badge-docs] Document GPU support ([#145])
 
 ## Version `v0.6.0`
-This release brings a large refactor of LRP analyzers, 
-supporting nested "dataflow layers" from Flux.jl like `Chain` and `Parallel` layers. 
+This release brings a large refactor of LRP analyzers,
+supporting nested "dataflow layers" from Flux.jl like `Chain` and `Parallel` layers.
 This enables LRP on more complex model architectures like ResNets.
 
 Due to the fact that these new features require a breaking release,
-we've used the occasion to clean up the API. 
-Since the number of changes is large, this changelog has been 
+we've used the occasion to clean up the API.
+Since the number of changes is large, this changelog has been
 split between changes to LRP analyzers and more general changes to the package.
 
 ### Changes to LRP analyzers
 Breaking changes:
 - ![BREAKING][badge-breaking] Remove all unicode characters from user-facing API ([#107])
-    - `EpsilonRule`: argument `epsilon` replaces `ϵ` 
-    - `GammaRule`: argument `gamma` replaces `γ` 
-    - `AlphaBetaRule`: arguments `alpha` and `beta` replace `α`, `β` 
+    - `EpsilonRule`: argument `epsilon` replaces `ϵ`
+    - `GammaRule`: argument `gamma` replaces `γ`
+    - `AlphaBetaRule`: arguments `alpha` and `beta` replace `α`, `β`
 - ![BREAKING][badge-breaking] Rename `LRP` analyzer keyword argument `is_flat=false` to `flatten=true` ([#119])
 - ![BREAKING][badge-breaking] Remove `check_model`, replaced by non-exported `check_lrp_compat` ([#119])
 - ![BREAKING][badge-breaking] Replace `layerwise_relevances` field of `Explanation` return type by optional named tuple `extras`.
     Access layerwise relevances via `extras.layerwise_relevances`. ([#126])
-- ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119]) 
+- ![BREAKING][badge-breaking] Remove composite `LastNTypeRule` ([#119])
 - ![BREAKING][badge-breaking] Rename composite primitives to avoid confusion with LRP rules ([#130])
     - rename `*Rule` to `*Map`
     - rename `*TypeRule` to `*TypeMap`
@@ -164,7 +164,7 @@ Bugfixes:
 
 ## Version `v0.5.3`
 Big feature release that adds LRP composites and presets:
-- ![Feature][badge-feature] Add LRP `Composite` and composite primitives ([#84]) 
+- ![Feature][badge-feature] Add LRP `Composite` and composite primitives ([#84])
 - ![Feature][badge-feature] Add LRP composite presets ([#87])
 - ![Feature][badge-feature] Add LRP `ZPlusRule` ([#88])
 - ![Enhancement][badge-enhancement] Export union-types of Flux layers for easy definition of LRP composites
@@ -178,7 +178,7 @@ This release temporarily adds ImageNet pre-processing utilities. This enables us
 - ![Enhancement][badge-enhancement] Updated README with the JuliaCon 2022 talk and examples on VGG16
 
 ## Version `v0.5.1`
-Small bugfix release addressing a bug in `v0.5.0`. 
+Small bugfix release addressing a bug in `v0.5.0`.
 Version of ExplainableAI.jl shown in the JuliaCon 2022 talk.
 - ![Bugfix][badge-bugfix] Fix bug in `FlatRule` ([#77])
 
@@ -211,8 +211,8 @@ Performance improvements:
 Changes:
 - ![BREAKING][badge-breaking] Update heatmapping normalizer, using ColorScheme's `get`. Breaking due to renaming `normalize` to ColorScheme's `rangescale`. ([#57])
 - ![BREAKING][badge-breaking] Rename `InputAugmentation` to `NoiseAugmentation`. ([#65])
-- ![BREAKING][badge-breaking] `GammaRule` and `EpsilonRule` now use default arguments instead of keyword arguments, removing the need for users to type unicode symbols. ([#70]) 
-- ![BREAKING][badge-breaking]![Bugfix][badge-bugfix] `ZBoxRule` now requires parameters `low` and `high` instead of computing them from the input. ([#69]) 
+- ![BREAKING][badge-breaking] `GammaRule` and `EpsilonRule` now use default arguments instead of keyword arguments, removing the need for users to type unicode symbols. ([#70])
+- ![BREAKING][badge-breaking]![Bugfix][badge-bugfix] `ZBoxRule` now requires parameters `low` and `high` instead of computing them from the input. ([#69])
 - ![Feature][badge-feature] Add `IntegratedGradients` analyzer. ([#65])
 - ![Feature][badge-feature] Add `InterpolationAugmentation` wrapper. ([#65])
 - ![Feature][badge-feature] Allow any type of `Sampleable` in `NoiseAugmentation`. ([#65])

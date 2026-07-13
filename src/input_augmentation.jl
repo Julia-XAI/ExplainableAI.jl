@@ -6,7 +6,7 @@ Neuron selector that passes through an augmented neuron selection.
 struct AugmentationSelector{I} <: AbstractOutputSelector
     indices::I
 end
-(s::AugmentationSelector)(out) = s.indices
+(s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
 """
     NoiseAugmentation(analyzer, n, [std::Real, rng])
@@ -20,8 +20,8 @@ For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10
 e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 
 ## Keyword arguments
-- `rng::AbstractRNG`: Specify the random number generator that is used to sample noise from the `distribution`. 
-  Defaults to `GLOBAL_RNG`. 
+- `rng::AbstractRNG`: Specify the random number generator that is used to sample noise from the `distribution`.
+  Defaults to `GLOBAL_RNG`.
 - `show_progress:Bool`: Show progress meter while sampling augmentations. Defaults to `true`.
 """
 struct NoiseAugmentation{A <: AbstractXAIMethod, D <: Sampleable, R <: AbstractRNG} <:
