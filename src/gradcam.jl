@@ -9,7 +9,7 @@ GradCAM provides a visual explanation of the regions with significant neuron imp
 - `adaptation_layers`: The layers of the CNN used for adaptation and classification.
 
 # Note
-Flux is not required for GradCAM. 
+Flux is not required for GradCAM.
 GradCAM is compatible with a wide variety of CNN model-families.
 
 # References

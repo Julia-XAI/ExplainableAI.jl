@@ -19,4 +19,3 @@ jobs:
         run: julia benchmark/run_benchmarks.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          

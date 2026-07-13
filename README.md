@@ -6,7 +6,7 @@ ___
 | Documentation | [![][docs-stab-img]][docs-stab-url] [![][docs-dev-img]][docs-dev-url] [![][changelog-img]][changelog-url] |
 | Build Status  | [![][ci-img]][ci-url] [![][codecov-img]][codecov-url]                                                     |
 | Testing       | [![Aqua][aqua-img]][aqua-url] [![JET][jet-img]][jet-url]                                                  |
-| Code Style    | [![Code Style: Runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl) [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac) | 
+| Code Style    | [![Code Style: Runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl) [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac) |
 | Citation      | [![][doi-img]][doi-url]                                                                                   |
 
 Explainable AI in Julia.
@@ -14,13 +14,13 @@ Explainable AI in Julia.
 This package implements interpretability methods for black-box classifiers,
 with an emphasis on local explanations and attribution maps in input space.
 The only requirement for the model is that it is differentiable[^1].
-It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch 
+It is similar to [Captum][captum-repo] and [Zennit][zennit-repo] for PyTorch
 and [iNNvestigate][innvestigate-repo] for Keras models.
 
 [^1]: The automatic differentiation backend can be selected using [ADTypes.jl](https://github.com/SciML/ADTypes.jl).
 
-## Installation 
-This package supports Julia ≥1.10. To install it, open the Julia REPL and run 
+## Installation
+This package supports Julia ≥1.10. To install it, open the Julia REPL and run
 ```julia-repl
 julia> ]add ExplainableAI
 ```
@@ -44,7 +44,7 @@ model = VGG(16, pretrain=true)
 
 # Load input
 url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
-img = load(url) 
+img = load(url)
 
 # Preprocess input
 mean = (0.485f0, 0.456f0, 0.406f0)
@@ -63,7 +63,7 @@ By default, explanations are computed for the class with the highest activation.
 We can also compute explanations for a specific class, e.g. the one at output index 5:
 
 ```julia
-analyze(input, analyzer, 5)  # for explanation 
+analyze(input, analyzer, 5)  # for explanation
 heatmap(input, analyzer, 5)  # for heatmap
 ```
 
@@ -75,18 +75,18 @@ heatmap(input, analyzer, 5)  # for heatmap
 | `InputTimesGradient`                          | ![][castle-ixg]                | ![][streetsign-ixg]                |
 
 > [!TIP]
-> The heatmaps shown above were created using a VGG-16 vision model 
+> The heatmaps shown above were created using a VGG-16 vision model
 > from [Metalhead.jl](https://github.com/FluxML/Metalhead.jl)
 > that was pre-trained on the [ImageNet](http://www.image-net.org/) dataset.
 >
 > Since ExplainableAI.jl can be used outside of Deep Learning models and [Flux.jl](https://github.com/FluxML/Flux.jl),
-> we have omitted specific models and inputs from the code snippet above. 
+> we have omitted specific models and inputs from the code snippet above.
 > The full code used to generate the heatmaps can be found [here][asset-code].
 
 Depending on the method, the applied heatmapping defaults differ:
 sensitivity-based methods (e.g. `Gradient`) default to a grayscale color scheme,
 whereas attribution-based methods (e.g. `InputTimesGradient`) default to a red-white-blue color scheme.
-Red color indicates regions of positive relevance towards the selected class, 
+Red color indicates regions of positive relevance towards the selected class,
 whereas regions in blue are of negative relevance.
 More information on heatmapping presets can be found in the [Julia-XAI documentation](https://julia-xai.github.io/XAIDocs/XAIDocs/dev/generated/heatmapping/).
 
@@ -132,7 +132,7 @@ In the future, we would like to include:
 Contributions are welcome!
 
 ## Acknowledgements
-> Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF) 
+> Adrian Hill acknowledges support by the Federal Ministry of Education and Research (BMBF)
 > for the Berlin Institute for the Foundations of Learning and Data (BIFOLD) (01IS18037A).
 
 [banner-img]: https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/banner.png
