@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/fredrikekre/runic-pre-commit
+    rev: v1.0.0
+    hooks:
+      - id: runic
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.48.0
+    hooks:
+      - id: typos
+        # report and fail (no --write-changes, so no in-place edits);
+        # --force-exclude makes staged files honor _typos.toml excludes
+        args: [--force-exclude]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        # ReferenceTests golden files: trailing space and the missing
+        # final newline are significant output, never "fix" them
+        exclude: ^test/references/
+      - id: end-of-file-fixer
+        exclude: ^test/references/
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
