@@ -2,6 +2,7 @@
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
@@ -19,4 +20,5 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Aqua = "0.8"
 BenchmarkTools = "~1.6"
+ExplicitImports = "1"
 JET = "0.9, 0.11"
