@@ -76,9 +76,31 @@ function call_analyzer(
 end
 
 """
-    SmoothGrad(analyzer)
-    SmoothGrad(analyzer, [n, std, rng]])
-    SmoothGrad(analyzer, [n, distribution, rng])
+    backend(analyzer)
+
+Return the automatic differentiation backend used by a gradient-based analyzer.
+
+For analyzers that wrap another analyzer, 
+such as [`NoiseAugmentation`](@ref) and [`InterpolationAugmentation`](@ref),
+the backend of the wrapped analyzer is returned.
+
+# Example
+```julia-repl
+julia> analyzer = SmoothGrad(model; backend = AutoEnzyme());
+
+julia> backend(analyzer)
+AutoEnzyme()
+```
+"""
+backend(analyzer::Gradient) = analyzer.backend
+backend(analyzer::InputTimesGradient) = analyzer.backend
+backend(aug::NoiseAugmentation) = backend(aug.analyzer)
+backend(aug::InterpolationAugmentation) = backend(aug.analyzer)
+
+"""
+    SmoothGrad(model)
+    SmoothGrad(model, [n, std, rng])
+    SmoothGrad(model, [n, distribution, rng])
 
 Analyze model by calculating a smoothed sensitivity map.
 This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
@@ -88,18 +110,31 @@ Defaults to 50 samples from the normal distribution with zero mean and `std=1.0f
 For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
 e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
 
+## Keyword arguments
+- `backend::AbstractADType`: 
+  AD backend used by the internal [`Gradient`](@ref) analyzer. 
+  Defaults to `$(DEFAULT_AD_BACKEND)`.
+
 # References
 - $REF_SMILKOV_SMOOTHGRAD
 """
-SmoothGrad(model, n = 50, args...) = NoiseAugmentation(Gradient(model), n, args...)
+function SmoothGrad(model, n = 50, args...; backend::AbstractADType = DEFAULT_AD_BACKEND)
+    return NoiseAugmentation(Gradient(model, backend), n, args...)
+end
 
 """
-    IntegratedGradients(analyzer, [n=50])
-    IntegratedGradients(analyzer, [n=50])
+    IntegratedGradients(model, [n=50])
 
 Analyze model by using the Integrated Gradients method.
+
+## Keyword arguments
+- `backend::AbstractADType`: 
+  AD backend used by the internal [`Gradient`](@ref) analyzer.
+  Defaults to `$(DEFAULT_AD_BACKEND)`.
 
 # References
 - $REF_SUNDARARAJAN_AXIOMATIC
 """
-IntegratedGradients(model, n = 50) = InterpolationAugmentation(Gradient(model), n)
+function IntegratedGradients(model, n = 50; backend::AbstractADType = DEFAULT_AD_BACKEND)
+    return InterpolationAugmentation(Gradient(model, backend), n)
+end
