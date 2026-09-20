@@ -23,5 +23,6 @@ export Gradient, InputTimesGradient
 export NoiseAugmentation, SmoothGrad
 export InterpolationAugmentation, IntegratedGradients
 export GradCAM
+export backend
 
 end # module

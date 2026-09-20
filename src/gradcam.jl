@@ -26,6 +26,8 @@ struct GradCAM{F, A, B <: AbstractADType} <: AbstractXAIMethod
         return new{F, A, B}(feature_layers, adaptation_layers, backend)
     end
 end
+backend(analyzer::GradCAM) = analyzer.backend
+
 function call_analyzer(input, analyzer::GradCAM, ns::AbstractOutputSelector; kwargs...)
     A = analyzer.feature_layers(input)  # feature map
     feature_map_size = size(A, 1) * size(A, 2)

@@ -1,4 +1,5 @@
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -18,6 +19,7 @@ XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+ADTypes = "1"
 Aqua = "0.8"
 BenchmarkTools = "~1.6"
 ExplicitImports = "1"

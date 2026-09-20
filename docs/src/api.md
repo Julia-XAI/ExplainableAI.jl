@@ -20,6 +20,14 @@ IntegratedGradients
 GradCAM
 ```
 
+All gradient-based analyzers use AD backends from
+[ADTypes.jl](https://github.com/SciML/ADTypes.jl) via
+[DifferentiationInterface.jl](https://github.com/JuliaDiff/DifferentiationInterface.jl),
+which can be selected on construction and queried via `backend`:
+```@docs
+backend
+```
+
 # Input augmentations
 `SmoothGrad` and `IntegratedGradients` are special cases of the input augmentations
 `NoiseAugmentation` and `InterpolationAugmentation`,

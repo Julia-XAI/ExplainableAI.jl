@@ -1,6 +1,9 @@
 # ExplainableAI.jl
 
 ## Version `v0.10.4-DEV`
+- ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
+  via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
+- ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
 - ![Maintenance][badge-maintenance] Switch from JuliaFormatter to Runic, update JET ([#188])
 
 ## Version `v0.10.3`
