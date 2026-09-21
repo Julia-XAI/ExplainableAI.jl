@@ -22,13 +22,13 @@
   on exactly `n` points spanning the reference and the input (inclusive),
   instead of averaging `n+1` points overshooting past the input.
   This changes `IntegratedGradients` results
-- ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
-  DifferentiationInterface.jl preparation and a gradient buffer across all samples,
-  and compute a single forward pass per sample on all AD backends.
-  Augmentations of `InputTimesGradient` multiply with the input in place on this buffer
-- ![Enhancement][badge-enhancement] `IntegratedGradients` and `InterpolationAugmentation` no longer compute
-  a separate forward pass to select the output,
-  and no longer require the wrapped analyzer to have a `model` field
+- ![Enhancement][badge-enhancement] `SmoothGrad` and `IntegratedGradients` are now dedicated analyzers
+  that hold the model, the AD backend and their sampling parameters directly,
+  instead of wrapping a `Gradient` analyzer in a `NoiseAugmentation` or `InterpolationAugmentation`.
+  They own an efficient implementation that selects the output once,
+  reuses a DifferentiationInterface.jl preparation and a gradient buffer across all samples,
+  and computes a single forward pass per sample on all AD backends.
+  `NoiseAugmentation` and `InterpolationAugmentation` stay generic wrappers around arbitrary analyzers
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
   via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
