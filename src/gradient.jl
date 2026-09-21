@@ -24,12 +24,18 @@ function gradient_wrt_input(
     return grad, output, selection
 end
 
+# Backend used to differentiate `masked_model` through DifferentiationInterface.jl.
+# `masked_model` is a stateless function and the model is passed as an inactive
+# context, so backends that annotate the differentiated function itself, such as
+# Enzyme with `function_annotation = Duplicated`, are stripped of that annotation.
+di_backend(backend::AbstractADType) = backend
+
 # Fix the output selection ahead of time so that repeated gradients at the same
 # `output_indices`, e.g. over augmented inputs, can reuse the preparation `prep`.
 function prepare_gradient_wrt_input(model, input, output_indices, backend::AbstractADType)
     return DI.prepare_gradient(
         masked_model,      # function differentiated w.r.t. its first argument
-        backend,           # AD backend
+        di_backend(backend),  # AD backend
         input,             # active argument the gradient is taken w.r.t.
         DI.Constant(model),          # context argument held constant
         DI.Constant(output_indices), # context argument held constant
@@ -44,7 +50,7 @@ function gradient_wrt_input!(
         masked_model,      # function differentiated w.r.t. its first argument
         grad,              # buffer the gradient is written into
         prep,              # reused preparation
-        backend,           # AD backend
+        di_backend(backend),  # AD backend
         input,             # active argument the gradient is taken w.r.t.
         DI.Constant(model),          # context argument held constant
         DI.Constant(output_indices), # context argument held constant
