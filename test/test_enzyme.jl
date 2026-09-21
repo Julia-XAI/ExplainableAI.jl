@@ -28,14 +28,16 @@ function test_against_zygote(model, backend_enzyme)
             expl_zygote = analyze(input, constructor(model, AutoZygote()); kwargs...)
             expl_enzyme = analyze(input, constructor(model, backend_enzyme); kwargs...)
             @test expl_enzyme.val ≈ expl_zygote.val
-            @test expl_enzyme.output == output
+            # Enzyme returns the primal of its own forward pass as the output.
+            # On some Julia versions this rounds differently from a plain `model(input)`.
+            @test expl_enzyme.output ≈ output
             @test expl_enzyme.output_selection == expl_zygote.output_selection
 
             # Select the second output
             expl_zygote = analyze(input, constructor(model, AutoZygote()), 2; kwargs...)
             expl_enzyme = analyze(input, constructor(model, backend_enzyme), 2; kwargs...)
             @test expl_enzyme.val ≈ expl_zygote.val
-            @test expl_enzyme.output == output
+            @test expl_enzyme.output ≈ output
         end
     end
     return nothing
