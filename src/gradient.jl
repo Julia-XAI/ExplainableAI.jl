@@ -9,7 +9,9 @@ function gradient_wrt_input(
     )
     output = model(input)
     selection = selector(output)
-    grad = DI.gradient(SelectedOutput(model, selection), backend, input)
+    # Writing into a buffer keeps the array type of the input:
+    # some backends return gradients of other types, e.g. forward-mode Enzyme.
+    grad = DI.gradient!(SelectedOutput(model, selection), similar(input), backend, input)
     return grad, output, selection
 end
 

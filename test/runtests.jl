@@ -24,6 +24,10 @@ using Test
         @info "Testing analyzers using Enzyme..."
         include("test_enzyme.jl")
     end
+    @testset "AD backends" begin
+        @info "Testing analyzers on several AD backends..."
+        include("test_backends.jl")
+    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")
