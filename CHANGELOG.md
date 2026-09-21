@@ -8,6 +8,11 @@
   and corrupted the final multiplication with `input - input_ref`:
   attributions had the wrong sign and shrank roughly like `1/n`.
   This changes `IntegratedGradients` results
+- ![Bugfix][badge-bugfix] Fix the quadrature of `IntegratedGradients` and `InterpolationAugmentation`.
+  The path integral is now computed with the trapezoidal rule
+  on exactly `n` points spanning the reference and the input (inclusive),
+  instead of averaging `n+1` points overshooting past the input.
+  This changes `IntegratedGradients` results
 - ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
   DifferentiationInterface.jl preparation across all samples, avoiding redundant work per sample
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection

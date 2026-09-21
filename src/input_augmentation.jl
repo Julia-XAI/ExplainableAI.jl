@@ -91,10 +91,13 @@ end
 """
     InterpolationAugmentation(model, [n=50])
 
-A wrapper around analyzers that augments the input with `n` steps of linear interpolation
-between the input and a reference input (typically `zero(input)`).
-The gradients w.r.t. this augmented input are then averaged and multiplied with the
-difference between the input and the reference input.
+A wrapper around analyzers that augments the input with `n` points of linear interpolation
+between a reference input (typically `zero(input)`) and the input, both endpoints included.
+The explanations of these augmented inputs are integrated over the path
+using the trapezoidal rule,
+and multiplied with the difference between the input and the reference input.
+
+The reference input can be set via the keyword argument `input_ref` of `analyze`.
 """
 struct InterpolationAugmentation{A <: AbstractXAIMethod} <: AbstractXAIMethod
     analyzer::A
@@ -122,21 +125,30 @@ function call_analyzer(
     # Prepare the wrapped analyzer once and reuse it across all interpolation steps
     prep = prepare_analyzer(aug.analyzer, input, output_selector)
 
-    # First augmentations
-    input_aug = copy(input_ref) # interpolation is accumulated in place
-    expl_aug = augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
-    sum_val = expl_aug.val
+    # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
+    # using the trapezoidal rule on `n` equidistant points, endpoints included.
+    # Every point is computed from the endpoints instead of being accumulated step by step.
+    # This avoids floating-point drift and never mutates `input_ref`.
+    T = eltype(input)
+    input_delta = input - input_ref
+    input_aug = similar(input)
+    function explain_at(α)
+        input_aug .= input_ref .+ α .* input_delta
+        return augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
+    end
 
-    # Further augmentations
-    input_delta = (input - input_ref) / (aug.n - 1)
-    for _ in 1:(aug.n)
-        input_aug .+= input_delta
-        expl_aug = augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
-        sum_val .+= expl_aug.val
+    # Endpoints α = 0 and α = 1 carry half weight
+    sum_val = T(0.5) .* explain_at(zero(T)).val
+    expl_aug = explain_at(one(T))
+    sum_val .+= T(0.5) .* expl_aug.val
+
+    # Interior points carry full weight
+    for k in 1:(aug.n - 2)
+        sum_val .+= explain_at(T(k / (aug.n - 1))).val
     end
 
     # Average gradients and compute explanation
-    val = (input - input_ref) .* sum_val / aug.n
+    val = input_delta .* sum_val ./ (aug.n - 1)
 
     return Explanation(
         val, input, output, output_indices, expl_aug.analyzer, expl_aug.heatmap, nothing
