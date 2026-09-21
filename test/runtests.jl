@@ -16,6 +16,14 @@ using Test
         @info "Testing analyzers against closed-form solutions..."
         include("test_analytic.jl")
     end
+    @testset "Forward passes" begin
+        @info "Testing number of forward passes..."
+        include("test_forward_passes.jl")
+    end
+    @testset "Enzyme" begin
+        @info "Testing analyzers using Enzyme..."
+        include("test_enzyme.jl")
+    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")
