@@ -52,19 +52,22 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
 
+    # Prepare the wrapped analyzer once and reuse it across all samples
+    prep = prepare_analyzer(aug.analyzer, input, output_selector)
+
     p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
     noisy_input = sample_noise!(noisy_input, input, aug)
-    expl_aug = aug.analyzer(noisy_input, output_selector)
+    expl_aug = augmented_explanation(aug.analyzer, noisy_input, output_selector, prep)
     sum_val = expl_aug.val
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
         noisy_input = sample_noise!(noisy_input, input, aug)
-        expl_aug = aug.analyzer(noisy_input, output_selector)
+        expl_aug = augmented_explanation(aug.analyzer, noisy_input, output_selector, prep)
         sum_val .+= expl_aug.val
         next!(p)
     end
@@ -116,16 +119,19 @@ function call_analyzer(
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
 
+    # Prepare the wrapped analyzer once and reuse it across all interpolation steps
+    prep = prepare_analyzer(aug.analyzer, input, output_selector)
+
     # First augmentations
     input_aug = input_ref
-    expl_aug = aug.analyzer(input_aug, output_selector)
+    expl_aug = augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
     sum_val = expl_aug.val
 
     # Further augmentations
     input_delta = (input - input_ref) / (aug.n - 1)
     for _ in 1:(aug.n)
         input_aug .+= input_delta
-        expl_aug = aug.analyzer(input_aug, output_selector)
+        expl_aug = augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
         sum_val .+= expl_aug.val
     end
 

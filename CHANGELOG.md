@@ -2,6 +2,8 @@
 
 ## Version `v0.10.4-DEV`
 - ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two ([#186])
+- ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
+  DifferentiationInterface.jl preparation across all samples, avoiding redundant work per sample
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
   via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
