@@ -8,6 +8,18 @@ struct AugmentationSelector{I} <: AbstractOutputSelector
 end
 (s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
+# Internal interface of input augmentations:
+# `prepare_augmentation` is called once on the unaugmented input and its output selection,
+# `explain_augmentation` is then called on every augmented input.
+# The `val` of the returned explanation is only valid until the next call,
+# which allows analyzers to reuse buffers.
+function prepare_augmentation(::AbstractXAIMethod, input, output, output_indices)
+    return AugmentationSelector(output_indices)
+end
+function explain_augmentation(analyzer::AbstractXAIMethod, input, s::AugmentationSelector)
+    return analyzer(input, s)
+end
+
 """
     NoiseAugmentation(analyzer, n, [std::Real, rng])
     NoiseAugmentation(analyzer, n, [distribution::Sampleable, rng])
@@ -50,24 +62,23 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     # Regular forward pass of model
     output = aug.analyzer.model(input)
     output_indices = ns(output)
-    output_selector = AugmentationSelector(output_indices)
 
     # Prepare the wrapped analyzer once and reuse it across all samples
-    prep = prepare_analyzer(aug.analyzer, input, output_selector)
+    prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
 
     p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
     noisy_input = sample_noise!(noisy_input, input, aug)
-    expl_aug = augmented_explanation(aug.analyzer, noisy_input, output_selector, prep)
-    sum_val = expl_aug.val
+    expl_aug = explain_augmentation(aug.analyzer, noisy_input, prep)
+    sum_val = copy(expl_aug.val)
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
         noisy_input = sample_noise!(noisy_input, input, aug)
-        expl_aug = augmented_explanation(aug.analyzer, noisy_input, output_selector, prep)
+        expl_aug = explain_augmentation(aug.analyzer, noisy_input, prep)
         sum_val .+= expl_aug.val
         next!(p)
     end
@@ -120,10 +131,9 @@ function call_analyzer(
     # Regular forward pass of model
     output = aug.analyzer.model(input)
     output_indices = ns(output)
-    output_selector = AugmentationSelector(output_indices)
 
     # Prepare the wrapped analyzer once and reuse it across all interpolation steps
-    prep = prepare_analyzer(aug.analyzer, input, output_selector)
+    prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
 
     # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
     # using the trapezoidal rule on `n` equidistant points, endpoints included.
@@ -134,7 +144,7 @@ function call_analyzer(
     input_aug = similar(input)
     function explain_at(α)
         input_aug .= input_ref .+ α .* input_delta
-        return augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
+        return explain_augmentation(aug.analyzer, input_aug, prep)
     end
 
     # Endpoints α = 0 and α = 1 carry half weight

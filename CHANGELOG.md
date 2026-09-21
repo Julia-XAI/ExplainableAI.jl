@@ -1,7 +1,8 @@
 # ExplainableAI.jl
 
 ## Version `v0.10.4-DEV`
-- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two ([#186])
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two
+  when using the default Zygote backend ([#186])
 - ![Bugfix][badge-bugfix] Fix `IntegratedGradients` and `InterpolationAugmentation` mutating the reference input.
   The interpolation was accumulated in place on `input_ref`,
   which overwrote a user-provided `input_ref`
@@ -14,7 +15,8 @@
   instead of averaging `n+1` points overshooting past the input.
   This changes `IntegratedGradients` results
 - ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
-  DifferentiationInterface.jl preparation across all samples, avoiding redundant work per sample
+  DifferentiationInterface.jl preparation and a gradient buffer across all samples,
+  and compute a single forward pass per sample on all AD backends
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
   via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer

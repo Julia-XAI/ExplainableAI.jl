@@ -1,4 +1,5 @@
 using ExplainableAI
+using ADTypes: AbstractADType, AutoZygote
 using Zygote
 using Test
 
@@ -22,6 +23,31 @@ end
 @testset "InputTimesGradient" begin
     # x ⊙ ∂f/∂x = x²
     @test analyze(input, InputTimesGradient(model)).val ≈ input .^ 2
+end
+
+# Zygote takes output and selection from a single forward pass,
+# all other backends use a forward pass followed by a vector-Jacobian product.
+# Both code paths have to agree. Two logits make the output selection non-trivial:
+#
+#     f₁(x) = ½ ∑ᵢ xᵢ²,  f₂(x) = 5 ∑ᵢ xᵢ,    ∂f₁/∂xᵢ = xᵢ,  ∂f₂/∂xᵢ = 5
+@testset "Gradient code paths" begin
+    model_two_logits = x -> vcat(sum(0.5f0 .* x .^ 2; dims = 1), sum(5 .* x; dims = 1))
+    output = model_two_logits(input)
+    selector = MaxActivationSelector()
+    @test selector(output) == [CartesianIndex(1, 1), CartesianIndex(2, 2)]
+
+    gradient_wrt_input = ExplainableAI.gradient_wrt_input
+    res_zygote = gradient_wrt_input(model_two_logits, input, selector, AutoZygote())
+    res_generic = invoke(
+        gradient_wrt_input,
+        Tuple{Any, Any, AbstractOutputSelector, AbstractADType},
+        model_two_logits, input, selector, AutoZygote(),
+    )
+    for (grad, out, selection) in (res_zygote, res_generic)
+        @test grad ≈ hcat(input[:, 1], fill(5.0f0, 3))
+        @test out == output
+        @test selection == selector(output)
+    end
 end
 
 # For this model the path gradient x' + α(x - x') is linear in α, so the n-point

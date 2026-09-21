@@ -1,59 +1,43 @@
-# Scalar-valued function that is differentiated to obtain the input gradient.
-# It runs a single forward pass, selects the target output activation(s) and reduces
-# them to a scalar. The forward-pass output is cached in the `output` field so that
-# the caller can reuse it for the `Explanation` without a second forward pass (#186).
-mutable struct SelectedModelOutput{M, S <: AbstractOutputSelector}
-    model::M
-    selector::S
-    output::Any
-end
-SelectedModelOutput(model, selector) = SelectedModelOutput(model, selector, nothing)
-
-function (f::SelectedModelOutput)(input)
-    output = f.model(input)
-    f.output = output
-    selection = f.selector(output)
-    return sum(output[selection])
-end
-
-# Prepare the input-gradient computation for repeated evaluation on inputs of matching
-# type and size (e.g. the samples drawn by input augmentations). Returns the differentiated
-# function and a DifferentiationInterface preparation object to be passed back below.
-function prepare_gradient_wrt_input(
-        model, input, selector::AbstractOutputSelector, backend::AbstractADType
-    )
-    f = SelectedModelOutput(model, selector)
-    prep = prepare_gradient(f, backend, input)
-    return (f, prep)
+# Seed of the vector-Jacobian product that selects the output activations at `selection`.
+function output_seed(output, selection)
+    seed = zero(output)
+    seed[selection] .= 1
+    return seed
 end
 
 # Compute the gradient of the selected output activation(s) w.r.t. the input.
-# A single forward pass determines the selection *and* the model output (#186),
-# the latter being returned for use in the `Explanation`.
+# Returns the gradient, the model output and the output selection.
+# The selection depends on the model output,
+# which requires a forward pass ahead of the vector-Jacobian product.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
-    f = SelectedModelOutput(model, selector)
-    _, grad = value_and_gradient(f, backend, input)
-    output = f.output
-    return grad, output, selector(output)
+    output = model(input)
+    selection = selector(output)
+    seed = output_seed(output, selection)
+    output, (grad,) = value_and_pullback(model, backend, input, (seed,))
+    return grad, output, selection
 end
 
-# Variant reusing a preparation object created by `prepare_gradient_wrt_input`.
+# Zygote evaluates the differentiated function exactly once, on the unmodified input,
+# and tolerates side effects.
+# Output and selection can therefore be taken from a single forward pass (#186).
+# This doesn't hold for backends in general:
+# forward-mode and finite-difference backends call the function on dual-valued
+# or perturbed inputs, and Enzyme doesn't support the write to captured memory.
 function gradient_wrt_input(
-        model, input, ::AbstractOutputSelector, backend::AbstractADType, prep::Tuple
+        model, input, selector::AbstractOutputSelector, backend::AutoZygote
     )
-    f, gradient_prep = prep
-    _, grad = value_and_gradient(f, gradient_prep, backend, input)
-    output = f.output
-    return grad, output, f.selector(output)
-end
-
-# `prep === nothing` falls back to the unprepared, single-shot computation.
-function gradient_wrt_input(
-        model, input, selector::AbstractOutputSelector, backend::AbstractADType, ::Nothing
-    )
-    return gradient_wrt_input(model, input, selector, backend)
+    forward_pass = Ref{Any}(nothing)
+    function selected_output(x)
+        output = model(x)
+        selection = selector(output)
+        forward_pass[] = (output, selection)
+        return sum(output[selection])
+    end
+    _, grad = value_and_gradient(selected_output, backend, input)
+    output, selection = forward_pass[]
+    return grad, output, selection
 end
 
 """
@@ -70,17 +54,7 @@ struct Gradient{M, B <: AbstractADType} <: AbstractXAIMethod
     end
 end
 
-function call_analyzer(input, analyzer::Gradient, ns::AbstractOutputSelector; kwargs...)
-    return gradient_explanation(analyzer, input, ns, nothing)
-end
-
-# Shared explanation builder, also used by input augmentations (via `augmented_explanation`)
-# to reuse a preparation object `prep` across many samples. `prep === nothing` computes
-# the gradient without preparation.
-function gradient_explanation(analyzer::Gradient, input, ns::AbstractOutputSelector, prep)
-    grad, output, output_indices = gradient_wrt_input(
-        analyzer.model, input, ns, analyzer.backend, prep
-    )
+function gradient_explanation(::Gradient, grad, input, output, output_indices)
     return Explanation(
         grad, input, output, output_indices, :Gradient, :sensitivity, nothing
     )
@@ -103,41 +77,48 @@ struct InputTimesGradient{M, B <: AbstractADType} <: AbstractXAIMethod
     end
 end
 
-function call_analyzer(
-        input, analyzer::InputTimesGradient, ns::AbstractOutputSelector; kwargs...
-    )
-    return gradient_explanation(analyzer, input, ns, nothing)
-end
-
-function gradient_explanation(
-        analyzer::InputTimesGradient, input, ns::AbstractOutputSelector, prep
-    )
-    grad, output, output_indices = gradient_wrt_input(
-        analyzer.model, input, ns, analyzer.backend, prep
-    )
+function gradient_explanation(::InputTimesGradient, grad, input, output, output_indices)
     attr = input .* grad
     return Explanation(
         attr, input, output, output_indices, :InputTimesGradient, :attribution, nothing
     )
 end
 
-# Preparation interface used internally by input augmentations to amortize the cost of
-# repeatedly differentiating the same model over many samples. `prep` is never exposed to
-# users: `prepare_analyzer` builds it once and `augmented_explanation` threads it back into
-# the gradient computation for each sample. Analyzers without a preparation opt out by
-# returning `nothing`, in which case augmentations fall back to a plain analyzer call.
-prepare_analyzer(::AbstractXAIMethod, input, ::AbstractOutputSelector) = nothing
-function prepare_analyzer(
-        analyzer::Union{Gradient, InputTimesGradient}, input, selector::AbstractOutputSelector
+const GradientAnalyzer = Union{Gradient, InputTimesGradient}
+
+function call_analyzer(
+        input, analyzer::GradientAnalyzer, ns::AbstractOutputSelector; kwargs...
     )
-    return prepare_gradient_wrt_input(analyzer.model, input, selector, analyzer.backend)
+    grad, output, output_indices = gradient_wrt_input(
+        analyzer.model, input, ns, analyzer.backend
+    )
+    return gradient_explanation(analyzer, grad, input, output, output_indices)
 end
 
-augmented_explanation(analyzer, input, selector, ::Nothing) = analyzer(input, selector)
-function augmented_explanation(
-        analyzer::Union{Gradient, InputTimesGradient}, input, selector, prep::Tuple
+# Input augmentations fix the output selection ahead of sampling.
+# The seed of the vector-Jacobian product is therefore known,
+# such that the model can be differentiated directly,
+# reusing a DifferentiationInterface.jl preparation and a gradient buffer across all samples.
+struct PreparedPullback{P, S, G, I}
+    prep::P
+    seed::S
+    grad::G
+    output_indices::I
+end
+
+function prepare_augmentation(analyzer::GradientAnalyzer, input, output, output_indices)
+    seed = output_seed(output, output_indices)
+    prep = prepare_pullback(analyzer.model, analyzer.backend, input, (seed,))
+    return PreparedPullback(prep, seed, similar(input), output_indices)
+end
+
+# The returned explanation aliases the gradient buffer of `p`,
+# which is overwritten by the next call.
+function explain_augmentation(analyzer::GradientAnalyzer, input, p::PreparedPullback)
+    output, (grad,) = value_and_pullback!(
+        analyzer.model, (p.grad,), p.prep, analyzer.backend, input, (p.seed,)
     )
-    return gradient_explanation(analyzer, input, selector, prep)
+    return gradient_explanation(analyzer, grad, input, output, p.output_indices)
 end
 
 """

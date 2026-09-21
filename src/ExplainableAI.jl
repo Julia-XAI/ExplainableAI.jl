@@ -11,7 +11,8 @@ using ProgressMeter: Progress, next!
 
 # Automatic differentiation
 using ADTypes: AbstractADType, AutoZygote
-using DifferentiationInterface: value_and_gradient, prepare_gradient
+using DifferentiationInterface: value_and_gradient
+using DifferentiationInterface: prepare_pullback, value_and_pullback, value_and_pullback!
 const DEFAULT_AD_BACKEND = AutoZygote()
 
 include("bibliography.jl")
