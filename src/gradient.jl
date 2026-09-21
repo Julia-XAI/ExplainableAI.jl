@@ -24,6 +24,33 @@ function gradient_wrt_input(
     return grad, output, selection
 end
 
+# Fix the output selection ahead of time so that repeated gradients at the same
+# `output_indices`, e.g. over augmented inputs, can reuse the preparation `prep`.
+function prepare_gradient_wrt_input(model, input, output_indices, backend::AbstractADType)
+    return DI.prepare_gradient(
+        masked_model,      # function differentiated w.r.t. its first argument
+        backend,           # AD backend
+        input,             # active argument the gradient is taken w.r.t.
+        DI.Constant(model),          # context argument held constant
+        DI.Constant(output_indices), # context argument held constant
+    )
+end
+
+# Gradient at a fixed output selection, written into `grad` and reusing `prep`.
+function gradient_wrt_input!(
+        grad, model, input, output_indices, prep, backend::AbstractADType
+    )
+    return DI.gradient!(
+        masked_model,      # function differentiated w.r.t. its first argument
+        grad,              # buffer the gradient is written into
+        prep,              # reused preparation
+        backend,           # AD backend
+        input,             # active argument the gradient is taken w.r.t.
+        DI.Constant(model),          # context argument held constant
+        DI.Constant(output_indices), # context argument held constant
+    )
+end
+
 """
     Gradient(model)
 
@@ -38,7 +65,10 @@ struct Gradient{M, B <: AbstractADType} <: AbstractXAIMethod
     end
 end
 
-function gradient_explanation(::Gradient, grad, input, output, output_indices)
+function call_analyzer(input, analyzer::Gradient, ns::AbstractOutputSelector; kwargs...)
+    grad, output, output_indices = gradient_wrt_input(
+        analyzer.model, input, ns, analyzer.backend
+    )
     return Explanation(
         grad, input, output, output_indices, :Gradient, :sensitivity, nothing
     )
@@ -61,61 +91,171 @@ struct InputTimesGradient{M, B <: AbstractADType} <: AbstractXAIMethod
     end
 end
 
-function gradient_explanation(::InputTimesGradient, grad, input, output, output_indices)
+function call_analyzer(
+        input, analyzer::InputTimesGradient, ns::AbstractOutputSelector; kwargs...
+    )
+    grad, output, output_indices = gradient_wrt_input(
+        analyzer.model, input, ns, analyzer.backend
+    )
     attr = input .* grad
     return Explanation(
         attr, input, output, output_indices, :InputTimesGradient, :attribution, nothing
     )
 end
 
-# Variants of `gradient_explanation` that are allowed to overwrite the buffer `grad`.
-function gradient_explanation!(analyzer::Gradient, grad, input, output, output_indices)
-    return gradient_explanation(analyzer, grad, input, output, output_indices)
+"""
+    SmoothGrad(model)
+    SmoothGrad(model, [n, std, rng])
+    SmoothGrad(model, [n, distribution, rng])
+
+Analyze model by calculating a smoothed sensitivity map.
+This is done by averaging the gradient over `n` random samples
+in a neighborhood of the input.
+Defaults to 50 samples from the normal distribution with zero mean and `std=1.0f0`.
+
+For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
+e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
+
+## Keyword arguments
+- `backend::AbstractADType`:
+  AD backend used to compute gradients.
+  Defaults to `$(DEFAULT_AD_BACKEND)`.
+
+# References
+- $REF_SMILKOV_SMOOTHGRAD
+"""
+struct SmoothGrad{M, B <: AbstractADType, D <: Sampleable, R <: AbstractRNG} <:
+    AbstractXAIMethod
+    model::M
+    backend::B
+    n::Int
+    distribution::D
+    rng::R
+    show_progress::Bool
+
+    function SmoothGrad(
+            model::M, backend::B, n::Int, distribution::D, rng::R, show_progress::Bool
+        ) where {M, B <: AbstractADType, D <: Sampleable, R <: AbstractRNG}
+        n < 1 && throw(ArgumentError("Number of samples `n` needs to be larger than zero."))
+        return new{M, B, D, R}(model, backend, n, distribution, rng, show_progress)
+    end
 end
-function gradient_explanation!(::InputTimesGradient, grad, input, output, output_indices)
-    grad .*= input
-    return Explanation(
-        grad, input, output, output_indices, :InputTimesGradient, :attribution, nothing
+function SmoothGrad(
+        model, n::Int = 50, distribution::Sampleable = Normal(0.0f0, 1.0f0),
+        rng::AbstractRNG = GLOBAL_RNG, show_progress::Bool = true;
+        backend::AbstractADType = DEFAULT_AD_BACKEND,
     )
+    return SmoothGrad(model, backend, n, distribution, rng, show_progress)
+end
+function SmoothGrad(
+        model, n::Int, std::Real, rng::AbstractRNG = GLOBAL_RNG, show_progress::Bool = true;
+        backend::AbstractADType = DEFAULT_AD_BACKEND,
+    )
+    return SmoothGrad(model, n, Normal(zero(std), std^2), rng, show_progress; backend)
 end
 
-const GradientAnalyzer = Union{Gradient, InputTimesGradient}
+function call_analyzer(input, analyzer::SmoothGrad, ns::AbstractOutputSelector; kwargs...)
+    # One forward pass on the unaugmented input fixes the output selection,
+    # which is then reused for every noisy sample.
+    output = analyzer.model(input)
+    output_indices = ns(output)
+
+    prep = prepare_gradient_wrt_input(
+        analyzer.model, input, output_indices, analyzer.backend
+    )
+    grad = similar(input)
+    sum_grad = zero(input)
+    noisy_input = similar(input)
+
+    p = Progress(analyzer.n; desc = "Sampling SmoothGrad...", enabled = analyzer.show_progress)
+    for _ in 1:(analyzer.n)
+        sample_noise!(noisy_input, input, analyzer.rng, analyzer.distribution)
+        gradient_wrt_input!(
+            grad, analyzer.model, noisy_input, output_indices, prep, analyzer.backend
+        )
+        sum_grad .+= grad
+        next!(p)
+    end
+
+    val = sum_grad ./ analyzer.n
+    return Explanation(val, input, output, output_indices, :SmoothGrad, :sensitivity, nothing)
+end
+
+"""
+    IntegratedGradients(model, [n=50])
+
+Analyze model by using the Integrated Gradients method.
+
+## Keyword arguments
+- `backend::AbstractADType`:
+  AD backend used to compute gradients.
+  Defaults to `$(DEFAULT_AD_BACKEND)`.
+
+# References
+- $REF_SUNDARARAJAN_AXIOMATIC
+"""
+struct IntegratedGradients{M, B <: AbstractADType} <: AbstractXAIMethod
+    model::M
+    backend::B
+    n::Int
+
+    function IntegratedGradients(
+            model::M, backend::B, n::Int
+        ) where {M, B <: AbstractADType}
+        n < 2 && throw(
+            ArgumentError("Number of interpolation steps `n` needs to be larger than one."),
+        )
+        return new{M, B}(model, backend, n)
+    end
+end
+function IntegratedGradients(model, n::Int = 50; backend::AbstractADType = DEFAULT_AD_BACKEND)
+    return IntegratedGradients(model, backend, n)
+end
 
 function call_analyzer(
-        input, analyzer::GradientAnalyzer, ns::AbstractOutputSelector; kwargs...
+        input, analyzer::IntegratedGradients, ns::AbstractOutputSelector; input_ref = zero(input)
     )
+    size(input) != size(input_ref) &&
+        throw(ArgumentError("Input reference size doesn't match input size."))
+
+    # The input is the endpoint α = 1 of the interpolation path.
+    # Its gradient computation also provides the model output and the output selection.
     grad, output, output_indices = gradient_wrt_input(
         analyzer.model, input, ns, analyzer.backend
     )
-    return gradient_explanation(analyzer, grad, input, output, output_indices)
-end
-
-# Extension point of the input augmentation interface (see `input_augmentation.jl`):
-# non-gradient analyzers need no preparation.
-prepare_gradient_wrt_input(::AbstractXAIMethod, input, output_indices) = nothing
-
-# Input augmentations fix the output selection ahead of sampling, so every sample
-# differentiates `masked_model` at the same `selection` and reuses a preparation `prep`.
-function prepare_gradient_wrt_input(analyzer::GradientAnalyzer, input, output_indices)
-    return DI.prepare_gradient(
-        masked_model,       # function differentiated w.r.t. its first argument
-        analyzer.backend,   # AD backend
-        input,              # active argument the gradient is taken w.r.t.
-        DI.Constant(analyzer.model),   # context argument held constant
-        DI.Constant(output_indices),   # context argument held constant
+    prep = prepare_gradient_wrt_input(
+        analyzer.model, input, output_indices, analyzer.backend
     )
-end
 
-# The returned explanation aliases the gradient buffer `grad`.
-# It holds the model output of the unaugmented input.
-function explain_augmentation!(
-        grad, analyzer::GradientAnalyzer, input, output, output_indices, prep
+    # Integrate the gradient along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
+    # using the trapezoidal rule on `n` equidistant points, endpoints included.
+    # Every point is computed from the endpoints, so `input_ref` is never mutated.
+    T = eltype(input)
+    input_delta = input - input_ref
+    input_aug = similar(input)
+    grad_buffer = similar(input)
+
+    # Endpoints α = 1 (the input) and α = 0 carry half weight
+    sum_grad = T(0.5) .* grad
+    input_aug .= input_ref
+    gradient_wrt_input!(
+        grad_buffer, analyzer.model, input_aug, output_indices, prep, analyzer.backend
     )
-    DI.gradient!(
-        masked_model, grad, prep, analyzer.backend, input,
-        DI.Constant(analyzer.model), DI.Constant(output_indices),
+    sum_grad .+= T(0.5) .* grad_buffer
+
+    # Interior points carry full weight
+    for k in 1:(analyzer.n - 2)
+        input_aug .= input_ref .+ T(k / (analyzer.n - 1)) .* input_delta
+        gradient_wrt_input!(
+            grad_buffer, analyzer.model, input_aug, output_indices, prep, analyzer.backend
+        )
+        sum_grad .+= grad_buffer
+    end
+
+    val = input_delta .* sum_grad ./ (analyzer.n - 1)
+    return Explanation(
+        val, input, output, output_indices, :IntegratedGradients, :sensitivity, nothing
     )
-    return gradient_explanation!(analyzer, grad, input, output, output_indices)
 end
 
 """
@@ -123,7 +263,7 @@ end
 
 Return the automatic differentiation backend used by a gradient-based analyzer.
 
-For analyzers that wrap another analyzer, 
+For analyzers that wrap another analyzer,
 such as [`NoiseAugmentation`](@ref) and [`InterpolationAugmentation`](@ref),
 the backend of the wrapped analyzer is returned.
 
@@ -137,47 +277,7 @@ AutoEnzyme()
 """
 backend(analyzer::Gradient) = analyzer.backend
 backend(analyzer::InputTimesGradient) = analyzer.backend
+backend(analyzer::SmoothGrad) = analyzer.backend
+backend(analyzer::IntegratedGradients) = analyzer.backend
 backend(aug::NoiseAugmentation) = backend(aug.analyzer)
 backend(aug::InterpolationAugmentation) = backend(aug.analyzer)
-
-"""
-    SmoothGrad(model)
-    SmoothGrad(model, [n, std, rng])
-    SmoothGrad(model, [n, distribution, rng])
-
-Analyze model by calculating a smoothed sensitivity map.
-This is done by averaging sensitivity maps of a `Gradient` analyzer over random samples
-in a neighborhood of the input.
-Defaults to 50 samples from the normal distribution with zero mean and `std=1.0f0`.
-
-For optimal results, $REF_SMILKOV_SMOOTHGRAD recommends setting `std` between 10% and 20% of the input range of each sample,
-e.g. `std = 0.1 * (maximum(input) - minimum(input))`.
-
-## Keyword arguments
-- `backend::AbstractADType`: 
-  AD backend used by the internal [`Gradient`](@ref) analyzer. 
-  Defaults to `$(DEFAULT_AD_BACKEND)`.
-
-# References
-- $REF_SMILKOV_SMOOTHGRAD
-"""
-function SmoothGrad(model, n = 50, args...; backend::AbstractADType = DEFAULT_AD_BACKEND)
-    return NoiseAugmentation(Gradient(model, backend), n, args...)
-end
-
-"""
-    IntegratedGradients(model, [n=50])
-
-Analyze model by using the Integrated Gradients method.
-
-## Keyword arguments
-- `backend::AbstractADType`: 
-  AD backend used by the internal [`Gradient`](@ref) analyzer.
-  Defaults to `$(DEFAULT_AD_BACKEND)`.
-
-# References
-- $REF_SUNDARARAJAN_AXIOMATIC
-"""
-function IntegratedGradients(model, n = 50; backend::AbstractADType = DEFAULT_AD_BACKEND)
-    return InterpolationAugmentation(Gradient(model, backend), n)
-end

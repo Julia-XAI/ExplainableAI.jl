@@ -8,18 +8,6 @@ struct AugmentationSelector{I} <: AbstractOutputSelector
 end
 (s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
-# Internal interface of input augmentations:
-# `prepare_gradient_wrt_input` (see `gradient.jl`) is called once on the unaugmented
-# input and its output selection, `explain_augmentation!` is then called on every
-# augmented input.
-# Analyzers are allowed to write the `val` of the returned explanation into `buffer`,
-# which is overwritten by the next call.
-function explain_augmentation!(
-        buffer, analyzer::AbstractXAIMethod, input, output, output_indices, prep
-    )
-    return analyzer(input, AugmentationSelector(output_indices))
-end
-
 """
     NoiseAugmentation(analyzer, n, [std::Real, rng])
     NoiseAugmentation(analyzer, n, [distribution::Sampleable, rng])
@@ -59,31 +47,25 @@ function NoiseAugmentation(
 end
 
 function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector; kwargs...)
-    # Regular forward pass of model
+    # Select the output once on the unaugmented input, then hold it fixed
+    # so every sample is analyzed at the same output neuron(s).
     output = aug.analyzer.model(input)
     output_indices = ns(output)
-
-    # The preparation of the wrapped analyzer is reused across all samples, which overwrite `buffer`.
-    prep = prepare_gradient_wrt_input(aug.analyzer, input, output_indices)
-    buffer = similar(input)
+    output_selector = AugmentationSelector(output_indices)
 
     p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
-    noisy_input = sample_noise!(noisy_input, input, aug)
-    expl_aug = explain_augmentation!(
-        buffer, aug.analyzer, noisy_input, output, output_indices, prep
-    )
+    sample_noise!(noisy_input, input, aug.rng, aug.distribution)
+    expl_aug = aug.analyzer(noisy_input, output_selector)
     sum_val = copy(expl_aug.val)
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
-        noisy_input = sample_noise!(noisy_input, input, aug)
-        expl_aug = explain_augmentation!(
-            buffer, aug.analyzer, noisy_input, output, output_indices, prep
-        )
+        sample_noise!(noisy_input, input, aug.rng, aug.distribution)
+        expl_aug = aug.analyzer(noisy_input, output_selector)
         sum_val .+= expl_aug.val
         next!(p)
     end
@@ -96,10 +78,11 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     )
 end
 
+# Fill `out` with additive noise sampled from `distribution` around `input`.
 function sample_noise!(
-        out::A, input::A, aug::NoiseAugmentation
-    ) where {T, A <: AbstractArray{T}}
-    out = rand!(aug.rng, aug.distribution, out)
+        out::A, input::A, rng::AbstractRNG, distribution::Sampleable
+    ) where {A <: AbstractArray}
+    rand!(rng, distribution, out)
     out .+= input
     return out
 end
@@ -134,32 +117,25 @@ function call_analyzer(
         throw(ArgumentError("Input reference size doesn't match input size."))
 
     # The input is the endpoint α = 1 of the interpolation path.
-    # Its explanation also provides the model output and the output selection,
-    # which saves a separate forward pass.
+    # Analyzing it also provides the model output and the output selection,
+    # which are then held fixed across the remaining interpolation points.
     expl_input = aug.analyzer(input, ns)
     output = expl_input.output
     output_indices = expl_input.output_selection
-
-    # The preparation of the wrapped analyzer is reused across all other interpolation steps,
-    # which overwrite `buffer`.
-    prep = prepare_gradient_wrt_input(aug.analyzer, input, output_indices)
-    buffer = similar(input)
+    output_selector = AugmentationSelector(output_indices)
 
     # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
     # using the trapezoidal rule on `n` equidistant points, endpoints included.
-    # Every point is computed from the endpoints instead of being accumulated step by step.
-    # This avoids floating-point drift and never mutates `input_ref`.
+    # Every point is computed from the endpoints, so `input_ref` is never mutated.
     T = eltype(input)
     input_delta = input - input_ref
     input_aug = similar(input)
     function explain_at(α)
         input_aug .= input_ref .+ α .* input_delta
-        return explain_augmentation!(
-            buffer, aug.analyzer, input_aug, output, output_indices, prep
-        )
+        return aug.analyzer(input_aug, output_selector)
     end
 
-    # Endpoints α = 0 and α = 1 carry half weight
+    # Endpoints α = 1 (the input) and α = 0 carry half weight
     sum_val = T(0.5) .* expl_input.val
     sum_val .+= T(0.5) .* explain_at(zero(T)).val
 
