@@ -128,11 +128,14 @@ function call_analyzer(
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))
 
-    # Regular forward pass of model
-    output = aug.analyzer.model(input)
-    output_indices = ns(output)
+    # The input is the endpoint α = 1 of the interpolation path.
+    # Its explanation also provides the model output and the output selection,
+    # which saves a separate forward pass.
+    expl_input = aug.analyzer(input, ns)
+    output = expl_input.output
+    output_indices = expl_input.output_selection
 
-    # Prepare the wrapped analyzer once and reuse it across all interpolation steps
+    # Prepare the wrapped analyzer once and reuse it across all other interpolation steps
     prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
 
     # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
@@ -148,9 +151,8 @@ function call_analyzer(
     end
 
     # Endpoints α = 0 and α = 1 carry half weight
-    sum_val = T(0.5) .* explain_at(zero(T)).val
-    expl_aug = explain_at(one(T))
-    sum_val .+= T(0.5) .* expl_aug.val
+    sum_val = T(0.5) .* expl_input.val
+    sum_val .+= T(0.5) .* explain_at(zero(T)).val
 
     # Interior points carry full weight
     for k in 1:(aug.n - 2)
@@ -161,6 +163,6 @@ function call_analyzer(
     val = input_delta .* sum_val ./ (aug.n - 1)
 
     return Explanation(
-        val, input, output, output_indices, expl_aug.analyzer, expl_aug.heatmap, nothing
+        val, input, output, output_indices, expl_input.analyzer, expl_input.heatmap, nothing
     )
 end

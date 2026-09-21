@@ -1,43 +1,50 @@
-# Seed of the vector-Jacobian product that selects the output activations at `selection`.
-function output_seed(output, selection)
-    seed = zero(output)
-    seed[selection] .= 1
-    return seed
-end
-
 # Compute the gradient of the selected output activation(s) w.r.t. the input.
 # Returns the gradient, the model output and the output selection.
 # The selection depends on the model output,
-# which requires a forward pass ahead of the vector-Jacobian product.
+# which requires a forward pass ahead of the differentiation.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
     output = model(input)
     selection = selector(output)
-    seed = output_seed(output, selection)
-    output, (grad,) = value_and_pullback(model, backend, input, (seed,))
+    grad = DI.gradient(SelectedOutput(model, selection), backend, input)
     return grad, output, selection
 end
 
+# Sum of the output activations at a fixed `selection`.
+struct SelectedOutput{M, S}
+    model::M
+    selection::S
+end
+(f::SelectedOutput)(input) = sum(f.model(input)[f.selection])
+
 # Zygote evaluates the differentiated function exactly once, on the unmodified input,
 # and tolerates side effects.
-# Output and selection can therefore be taken from a single forward pass (#186).
+# Output and selection can therefore be recorded during a single forward pass (#186).
 # This doesn't hold for backends in general:
 # forward-mode and finite-difference backends call the function on dual-valued
-# or perturbed inputs, and Enzyme doesn't support the write to captured memory.
+# or perturbed inputs, and Enzyme doesn't support the write to `forward_pass`.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AutoZygote
     )
-    forward_pass = Ref{Any}(nothing)
-    function selected_output(x)
-        output = model(x)
-        selection = selector(output)
-        forward_pass[] = (output, selection)
-        return sum(output[selection])
-    end
-    _, grad = value_and_gradient(selected_output, backend, input)
-    output, selection = forward_pass[]
+    f = RecordedSelectedOutput(model, selector, Ref{Any}(nothing))
+    grad = DI.gradient(f, backend, input)
+    output, selection = f.forward_pass[]
     return grad, output, selection
+end
+
+# Sum of the output activations picked by `selector`,
+# recording model output and selection in `forward_pass`.
+struct RecordedSelectedOutput{M, S <: AbstractOutputSelector}
+    model::M
+    selector::S
+    forward_pass::Base.RefValue{Any}
+end
+function (f::RecordedSelectedOutput)(input)
+    output = f.model(input)
+    selection = f.selector(output)
+    f.forward_pass[] = (output, selection)
+    return sum(output[selection])
 end
 
 """
@@ -96,29 +103,27 @@ function call_analyzer(
 end
 
 # Input augmentations fix the output selection ahead of sampling.
-# The seed of the vector-Jacobian product is therefore known,
-# such that the model can be differentiated directly,
-# reusing a DifferentiationInterface.jl preparation and a gradient buffer across all samples.
-struct PreparedPullback{P, S, G, I}
+# All samples therefore differentiate the same `SelectedOutput`,
+# reusing a DifferentiationInterface.jl preparation and a gradient buffer.
+struct PreparedGradient{F <: SelectedOutput, P, G, O}
+    f::F
     prep::P
-    seed::S
     grad::G
-    output_indices::I
+    output::O
 end
 
 function prepare_augmentation(analyzer::GradientAnalyzer, input, output, output_indices)
-    seed = output_seed(output, output_indices)
-    prep = prepare_pullback(analyzer.model, analyzer.backend, input, (seed,))
-    return PreparedPullback(prep, seed, similar(input), output_indices)
+    f = SelectedOutput(analyzer.model, output_indices)
+    prep = DI.prepare_gradient(f, analyzer.backend, input)
+    return PreparedGradient(f, prep, similar(input), output)
 end
 
 # The returned explanation aliases the gradient buffer of `p`,
 # which is overwritten by the next call.
-function explain_augmentation(analyzer::GradientAnalyzer, input, p::PreparedPullback)
-    output, (grad,) = value_and_pullback!(
-        analyzer.model, (p.grad,), p.prep, analyzer.backend, input, (p.seed,)
-    )
-    return gradient_explanation(analyzer, grad, input, output, p.output_indices)
+# It holds the model output of the unaugmented input.
+function explain_augmentation(analyzer::GradientAnalyzer, input, p::PreparedGradient)
+    DI.gradient!(p.f, p.grad, p.prep, analyzer.backend, input)
+    return gradient_explanation(analyzer, p.grad, input, p.output, p.f.selection)
 end
 
 """

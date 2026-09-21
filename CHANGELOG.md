@@ -17,6 +17,9 @@
 - ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
   DifferentiationInterface.jl preparation and a gradient buffer across all samples,
   and compute a single forward pass per sample on all AD backends
+- ![Enhancement][badge-enhancement] `IntegratedGradients` and `InterpolationAugmentation` no longer compute
+  a separate forward pass to select the output,
+  and no longer require the wrapped analyzer to have a `model` field
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
   via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
