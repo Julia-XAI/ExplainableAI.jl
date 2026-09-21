@@ -12,6 +12,10 @@ using Test
         @info "Testing constructors..."
         include("test_constructors.jl")
     end
+    @testset "Analytic" begin
+        @info "Testing analyzers against closed-form solutions..."
+        include("test_analytic.jl")
+    end
     @testset "CNN" begin
         @info "Testing analyzers on CNN..."
         include("test_cnn.jl")

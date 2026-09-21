@@ -1,6 +1,7 @@
 # ExplainableAI.jl
 
 ## Version `v0.10.4-DEV`
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two ([#186])
 - ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
   via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
@@ -241,6 +242,7 @@ Performance improvements:
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
 [#188]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/188
+[#186]: https://github.com/Julia-XAI/ExplainableAI.jl/issues/186
 [#184]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/184
 [#183]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/183
 [#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180

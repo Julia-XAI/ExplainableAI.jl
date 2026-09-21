@@ -1,26 +1,31 @@
-function forward_with_output_selection(model, input, selector::AbstractOutputSelector)
-    output = model(input)
-    sel = selector(output)
-    return output[sel]
+# Scalar-valued function that is differentiated to obtain the input gradient.
+# It runs a single forward pass, selects the target output activation(s) and reduces
+# them to a scalar. The forward-pass output is cached in the `output` field so that
+# the caller can reuse it for the `Explanation` without a second forward pass (#186).
+mutable struct SelectedModelOutput{M, S <: AbstractOutputSelector}
+    model::M
+    selector::S
+    output::Any
+end
+SelectedModelOutput(model, selector) = SelectedModelOutput(model, selector, nothing)
+
+function (f::SelectedModelOutput)(input)
+    output = f.model(input)
+    f.output = output
+    selection = f.selector(output)
+    return sum(output[selection])
 end
 
+# Compute the gradient of the selected output activation(s) w.r.t. the input.
+# A single forward pass determines the selection *and* the model output (#186),
+# the latter being returned for use in the `Explanation`.
 function gradient_wrt_input(
-        model, input, output_selector::AbstractOutputSelector, backend::AbstractADType
+        model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
-    output = model(input)
-    return gradient_wrt_input(model, input, output, output_selector, backend)
-end
-
-function gradient_wrt_input(
-        model, input, output, output_selector::AbstractOutputSelector, backend::AbstractADType
-    )
-    output_selection = output_selector(output)
-    dy = zero(output)
-    dy[output_selection] .= 1
-
-    output, pbs = value_and_pullback(model, backend, input, tuple(dy))
-    grad = only(pbs)
-    return grad, output, output_selection
+    f = SelectedModelOutput(model, selector)
+    _, grad = value_and_gradient(f, backend, input)
+    output = f.output
+    return grad, output, selector(output)
 end
 
 """
