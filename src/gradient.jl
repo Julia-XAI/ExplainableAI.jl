@@ -2,6 +2,8 @@
 # Returns the gradient, the model output and the output selection.
 # The selection depends on the model output,
 # which requires a forward pass ahead of the differentiation.
+# Backends that can select the output during their own forward pass
+# specialize this function (#186): Zygote below, Enzyme in a package extension.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
@@ -23,7 +25,7 @@ end
 # Output and selection can therefore be recorded during a single forward pass (#186).
 # This doesn't hold for backends in general:
 # forward-mode and finite-difference backends call the function on dual-valued
-# or perturbed inputs, and Enzyme doesn't support the write to `forward_pass`.
+# or perturbed inputs.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AutoZygote
     )

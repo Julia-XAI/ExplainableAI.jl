@@ -40,18 +40,18 @@ n = 6
     @test count_forward_passes(analyzer, input; input_ref) == n
 end
 
-# Other backends select the output in a separate forward pass ahead of the differentiation.
+# Enzyme's split mode selects the output between the forward and the reverse pass.
 @testset "Enzyme" begin
     backend = AutoEnzyme()
-    @test count_forward_passes(Gradient(counting_model, backend), input) <= 2
-    @test count_forward_passes(InputTimesGradient(counting_model, backend), input) <= 2
+    @test count_forward_passes(Gradient(counting_model, backend), input) == 1
+    @test count_forward_passes(InputTimesGradient(counting_model, backend), input) == 1
 
     # One pass on the unaugmented input to select the output, one per sample
     analyzer = SmoothGrad(counting_model, n; backend)
     @test count_forward_passes(analyzer, input) <= n + 1
 
-    # Two passes on the input, one per remaining interpolation point
+    # One pass per interpolation point: the input itself is the last point of the path
     analyzer = IntegratedGradients(counting_model, n; backend)
-    @test count_forward_passes(analyzer, input) <= n + 1
-    @test count_forward_passes(analyzer, input; input_ref) <= n + 1
+    @test count_forward_passes(analyzer, input) == n
+    @test count_forward_passes(analyzer, input; input_ref) == n
 end

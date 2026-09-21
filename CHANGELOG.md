@@ -3,6 +3,10 @@
 ## Version `v0.10.4-DEV`
 - ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two
   when using the default Zygote backend ([#186])
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two
+  when using Enzyme in reverse mode.
+  A package extension on Enzyme selects the output
+  between the forward and the reverse pass of Enzyme's split mode ([#186])
 - ![Bugfix][badge-bugfix] Fix `IntegratedGradients` and `InterpolationAugmentation` mutating the reference input.
   The interpolation was accumulated in place on `input_ref`,
   which overwrote a user-provided `input_ref`

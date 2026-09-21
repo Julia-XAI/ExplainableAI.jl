@@ -52,3 +52,15 @@ end
     model = Chain(Dense(5 => 8, relu; init = pseudorand), Dense(8 => 3; init = pseudorand))
     test_against_zygote(model, AutoEnzyme(; function_annotation = Duplicated))
 end
+
+# Settings of a user-provided reverse mode are kept by the split mode of the extension.
+@testset "Reverse mode with runtime activity" begin
+    model = Chain(Dense(5 => 8, relu; init = pseudorand), Dense(8 => 3; init = pseudorand))
+    mode = Enzyme.set_runtime_activity(Enzyme.Reverse)
+    test_against_zygote(model, AutoEnzyme(; mode, function_annotation = Duplicated))
+end
+
+# Forward mode isn't covered by the extension and falls back to DifferentiationInterface.jl.
+@testset "Forward mode" begin
+    test_against_zygote(model_without_parameters, AutoEnzyme(; mode = Enzyme.Forward))
+end
