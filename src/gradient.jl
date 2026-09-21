@@ -93,6 +93,17 @@ function gradient_explanation(::InputTimesGradient, grad, input, output, output_
     )
 end
 
+# Variants of `gradient_explanation` that are allowed to overwrite the buffer `grad`.
+function gradient_explanation!(analyzer::Gradient, grad, input, output, output_indices)
+    return gradient_explanation(analyzer, grad, input, output, output_indices)
+end
+function gradient_explanation!(::InputTimesGradient, grad, input, output, output_indices)
+    grad .*= input
+    return Explanation(
+        grad, input, output, output_indices, :InputTimesGradient, :attribution, nothing
+    )
+end
+
 const GradientAnalyzer = Union{Gradient, InputTimesGradient}
 
 function call_analyzer(
@@ -125,7 +136,7 @@ end
 # It holds the model output of the unaugmented input.
 function explain_augmentation(analyzer::GradientAnalyzer, input, p::PreparedGradient)
     DI.gradient!(p.f, p.grad, p.prep, analyzer.backend, input)
-    return gradient_explanation(analyzer, p.grad, input, p.output, p.f.selection)
+    return gradient_explanation!(analyzer, p.grad, input, p.output, p.f.selection)
 end
 
 """

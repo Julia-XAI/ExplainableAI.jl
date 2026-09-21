@@ -20,7 +20,8 @@
   This changes `IntegratedGradients` results
 - ![Enhancement][badge-enhancement] Input augmentations (`SmoothGrad`, `IntegratedGradients`) reuse a
   DifferentiationInterface.jl preparation and a gradient buffer across all samples,
-  and compute a single forward pass per sample on all AD backends
+  and compute a single forward pass per sample on all AD backends.
+  Augmentations of `InputTimesGradient` multiply with the input in place on this buffer
 - ![Enhancement][badge-enhancement] `IntegratedGradients` and `InterpolationAugmentation` no longer compute
   a separate forward pass to select the output,
   and no longer require the wrapped analyzer to have a `model` field

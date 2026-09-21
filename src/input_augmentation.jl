@@ -63,7 +63,9 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output = aug.analyzer.model(input)
     output_indices = ns(output)
 
-    # Prepare the wrapped analyzer once and reuse it across all samples
+    # Prepare the wrapped analyzer once and reuse it across all samples.
+    # For gradient-based analyzers, `prep` is a `PreparedGradient`,
+    # which holds the gradient buffer that every sample overwrites.
     prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
 
     p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
@@ -135,7 +137,9 @@ function call_analyzer(
     output = expl_input.output
     output_indices = expl_input.output_selection
 
-    # Prepare the wrapped analyzer once and reuse it across all other interpolation steps
+    # Prepare the wrapped analyzer once and reuse it across all other interpolation steps.
+    # For gradient-based analyzers, `prep` is a `PreparedGradient`,
+    # which holds the gradient buffer that every step overwrites.
     prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
 
     # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
