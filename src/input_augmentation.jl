@@ -123,7 +123,7 @@ function call_analyzer(
     prep = prepare_analyzer(aug.analyzer, input, output_selector)
 
     # First augmentations
-    input_aug = input_ref
+    input_aug = copy(input_ref) # interpolation is accumulated in place
     expl_aug = augmented_explanation(aug.analyzer, input_aug, output_selector, prep)
     sum_val = expl_aug.val
 

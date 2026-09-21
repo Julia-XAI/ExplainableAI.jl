@@ -23,3 +23,10 @@ end
     # x ⊙ ∂f/∂x = x²
     @test analyze(input, InputTimesGradient(model)).val ≈ input .^ 2
 end
+
+@testset "IntegratedGradients (reference input)" begin
+    input_ref = Float32[0.5 1.0; -1.0 0.0; 2.0 -1.0]
+    input_ref_copy = copy(input_ref)
+    analyze(input, IntegratedGradients(model, 5); input_ref = input_ref)
+    @test input_ref == input_ref_copy # reference input must not be mutated
+end
