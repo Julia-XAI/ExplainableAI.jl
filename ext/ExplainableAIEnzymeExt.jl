@@ -5,16 +5,12 @@ using ADTypes: AutoEnzyme
 using Enzyme: Enzyme, Const, Duplicated, ReverseMode, ReverseSplitWithPrimal
 using Enzyme.EnzymeCore: Split, WithPrimal
 
-# DifferentiationInterface.jl requires the seed of a pullback ahead of the forward pass,
-# whereas the output selection depends on the model output.
-# Enzyme's split mode separates the two passes:
-# the output is selected after the forward pass and seeds the reverse pass (#186).
-# Forward-mode backends fall back to the generic method.
-const ReverseBackend{A} = AutoEnzyme{<:Union{Nothing, ReverseMode}, A}
-
+# Enzyme's split mode runs the forward and reverse passes separately (#186),
+# so the output can be selected after the forward pass to seed the reverse pass.
+# Forward-mode Enzyme falls back to the generic method.
 function ExplainableAI.gradient_wrt_input(
         model, input, selector::AbstractOutputSelector,
-        backend::ReverseBackend{<:Union{Nothing, Const, Duplicated}},
+        backend::AutoEnzyme{<:Union{Nothing, ReverseMode}},
     )
     f = annotate_model(model, backend)
     x = Duplicated(input, Enzyme.make_zero(input))
@@ -30,8 +26,8 @@ function ExplainableAI.gradient_wrt_input(
 end
 
 # Models that hold their parameters require a shadow, selected via `function_annotation`.
-annotate_model(model, ::ReverseBackend{<:Union{Nothing, Const}}) = Const(model)
-function annotate_model(model, ::ReverseBackend{<:Duplicated})
+annotate_model(model, ::AutoEnzyme{<:Any, <:Union{Nothing, Const}}) = Const(model)
+function annotate_model(model, ::AutoEnzyme{<:Any, <:Duplicated})
     return Duplicated(model, Enzyme.make_zero(model))
 end
 

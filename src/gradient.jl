@@ -1,9 +1,7 @@
-# Compute the gradient of the selected output activation(s) w.r.t. the input.
-# Returns the gradient, the model output and the output selection.
-# The selection depends on the model output,
-# which requires a forward pass ahead of the differentiation.
-# Backends that can select the output during their own forward pass
-# specialize this function in package extensions (#186): Zygote and Enzyme.
+# Compute the gradient of the selected output activation(s) w.r.t. the input,
+# returning the gradient, the model output and the output selection.
+# Zygote and Enzyme are specialized manually in package extensions (#186);
+# all other backends use this DifferentiationInterface.jl fallback.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
@@ -11,16 +9,15 @@ function gradient_wrt_input(
     selection = selector(output)
     # Writing into a buffer keeps the array type of the input:
     # some backends return gradients of other types, e.g. forward-mode Enzyme.
-    grad = DI.gradient!(SelectedOutput(model, selection), similar(input), backend, input)
+    grad = DI.gradient!(
+        selected_output, similar(input), backend, input,
+        DI.Constant(model), DI.Constant(selection),
+    )
     return grad, output, selection
 end
 
-# Sum of the output activations at a fixed `selection`.
-struct SelectedOutput{M, S}
-    model::M
-    selection::S
-end
-(f::SelectedOutput)(input) = sum(f.model(input)[f.selection])
+# Sum of the model output activations at a fixed `selection`.
+selected_output(input, model, selection) = sum(model(input)[selection])
 
 """
     Gradient(model)
@@ -88,12 +85,13 @@ function call_analyzer(
     return gradient_explanation(analyzer, grad, input, output, output_indices)
 end
 
-# Input augmentations fix the output selection ahead of sampling.
-# All samples therefore differentiate the same `SelectedOutput`,
-# reusing a DifferentiationInterface.jl preparation `prep`.
-function augmentation_cache(analyzer::GradientAnalyzer, input, output_indices)
-    f = SelectedOutput(analyzer.model, output_indices)
-    return DI.prepare_gradient(f, analyzer.backend, input)
+# Input augmentations fix the output selection ahead of sampling, so every sample
+# differentiates `selected_output` at the same `selection` and reuses a preparation `prep`.
+function prepare_gradient_wrt_input(analyzer::GradientAnalyzer, input, output_indices)
+    return DI.prepare_gradient(
+        selected_output, analyzer.backend, input,
+        DI.Constant(analyzer.model), DI.Constant(output_indices),
+    )
 end
 
 # The returned explanation aliases the gradient buffer `grad`.
@@ -101,8 +99,10 @@ end
 function explain_augmentation!(
         grad, analyzer::GradientAnalyzer, input, output, output_indices, prep
     )
-    f = SelectedOutput(analyzer.model, output_indices)
-    DI.gradient!(f, grad, prep, analyzer.backend, input)
+    DI.gradient!(
+        selected_output, grad, prep, analyzer.backend, input,
+        DI.Constant(analyzer.model), DI.Constant(output_indices),
+    )
     return gradient_explanation!(analyzer, grad, input, output, output_indices)
 end
 
