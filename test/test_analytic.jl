@@ -1,6 +1,8 @@
 using ExplainableAI
 using ADTypes: AbstractADType, AutoZygote
 using Zygote
+using Distributions: Normal
+using StableRNGs: StableRNG
 using Test
 
 # Analytical correctness tests on a model with a known closed-form gradient.
@@ -104,4 +106,29 @@ end
             (model_cubic(input) .- model_cubic(input_ref)),
     )
     @test gap(100) < gap(10) < gap(2)
+end
+
+# The dedicated analyzers own an efficient implementation, but must return the same
+# result as wrapping a `Gradient` analyzer in the corresponding generic augmentation.
+@testset "IntegratedGradients matches InterpolationAugmentation" begin
+    for n in (2, 5, 50)
+        ig = analyze(input, IntegratedGradients(model, n)).val
+        ia = analyze(input, InterpolationAugmentation(Gradient(model), n)).val
+        @test ig ≈ ia
+    end
+    input_ref = Float32[0.5 1.0; -1.0 0.0; 2.0 -1.0]
+    ig = analyze(input, IntegratedGradients(model, 7); input_ref = input_ref).val
+    ia = analyze(input, InterpolationAugmentation(Gradient(model), 7); input_ref = input_ref).val
+    @test ig ≈ ia
+end
+
+@testset "SmoothGrad matches NoiseAugmentation" begin
+    distribution = Normal(0.0f0, 0.1f0)
+    n = 10
+    # Both analyzers draw the same noise from an equally seeded RNG.
+    sg = analyze(input, SmoothGrad(model, n, distribution, StableRNG(42), false)).val
+    na = analyze(
+        input, NoiseAugmentation(Gradient(model), n, distribution, StableRNG(42), false)
+    ).val
+    @test sg ≈ na
 end
