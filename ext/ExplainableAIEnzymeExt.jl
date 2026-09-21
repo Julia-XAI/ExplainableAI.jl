@@ -42,9 +42,4 @@ function split_mode(backend::AutoEnzyme{<:ReverseMode})
     return WithPrimal(Split(backend.mode))
 end
 
-# When differentiating `masked_model` through DifferentiationInterface.jl (input
-# augmentations), the model is an inactive context, not the differentiated function,
-# so the `function_annotation` is dropped to avoid marking `masked_model` as differentiable.
-ExplainableAI.di_backend(backend::AutoEnzyme) = AutoEnzyme(; mode = backend.mode)
-
 end # module

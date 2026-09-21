@@ -10,7 +10,7 @@ using Random: AbstractRNG, GLOBAL_RNG, rand!
 using ProgressMeter: Progress, next!
 
 # Automatic differentiation
-using ADTypes: AbstractADType, AutoZygote
+using ADTypes: AbstractADType, AutoZygote, AutoEnzyme
 import DifferentiationInterface as DI
 const DEFAULT_AD_BACKEND = AutoZygote()
 
