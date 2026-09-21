@@ -15,9 +15,11 @@ XAIBase = "9b48221d-a747-4c1b-9860-46a1d8ba24a7"
 
 [weakdeps]
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
 ExplainableAIEnzymeExt = "Enzyme"
+ExplainableAIZygoteExt = "Zygote"
 
 [compat]
 ADTypes = "1"
@@ -29,4 +31,5 @@ Random = "<0.0.1, 1"
 Reexport = "1"
 Statistics = "<0.0.1, 1"
 XAIBase = "4"
+Zygote = "0.6, 0.7"
 julia = "1.10"

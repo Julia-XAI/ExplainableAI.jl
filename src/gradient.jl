@@ -3,7 +3,7 @@
 # The selection depends on the model output,
 # which requires a forward pass ahead of the differentiation.
 # Backends that can select the output during their own forward pass
-# specialize this function (#186): Zygote below, Enzyme in a package extension.
+# specialize this function in package extensions (#186): Zygote and Enzyme.
 function gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, backend::AbstractADType
     )
@@ -19,35 +19,6 @@ struct SelectedOutput{M, S}
     selection::S
 end
 (f::SelectedOutput)(input) = sum(f.model(input)[f.selection])
-
-# Zygote evaluates the differentiated function exactly once, on the unmodified input,
-# and tolerates side effects.
-# Output and selection can therefore be recorded during a single forward pass (#186).
-# This doesn't hold for backends in general:
-# forward-mode and finite-difference backends call the function on dual-valued
-# or perturbed inputs.
-function gradient_wrt_input(
-        model, input, selector::AbstractOutputSelector, backend::AutoZygote
-    )
-    f = RecordedSelectedOutput(model, selector, Ref{Any}(nothing))
-    grad = DI.gradient(f, backend, input)
-    output, selection = f.forward_pass[]
-    return grad, output, selection
-end
-
-# Sum of the output activations picked by `selector`,
-# recording model output and selection in `forward_pass`.
-struct RecordedSelectedOutput{M, S <: AbstractOutputSelector}
-    model::M
-    selector::S
-    forward_pass::Base.RefValue{Any}
-end
-function (f::RecordedSelectedOutput)(input)
-    output = f.model(input)
-    selection = f.selector(output)
-    f.forward_pass[] = (output, selection)
-    return sum(output[selection])
-end
 
 """
     Gradient(model)
