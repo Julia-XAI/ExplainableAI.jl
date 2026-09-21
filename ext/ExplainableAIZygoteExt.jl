@@ -4,10 +4,8 @@ using ExplainableAI: ExplainableAI, AbstractOutputSelector
 using ADTypes: AutoZygote
 using Zygote: Zygote
 
-# DifferentiationInterface.jl requires the seed of a pullback ahead of the forward pass,
-# whereas the output selection depends on the model output.
-# Zygote's pullback separates the two passes:
-# the output is selected after the forward pass and seeds the reverse pass (#186).
+# Zygote's pullback separates the forward and reverse passes (#186),
+# so the output can be selected after the forward pass to seed the reverse pass.
 function ExplainableAI.gradient_wrt_input(
         model, input, selector::AbstractOutputSelector, ::AutoZygote
     )
