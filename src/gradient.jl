@@ -1,3 +1,7 @@
+# Sum of the model output activations at a fixed `selection`.
+# This is the scalar function differentiated w.r.t. the input.
+masked_model(input, model, selection) = sum(model(input)[selection])
+
 # Compute the gradient of the selected output activation(s) w.r.t. the input,
 # returning the gradient, the model output and the output selection.
 # Zygote and Enzyme are specialized manually in package extensions (#186);
@@ -10,14 +14,15 @@ function gradient_wrt_input(
     # Writing into a buffer keeps the array type of the input:
     # some backends return gradients of other types, e.g. forward-mode Enzyme.
     grad = DI.gradient!(
-        selected_output, similar(input), backend, input,
-        DI.Constant(model), DI.Constant(selection),
+        masked_model,      # function differentiated w.r.t. its first argument
+        similar(input),    # buffer the gradient is written into
+        backend,           # AD backend
+        input,             # active argument the gradient is taken w.r.t.
+        DI.Constant(model),      # context argument held constant
+        DI.Constant(selection),  # context argument held constant
     )
     return grad, output, selection
 end
-
-# Sum of the model output activations at a fixed `selection`.
-selected_output(input, model, selection) = sum(model(input)[selection])
 
 """
     Gradient(model)
@@ -85,12 +90,19 @@ function call_analyzer(
     return gradient_explanation(analyzer, grad, input, output, output_indices)
 end
 
+# Extension point of the input augmentation interface (see `input_augmentation.jl`):
+# non-gradient analyzers need no preparation.
+prepare_gradient_wrt_input(::AbstractXAIMethod, input, output_indices) = nothing
+
 # Input augmentations fix the output selection ahead of sampling, so every sample
-# differentiates `selected_output` at the same `selection` and reuses a preparation `prep`.
+# differentiates `masked_model` at the same `selection` and reuses a preparation `prep`.
 function prepare_gradient_wrt_input(analyzer::GradientAnalyzer, input, output_indices)
     return DI.prepare_gradient(
-        selected_output, analyzer.backend, input,
-        DI.Constant(analyzer.model), DI.Constant(output_indices),
+        masked_model,       # function differentiated w.r.t. its first argument
+        analyzer.backend,   # AD backend
+        input,              # active argument the gradient is taken w.r.t.
+        DI.Constant(analyzer.model),   # context argument held constant
+        DI.Constant(output_indices),   # context argument held constant
     )
 end
 
@@ -100,7 +112,7 @@ function explain_augmentation!(
         grad, analyzer::GradientAnalyzer, input, output, output_indices, prep
     )
     DI.gradient!(
-        selected_output, grad, prep, analyzer.backend, input,
+        masked_model, grad, prep, analyzer.backend, input,
         DI.Constant(analyzer.model), DI.Constant(output_indices),
     )
     return gradient_explanation!(analyzer, grad, input, output, output_indices)

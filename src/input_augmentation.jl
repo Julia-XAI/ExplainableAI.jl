@@ -9,12 +9,11 @@ end
 (s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
 # Internal interface of input augmentations:
-# `prepare_gradient_wrt_input` is called once on the unaugmented input and its output selection,
-# `explain_augmentation!` is then called on every augmented input.
+# `prepare_gradient_wrt_input` (see `gradient.jl`) is called once on the unaugmented
+# input and its output selection, `explain_augmentation!` is then called on every
+# augmented input.
 # Analyzers are allowed to write the `val` of the returned explanation into `buffer`,
 # which is overwritten by the next call.
-# Gradient-based analyzers return a DifferentiationInterface.jl preparation `prep`.
-prepare_gradient_wrt_input(::AbstractXAIMethod, input, output_indices) = nothing
 function explain_augmentation!(
         buffer, analyzer::AbstractXAIMethod, input, output, output_indices, prep
     )
