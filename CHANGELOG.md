@@ -1,36 +1,13 @@
 # ExplainableAI.jl
 
 ## Version `v0.10.4-DEV`
-- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two
-  when using the default Zygote backend.
-  A package extension on Zygote selects the output
-  between the forward and the reverse pass of `Zygote.pullback` ([#186])
-- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two
-  when using Enzyme in reverse mode.
-  A package extension on Enzyme selects the output
-  between the forward and the reverse pass of Enzyme's split mode ([#186])
-- ![Bugfix][badge-bugfix] `Gradient` now returns attributions of the array type of the input on all AD backends.
-  Forward-mode Enzyme previously returned an immutable `Enzyme.TupleArray`
-- ![Bugfix][badge-bugfix] Fix `IntegratedGradients` and `InterpolationAugmentation` mutating the reference input.
-  The interpolation was accumulated in place on `input_ref`,
-  which overwrote a user-provided `input_ref`
-  and corrupted the final multiplication with `input - input_ref`:
-  attributions had the wrong sign and shrank roughly like `1/n`.
-  This changes `IntegratedGradients` results
-- ![Bugfix][badge-bugfix] Fix the quadrature of `IntegratedGradients` and `InterpolationAugmentation`.
-  The path integral is now computed with the trapezoidal rule
-  on exactly `n` points spanning the reference and the input (inclusive),
-  instead of averaging `n+1` points overshooting past the input.
-  This changes `IntegratedGradients` results
-- ![Enhancement][badge-enhancement] `SmoothGrad` and `IntegratedGradients` are now dedicated analyzers
-  that hold the model, the AD backend and their sampling parameters directly,
-  instead of wrapping a `Gradient` analyzer in a `NoiseAugmentation` or `InterpolationAugmentation`.
-  They own an efficient implementation that selects the output once,
-  reuses a DifferentiationInterface.jl preparation and a gradient buffer across all samples,
-  and computes a single forward pass per sample on all AD backends.
-  `NoiseAugmentation` and `InterpolationAugmentation` stay generic wrappers around arbitrary analyzers
-- ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
-  via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two when using the default Zygote backend. A package extension on Zygote selects the output between the forward and the reverse pass of `Zygote.pullback` ([#186])
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two when using Enzyme in reverse mode. A package extension on Enzyme selects the output between the forward and the reverse pass of Enzyme's split mode ([#186])
+- ![Bugfix][badge-bugfix] `Gradient` now returns attributions of the array type of the input on all AD backends. Forward-mode Enzyme previously returned an immutable `Enzyme.TupleArray`
+- ![Bugfix][badge-bugfix] Fix `IntegratedGradients` and `InterpolationAugmentation` mutating the reference input. The interpolation was accumulated in place on `input_ref`, which overwrote a user-provided `input_ref` and corrupted the final multiplication with `input - input_ref`: attributions had the wrong sign and shrank roughly like `1/n`. This changes `IntegratedGradients` results
+- ![Bugfix][badge-bugfix] Fix the quadrature of `IntegratedGradients` and `InterpolationAugmentation`. The path integral is now computed with the trapezoidal rule on exactly `n` points spanning the reference and the input (inclusive), instead of averaging `n+1` points overshooting past the input. This changes `IntegratedGradients` results
+- ![Enhancement][badge-enhancement] `SmoothGrad` and `IntegratedGradients` are now dedicated analyzers that hold the model, the AD backend and their sampling parameters directly, instead of wrapping a `Gradient` analyzer in a `NoiseAugmentation` or `InterpolationAugmentation`. They own an efficient implementation that selects the output once, reuses a DifferentiationInterface.jl preparation and a gradient buffer across all samples, and computes a single forward pass per sample on all AD backends. `NoiseAugmentation` and `InterpolationAugmentation` stay generic wrappers around arbitrary analyzers
+- ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
 - ![Maintenance][badge-maintenance] Switch from JuliaFormatter to Runic, update JET ([#188])
 
