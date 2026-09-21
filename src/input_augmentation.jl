@@ -9,15 +9,16 @@ end
 (s::AugmentationSelector)(out::AbstractMatrix) = s.indices
 
 # Internal interface of input augmentations:
-# `prepare_augmentation` is called once on the unaugmented input and its output selection,
-# `explain_augmentation` is then called on every augmented input.
-# The `val` of the returned explanation is only valid until the next call,
-# which allows analyzers to reuse buffers.
-function prepare_augmentation(::AbstractXAIMethod, input, output, output_indices)
-    return AugmentationSelector(output_indices)
-end
-function explain_augmentation(analyzer::AbstractXAIMethod, input, s::AugmentationSelector)
-    return analyzer(input, s)
+# `augmentation_cache` is called once on the unaugmented input and its output selection,
+# `explain_augmentation!` is then called on every augmented input.
+# Analyzers are allowed to write the `val` of the returned explanation into `buffer`,
+# which is overwritten by the next call.
+# Gradient-based analyzers cache a DifferentiationInterface.jl preparation.
+augmentation_cache(::AbstractXAIMethod, input, output_indices) = nothing
+function explain_augmentation!(
+        buffer, analyzer::AbstractXAIMethod, input, output, output_indices, cache
+    )
+    return analyzer(input, AugmentationSelector(output_indices))
 end
 
 """
@@ -63,24 +64,27 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     output = aug.analyzer.model(input)
     output_indices = ns(output)
 
-    # Prepare the wrapped analyzer once and reuse it across all samples.
-    # For gradient-based analyzers, `prep` is a `PreparedGradient`,
-    # which holds the gradient buffer that every sample overwrites.
-    prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
+    # The cache of the wrapped analyzer is reused across all samples, which overwrite `buffer`.
+    cache = augmentation_cache(aug.analyzer, input, output_indices)
+    buffer = similar(input)
 
     p = Progress(aug.n; desc = "Sampling NoiseAugmentation...", enabled = aug.show_progress)
 
     # First augmentation
     noisy_input = similar(input)
     noisy_input = sample_noise!(noisy_input, input, aug)
-    expl_aug = explain_augmentation(aug.analyzer, noisy_input, prep)
+    expl_aug = explain_augmentation!(
+        buffer, aug.analyzer, noisy_input, output, output_indices, cache
+    )
     sum_val = copy(expl_aug.val)
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
         noisy_input = sample_noise!(noisy_input, input, aug)
-        expl_aug = explain_augmentation(aug.analyzer, noisy_input, prep)
+        expl_aug = explain_augmentation!(
+            buffer, aug.analyzer, noisy_input, output, output_indices, cache
+        )
         sum_val .+= expl_aug.val
         next!(p)
     end
@@ -137,10 +141,10 @@ function call_analyzer(
     output = expl_input.output
     output_indices = expl_input.output_selection
 
-    # Prepare the wrapped analyzer once and reuse it across all other interpolation steps.
-    # For gradient-based analyzers, `prep` is a `PreparedGradient`,
-    # which holds the gradient buffer that every step overwrites.
-    prep = prepare_augmentation(aug.analyzer, input, output, output_indices)
+    # The cache of the wrapped analyzer is reused across all other interpolation steps,
+    # which overwrite `buffer`.
+    cache = augmentation_cache(aug.analyzer, input, output_indices)
+    buffer = similar(input)
 
     # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
     # using the trapezoidal rule on `n` equidistant points, endpoints included.
@@ -151,7 +155,9 @@ function call_analyzer(
     input_aug = similar(input)
     function explain_at(α)
         input_aug .= input_ref .+ α .* input_delta
-        return explain_augmentation(aug.analyzer, input_aug, prep)
+        return explain_augmentation!(
+            buffer, aug.analyzer, input_aug, output, output_indices, cache
+        )
     end
 
     # Endpoints α = 0 and α = 1 carry half weight

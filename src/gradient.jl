@@ -90,26 +90,20 @@ end
 
 # Input augmentations fix the output selection ahead of sampling.
 # All samples therefore differentiate the same `SelectedOutput`,
-# reusing a DifferentiationInterface.jl preparation and a gradient buffer.
-struct PreparedGradient{F <: SelectedOutput, P, G, O}
-    f::F
-    prep::P
-    grad::G
-    output::O
-end
-
-function prepare_augmentation(analyzer::GradientAnalyzer, input, output, output_indices)
+# reusing a DifferentiationInterface.jl preparation `prep`.
+function augmentation_cache(analyzer::GradientAnalyzer, input, output_indices)
     f = SelectedOutput(analyzer.model, output_indices)
-    prep = DI.prepare_gradient(f, analyzer.backend, input)
-    return PreparedGradient(f, prep, similar(input), output)
+    return DI.prepare_gradient(f, analyzer.backend, input)
 end
 
-# The returned explanation aliases the gradient buffer of `p`,
-# which is overwritten by the next call.
+# The returned explanation aliases the gradient buffer `grad`.
 # It holds the model output of the unaugmented input.
-function explain_augmentation(analyzer::GradientAnalyzer, input, p::PreparedGradient)
-    DI.gradient!(p.f, p.grad, p.prep, analyzer.backend, input)
-    return gradient_explanation!(analyzer, p.grad, input, p.output, p.f.selection)
+function explain_augmentation!(
+        grad, analyzer::GradientAnalyzer, input, output, output_indices, prep
+    )
+    f = SelectedOutput(analyzer.model, output_indices)
+    DI.gradient!(f, grad, prep, analyzer.backend, input)
+    return gradient_explanation!(analyzer, grad, input, output, output_indices)
 end
 
 """
