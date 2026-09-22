@@ -42,7 +42,7 @@ end
 function NoiseAugmentation(
         analyzer, n::Int, std::T = 1.0f0, rng = GLOBAL_RNG, show_progress = true
     ) where {T <: Real}
-    distribution = Normal(zero(T), std^2)
+    distribution = Normal(zero(T), std)
     return NoiseAugmentation(analyzer, n, distribution, rng, show_progress)
 end
 

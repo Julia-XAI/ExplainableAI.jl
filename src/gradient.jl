@@ -151,7 +151,7 @@ function SmoothGrad(
         model, n::Int, std::Real, rng::AbstractRNG = GLOBAL_RNG, show_progress::Bool = true;
         backend::AbstractADType = DEFAULT_AD_BACKEND,
     )
-    return SmoothGrad(model, n, Normal(zero(std), std^2), rng, show_progress; backend)
+    return SmoothGrad(model, n, Normal(zero(std), std), rng, show_progress; backend)
 end
 
 function call_analyzer(input, analyzer::SmoothGrad, ns::AbstractOutputSelector; kwargs...)
