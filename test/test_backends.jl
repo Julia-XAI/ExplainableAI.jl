@@ -81,6 +81,35 @@ ig_max = hcat(ig_f1[:, 1], ig_f2[:, 2])
     end
 end
 
+# `SmoothGrad` and `IntegratedGradients` create one DifferentiationInterface.jl
+# preparation at the unaugmented input and reuse it for every noisy or interpolated input.
+# For tape-based backends this is only sound because DI deactivates tape recording and
+# compilation whenever context arguments are passed, and both the model and the output
+# selection are passed as `DI.Constant` contexts. This guards against DI changing that
+# behavior: the model branches on the input, so a tape recorded at `input` and replayed
+# at `-input` would silently differentiate the wrong branch.
+#
+#     f(x) = ½ ∑ᵢ xᵢ²  if ∑ᵢ xᵢ > 0,  else  ∑ᵢ xᵢ,    with  ∂f/∂xᵢ = xᵢ  or  1
+branch_model(x) = sum(x) > 0 ? sum(0.5f0 .* x .^ 2; dims = 1) : sum(x; dims = 1)
+
+@testset "Preparation reuse across inputs: $name" for (name, backend) in (
+        "ReverseDiff" => AutoReverseDiff(),
+        "ReverseDiff (compiled)" => AutoReverseDiff(; compile = true),
+    )
+    @test sum(input) > 0
+    selection = MaxActivationSelector()(branch_model(input))
+    prep = ExplainableAI.prepare_gradient_wrt_input(branch_model, input, selection, backend)
+    grad = similar(input)
+
+    # Same branch as the preparation input
+    ExplainableAI.gradient_wrt_input!(grad, branch_model, input, selection, prep, backend)
+    @test grad ≈ input
+
+    # Other branch: a tape recorded at `input` would return the stale gradient `-input`
+    ExplainableAI.gradient_wrt_input!(grad, branch_model, -input, selection, prep, backend)
+    @test grad ≈ ones(Float32, size(input))
+end
+
 # Test that backends match the default Zygote backend on a Flux model.
 pseudorand(dims...) = rand(StableRNG(123), Float32, dims...)
 
