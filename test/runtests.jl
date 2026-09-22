@@ -39,6 +39,10 @@ using Test
     @testset "GPU tests" begin
         include("test_gpu.jl")
     end
+    @testset "XAIBase interface" begin
+        @info "Testing XAIBase interface..."
+        include("test_interface.jl")
+    end
     @testset "Benchmark correctness" begin
         @info "Testing whether benchmarks are up-to-date..."
         include("test_benchmarks.jl")

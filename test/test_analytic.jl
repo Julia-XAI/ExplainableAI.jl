@@ -60,10 +60,10 @@ end
 # It therefore also satisfies the completeness axiom  ∑ᵢ IGᵢ = f(x) - f(x').
 @testset "IntegratedGradients (zero reference)" begin
     for n in (2, 5, 10, 50)
-        expl = analyze(input, IntegratedGradients(model, n))
-        @test expl.val ≈ 0.5f0 .* input .^ 2
+        attr = analyze(input, IntegratedGradients(model, n))
+        @test attr.val ≈ 0.5f0 .* input .^ 2
         # Completeness: ∑ᵢ IGᵢ = f(x) - f(0)
-        @test vec(sum(expl.val; dims = 1)) ≈ vec(model(input))
+        @test vec(sum(attr.val; dims = 1)) ≈ vec(model(input))
     end
 end
 
@@ -71,11 +71,11 @@ end
     input_ref = Float32[0.5 1.0; -1.0 0.0; 2.0 -1.0]
     for n in (2, 7, 20)
         input_ref_copy = copy(input_ref)
-        expl = analyze(input, IntegratedGradients(model, n); input_ref = input_ref)
+        attr = analyze(input, IntegratedGradients(model, n); input_ref = input_ref)
         @test input_ref == input_ref_copy # reference input must not be mutated
-        @test expl.val ≈ 0.5f0 .* (input .^ 2 .- input_ref .^ 2)
+        @test attr.val ≈ 0.5f0 .* (input .^ 2 .- input_ref .^ 2)
         # Completeness: ∑ᵢ IGᵢ = f(x) - f(x_ref)
-        @test vec(sum(expl.val; dims = 1)) ≈ vec(model(input) .- model(input_ref))
+        @test vec(sum(attr.val; dims = 1)) ≈ vec(model(input) .- model(input_ref))
     end
 end
 
@@ -96,8 +96,8 @@ end
     exact = (input .^ 3 .- input_ref .^ 3) ./ 3
     for n in (2, 3, 10, 50)
         h = 1.0f0 / (n - 1)
-        expl = analyze(input, IntegratedGradients(model_cubic, n); input_ref = input_ref)
-        @test expl.val ≈ exact .+ h^2 .* Δ .^ 3 ./ 6
+        attr = analyze(input, IntegratedGradients(model_cubic, n); input_ref = input_ref)
+        @test attr.val ≈ exact .+ h^2 .* Δ .^ 3 ./ 6
     end
     # The completeness gap vanishes as n grows
     gap(n) = maximum(
@@ -111,14 +111,17 @@ end
 # The dedicated analyzers own an efficient implementation, but must return the same
 # result as wrapping a `Gradient` analyzer in the corresponding generic augmentation.
 @testset "IntegratedGradients matches InterpolationAugmentation" begin
+    pooling = SumPooling()
     for n in (2, 5, 50)
         ig = analyze(input, IntegratedGradients(model, n)).val
-        ia = analyze(input, InterpolationAugmentation(Gradient(model), n)).val
+        ia = analyze(input, InterpolationAugmentation(Gradient(model), n; pooling)).val
         @test ig ≈ ia
     end
     input_ref = Float32[0.5 1.0; -1.0 0.0; 2.0 -1.0]
     ig = analyze(input, IntegratedGradients(model, 7); input_ref = input_ref).val
-    ia = analyze(input, InterpolationAugmentation(Gradient(model), 7); input_ref = input_ref).val
+    ia = analyze(
+        input, InterpolationAugmentation(Gradient(model), 7; pooling); input_ref = input_ref
+    ).val
     @test ig ≈ ia
 end
 
@@ -128,7 +131,10 @@ end
     # Both analyzers draw the same noise from an equally seeded RNG.
     sg = analyze(input, SmoothGrad(model, n, distribution, StableRNG(42), false)).val
     na = analyze(
-        input, NoiseAugmentation(Gradient(model), n, distribution, StableRNG(42), false)
+        input,
+        NoiseAugmentation(
+            Gradient(model), n, distribution, StableRNG(42), false; pooling = NormPooling()
+        ),
     ).val
     @test sg ≈ na
 end

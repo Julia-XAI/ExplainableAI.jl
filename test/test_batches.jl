@@ -34,20 +34,20 @@ ANALYZERS = Dict(
 for (name, method) in ANALYZERS
     @testset "$name" begin
         analyzer = method(model)
-        expl1 = analyzer(input1)
-        @test expl1.val ≈ expl1.val
+        attr1 = analyzer(input1)
+        @test attr1.val ≈ attr1.val
 
         # Analyzing a batch should have the same result
         # as analyzing inputs in batch individually
         analyzer = method(model)
-        expl2 = analyzer(input2)
+        attr2 = analyzer(input2)
         analyzer = method(model)
-        expl_batch = analyzer(input_batch)
-        @test expl1.val ≈ expl_batch.val[:, 1]
+        attr_batch = analyzer(input_batch)
+        @test attr1.val ≈ attr_batch.val[:, 1]
         if !(analyzer isa NoiseAugmentation)
             # NoiseAugmentation methods generate random numbers for the entire batch.
             # therefore explanations don't match except for the first input in the batch.
-            @test expl2.val ≈ expl_batch.val[:, 2]
+            @test attr2.val ≈ attr_batch.val[:, 2]
         end
     end
 end

@@ -55,8 +55,8 @@ input = reshape(input.data, 224, 224, 3, :)  # unpack data and add batch dimensi
 
 # Run XAI method
 analyzer = SmoothGrad(model)
-expl = analyze(input, analyzer)  # or: expl = analyzer(input)
-heatmap(expl)                    # show heatmap using VisionHeatmaps.jl
+attr = analyze(input, analyzer)  # or: attr = analyzer(input)
+heatmap(attr)                    # show heatmap using VisionHeatmaps.jl
 ```
 
 By default, explanations are computed for the class with the highest activation.
@@ -83,11 +83,13 @@ heatmap(input, analyzer, 5)  # for heatmap
 > we have omitted specific models and inputs from the code snippet above.
 > The full code used to generate the heatmaps can be found [here][asset-code].
 
-Depending on the method, the applied heatmapping defaults differ:
-sensitivity-based methods (e.g. `Gradient`) default to a grayscale color scheme,
-whereas attribution-based methods (e.g. `InputTimesGradient`) default to a red-white-blue color scheme.
-Red color indicates regions of positive relevance towards the selected class,
-whereas regions in blue are of negative relevance.
+Depending on the method, the applied heatmapping defaults differ.
+Each method returns an attribution with a pooling that reduces it over color channels.
+Methods pooled to non-negative values (e.g. `Gradient` with `NormPooling`)
+default to a sequential colormap,
+whereas methods pooled to signed values (e.g. `InputTimesGradient` with `SumPooling`)
+default to a diverging colormap
+that distinguishes regions of positive and negative relevance towards the selected class.
 More information on heatmapping presets can be found in the [Julia-XAI documentation](https://julia-xai.github.io/XAIDocs/XAIDocs/dev/generated/heatmapping/).
 
 > [!WARNING]

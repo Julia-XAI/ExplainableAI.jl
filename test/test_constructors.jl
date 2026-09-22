@@ -12,8 +12,18 @@ using StableRNGs: StableRNG
     @test_nowarn SmoothGrad(identity, 50, distribution, rng)
 
     gradient_analyzer = Gradient(identity)
-    @test_nowarn NoiseAugmentation(gradient_analyzer, 50, distribution)
-    @test_nowarn NoiseAugmentation(gradient_analyzer, 50, distribution, rng)
+    pooling = NormPooling()
+    @test_nowarn NoiseAugmentation(gradient_analyzer, 50; pooling)
+    @test_nowarn NoiseAugmentation(gradient_analyzer, 50, 0.1f0; pooling)
+    @test_nowarn NoiseAugmentation(gradient_analyzer, 50, distribution; pooling)
+    @test_nowarn NoiseAugmentation(gradient_analyzer, 50, distribution, rng; pooling)
+    @test_nowarn InterpolationAugmentation(gradient_analyzer, 50; pooling)
+end
+
+@testset "Augmentations require a pooling" begin
+    gradient_analyzer = Gradient(identity)
+    @test_throws UndefKeywordError NoiseAugmentation(gradient_analyzer, 50)
+    @test_throws UndefKeywordError InterpolationAugmentation(gradient_analyzer, 50)
 end
 
 @testset "AD backend selection" begin
@@ -40,6 +50,7 @@ end
     @test backend(IntegratedGradients(identity, 50; backend = ad)) == ad
 
     # `backend` also works on manually constructed augmentations
-    @test backend(NoiseAugmentation(Gradient(identity, ad), 50)) == ad
-    @test backend(InterpolationAugmentation(Gradient(identity, ad), 50)) == ad
+    pooling = NormPooling()
+    @test backend(NoiseAugmentation(Gradient(identity, ad), 50; pooling)) == ad
+    @test backend(InterpolationAugmentation(Gradient(identity, ad), 50; pooling)) == ad
 end

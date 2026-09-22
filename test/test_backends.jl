@@ -51,31 +51,31 @@ ig_max = hcat(ig_f1[:, 1], ig_f2[:, 2])
 @testset "Analytic: $name" for (name, backend) in BACKENDS
     @testset "Gradient" begin
         analyzer = Gradient(model_two_logits, backend)
-        expl = analyze(input, analyzer)
-        @test expl.val ≈ grad_max
-        @test expl.val isa Matrix{Float32}
-        @test expl.output == output
-        @test expl.output_selection == selection_max
+        attr = analyze(input, analyzer)
+        @test attr.val ≈ grad_max
+        @test attr.val isa Matrix{Float32}
+        @test attr.output == output
+        @test attr.output_selection == selection_max
         @test analyze(input, analyzer, 1).val ≈ grad_f1
         @test analyze(input, analyzer, 2).val ≈ grad_f2
     end
     @testset "InputTimesGradient" begin
         analyzer = InputTimesGradient(model_two_logits, backend)
-        expl = analyze(input, analyzer)
-        @test expl.val ≈ input .* grad_max
-        @test expl.val isa Matrix{Float32}
-        @test expl.output == output
-        @test expl.output_selection == selection_max
+        attr = analyze(input, analyzer)
+        @test attr.val ≈ input .* grad_max
+        @test attr.val isa Matrix{Float32}
+        @test attr.output == output
+        @test attr.output_selection == selection_max
         @test analyze(input, analyzer, 1).val ≈ input .* grad_f1
         @test analyze(input, analyzer, 2).val ≈ input .* grad_f2
     end
     @testset "IntegratedGradients" begin
         analyzer = IntegratedGradients(model_two_logits, 5; backend)
-        expl = analyze(input, analyzer; input_ref)
-        @test expl.val ≈ ig_max
-        @test expl.val isa Matrix{Float32}
-        @test expl.output == output
-        @test expl.output_selection == selection_max
+        attr = analyze(input, analyzer; input_ref)
+        @test attr.val ≈ ig_max
+        @test attr.val isa Matrix{Float32}
+        @test attr.output == output
+        @test attr.output_selection == selection_max
         @test analyze(input, analyzer, 1; input_ref).val ≈ ig_f1
         @test analyze(input, analyzer, 2; input_ref).val ≈ ig_f2
     end
@@ -125,16 +125,16 @@ pseudorand(dims...) = rand(StableRNG(123), Float32, dims...)
     )
     @testset "$analyzer_name" for (analyzer_name, constructor) in analyzers
         kwargs = analyzer_name == "IntegratedGradients" ? (; input_ref) : (;)
-        expl_zygote = analyze(input, constructor(AutoZygote()); kwargs...)
-        expl = analyze(input, constructor(backend); kwargs...)
-        @test expl.val ≈ expl_zygote.val
-        @test expl.output == output
-        @test expl.output_selection == expl_zygote.output_selection
+        attr_zygote = analyze(input, constructor(AutoZygote()); kwargs...)
+        attr = analyze(input, constructor(backend); kwargs...)
+        @test attr.val ≈ attr_zygote.val
+        @test attr.output == output
+        @test attr.output_selection == attr_zygote.output_selection
 
         # Select the second output
-        expl_zygote = analyze(input, constructor(AutoZygote()), 2; kwargs...)
-        expl = analyze(input, constructor(backend), 2; kwargs...)
-        @test expl.val ≈ expl_zygote.val
-        @test expl.output == output
+        attr_zygote = analyze(input, constructor(AutoZygote()), 2; kwargs...)
+        attr = analyze(input, constructor(backend), 2; kwargs...)
+        @test attr.val ≈ attr_zygote.val
+        @test attr.output == output
     end
 end
