@@ -25,15 +25,15 @@ analyzer_types = (Gradient, SmoothGrad, InputTimesGradient, IntegratedGradients)
 @testset "Run analyzer (CPU)" begin
     @testset "$A" for A in analyzer_types
         analyzer = A(model)
-        expl = analyze(input, analyzer)
-        @test expl isa Explanation
+        attr = analyze(input, analyzer)
+        @test attr isa Attribution
     end
 end
 
 @testset "Run analyzer (GPU)" begin
     @testset "$A" for A in analyzer_types
         analyzer_gpu = A(model_gpu)
-        expl = analyze(input_gpu, analyzer_gpu)
-        @test expl isa Explanation
+        attr = analyze(input_gpu, analyzer_gpu)
+        @test attr isa Attribution
     end
 end

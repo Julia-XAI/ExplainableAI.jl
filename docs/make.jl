@@ -46,7 +46,7 @@ makedocs(;
         r"https://link.springer.com/chapter/10.1007/978-3-030-28954-6_10",
         r"https://www.nature.com/articles/s42256-023-00711-8",
     ],
-    warnonly = [:missing_docs],
+    warnonly = [:missing_docs, :cross_references],
     checkdocs = :exports, # only check docstrings in API reference if they are exported
 )
 

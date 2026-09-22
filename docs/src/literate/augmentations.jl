@@ -34,14 +34,19 @@ heatmap(input, analyzer)
 # Now we wrap the analyzer in a [`NoiseAugmentation`](@ref) with 10 samples of noise.
 # By default, the noise is sampled from a Gaussian distribution
 # with mean 0 and standard deviation 1.
-analyzer = NoiseAugmentation(Gradient(model), 50)
+#
+# Augmentations require a `pooling` keyword argument,
+# which determines how the averaged attribution is reduced over color channels.
+# The right choice depends on the wrapped analyzer:
+# like `Gradient`, we use `NormPooling`.
+analyzer = NoiseAugmentation(Gradient(model), 50; pooling = NormPooling())
 heatmap(input, analyzer)
 
 # Note that a higher sample size is desired, as it will lead to a smoother heatmap.
 # However, this comes at the cost of a longer computation time.
 #
 # We can also set the standard deviation of the Gaussian distribution:
-analyzer = NoiseAugmentation(Gradient(model), 50, 0.1)
+analyzer = NoiseAugmentation(Gradient(model), 50, 0.1; pooling = NormPooling())
 heatmap(input, analyzer)
 
 # When used with a `Gradient` analyzer, this is equivalent to [`SmoothGrad`](@ref):
@@ -53,7 +58,7 @@ heatmap(input, analyzer)
 # for example Poisson noise with rate $\lambda=0.5$:
 using Distributions
 
-analyzer = NoiseAugmentation(Gradient(model), 50, Poisson(0.5))
+analyzer = NoiseAugmentation(Gradient(model), 50, Poisson(0.5); pooling = NormPooling())
 heatmap(input, analyzer)
 
 # Is is also possible to define your own distributions or mixture distributions.
@@ -65,8 +70,11 @@ heatmap(input, analyzer)
 # The [`InterpolationAugmentation`](@ref) wrapper computes explanations
 # integrated over `n` points of linear interpolation between a reference input and the input,
 # using the trapezoidal rule.
-# The reference input is set to `zero(input)` by default:
-analyzer = InterpolationAugmentation(Gradient(model), 50)
+# The reference input is set to `zero(input)` by default.
+# Multiplying with the difference between input and reference input
+# turns gradients into signed attributions,
+# so we pool them by summation:
+analyzer = InterpolationAugmentation(Gradient(model), 50; pooling = SumPooling())
 heatmap(input, analyzer)
 
 # When used with a `Gradient` analyzer, this is equivalent to [`IntegratedGradients`](@ref):
@@ -78,9 +86,9 @@ heatmap(input, analyzer)
 # Note that this is an arbitrary example for the sake of demonstration.
 matrix_of_ones = ones(Float32, size(input))
 
-analyzer = InterpolationAugmentation(Gradient(model), 50)
-expl = analyzer(input; input_ref = matrix_of_ones)
-heatmap(expl)
+analyzer = InterpolationAugmentation(Gradient(model), 50; pooling = SumPooling())
+attr = analyzer(input; input_ref = matrix_of_ones)
+heatmap(attr)
 
 # Once again, `InterpolationAugmentation` can be combined with any analyzer type from the Julia-XAI ecosystem,
 # for example `LRP` from [RelevancePropagation.jl](https://github.com/Julia-XAI/RelevancePropagation.jl).

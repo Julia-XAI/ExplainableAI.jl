@@ -69,9 +69,7 @@ function call_analyzer(input, analyzer::Gradient, ns::AbstractOutputSelector; kw
     grad, output, output_indices = gradient_wrt_input(
         analyzer.model, input, ns, analyzer.backend
     )
-    return Explanation(
-        grad, input, output, output_indices, :Gradient, :sensitivity, nothing
-    )
+    return Attribution(grad, input, output, output_indices, NormPooling())
 end
 
 """
@@ -97,10 +95,8 @@ function call_analyzer(
     grad, output, output_indices = gradient_wrt_input(
         analyzer.model, input, ns, analyzer.backend
     )
-    attr = input .* grad
-    return Explanation(
-        attr, input, output, output_indices, :InputTimesGradient, :attribution, nothing
-    )
+    val = input .* grad
+    return Attribution(val, input, output, output_indices, SumPooling())
 end
 
 """
@@ -185,7 +181,7 @@ function call_analyzer(input, analyzer::SmoothGrad, ns::AbstractOutputSelector; 
     end
 
     val = sum_grad ./ analyzer.n
-    return Explanation(val, input, output, output_indices, :SmoothGrad, :sensitivity, nothing)
+    return Attribution(val, input, output, output_indices, NormPooling())
 end
 
 """
@@ -260,9 +256,7 @@ function call_analyzer(
     end
 
     val = input_delta .* sum_grad ./ (analyzer.n - 1)
-    return Explanation(
-        val, input, output, output_indices, :IntegratedGradients, :sensitivity, nothing
-    )
+    return Attribution(val, input, output, output_indices, SumPooling())
 end
 
 """

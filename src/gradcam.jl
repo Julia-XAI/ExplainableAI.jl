@@ -38,5 +38,5 @@ function call_analyzer(input, analyzer::GradCAM, ns::AbstractOutputSelector; kwa
     )
     αᶜ = sum(grad; dims = (1, 2)) / feature_map_size
     Lᶜ = max.(sum(αᶜ .* A; dims = 3), 0)
-    return Explanation(Lᶜ, input, output, output_indices, :GradCAM, :cam, nothing)
+    return Attribution(Lᶜ, input, output, output_indices, UnsignedNoPooling())
 end

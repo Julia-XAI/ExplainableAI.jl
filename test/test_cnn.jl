@@ -44,21 +44,21 @@ Flux.testmode!(model, true)
     analyzer = Gradient(model)
     println("Timing Gradient...")
     print("cold:")
-    @time expl = analyze(input, analyzer)
+    @time attr = analyze(input, analyzer)
 
     # Test direct call of analyzer
     print("warm:")
-    @time expl2 = analyzer(input)
-    @test expl.val ≈ expl2.val
+    @time attr2 = analyzer(input)
+    @test attr.val ≈ attr2.val
 
-    @test_reference "references/cnn/Gradient_max.jld2" Dict("expl" => expl.val) by =
+    @test_reference "references/cnn/Gradient_max.jld2" Dict("expl" => attr.val) by =
         (r, a) -> isapprox(r["expl"], a["expl"]; rtol = 0.05)
 
     # Test neuron selection
-    expl = analyze(input, analyzer, 1)
-    expl2 = analyzer(input, 1)
-    @test expl.val ≈ expl2.val
-    @test_reference "references/cnn/Gradient_ns1.jld2" Dict("expl" => expl.val) by =
+    attr = analyze(input, analyzer, 1)
+    attr2 = analyzer(input, 1)
+    @test attr.val ≈ attr2.val
+    @test_reference "references/cnn/Gradient_ns1.jld2" Dict("expl" => attr.val) by =
         (r, a) -> isapprox(r["expl"], a["expl"]; rtol = 0.05)
 end
 
@@ -69,15 +69,15 @@ function test_cnn(name, method)
             analyzer = method(model)
             println("Timing $name...")
             print("cold:")
-            @time expl = analyze(input, analyzer)
-            @test_reference "references/cnn/$(name)_max.jld2" Dict("expl" => expl.val) by =
+            @time attr = analyze(input, analyzer)
+            @test_reference "references/cnn/$(name)_max.jld2" Dict("expl" => attr.val) by =
                 (r, a) -> isapprox(r["expl"], a["expl"]; rtol = 0.05)
         end
         @testset "Neuron selection" begin
             analyzer = method(model)
             print("warm:")
-            @time expl = analyze(input, analyzer, 1)
-            @test_reference "references/cnn/$(name)_ns1.jld2" Dict("expl" => expl.val) by =
+            @time attr = analyze(input, analyzer, 1)
+            @test_reference "references/cnn/$(name)_ns1.jld2" Dict("expl" => attr.val) by =
                 (r, a) -> isapprox(r["expl"], a["expl"]; rtol = 0.05)
         end
     end
