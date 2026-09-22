@@ -63,8 +63,9 @@ heatmap(input, analyzer)
 
 # ## Integration augmentation
 # The [`InterpolationAugmentation`](@ref) wrapper computes explanations
-# averaged over `n` steps of linear interpolation between the input and a reference input,
-# which is set to `zero(input)` by default:
+# integrated over `n` points of linear interpolation between a reference input and the input,
+# using the trapezoidal rule.
+# The reference input is set to `zero(input)` by default:
 analyzer = InterpolationAugmentation(Gradient(model), 50)
 heatmap(input, analyzer)
 
