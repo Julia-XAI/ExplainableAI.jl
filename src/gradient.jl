@@ -141,14 +141,21 @@ struct SmoothGrad{M, B <: AbstractADType, D <: Sampleable, R <: AbstractRNG} <:
     end
 end
 function SmoothGrad(
-        model, n::Int = 50, distribution::Sampleable = Normal(0.0f0, 1.0f0),
-        rng::AbstractRNG = GLOBAL_RNG, show_progress::Bool = true;
+        model,
+        n::Int = 50,
+        distribution::Sampleable = Normal(0.0f0, 1.0f0),
+        rng::AbstractRNG = GLOBAL_RNG,
+        show_progress::Bool = true;
         backend::AbstractADType = DEFAULT_AD_BACKEND,
     )
     return SmoothGrad(model, backend, n, distribution, rng, show_progress)
 end
 function SmoothGrad(
-        model, n::Int, std::Real, rng::AbstractRNG = GLOBAL_RNG, show_progress::Bool = true;
+        model,
+        n::Int,
+        std::Real,
+        rng::AbstractRNG = GLOBAL_RNG,
+        show_progress::Bool = true;
         backend::AbstractADType = DEFAULT_AD_BACKEND,
     )
     return SmoothGrad(model, n, Normal(zero(std), std), rng, show_progress; backend)

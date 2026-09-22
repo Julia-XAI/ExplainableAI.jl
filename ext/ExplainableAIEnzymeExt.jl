@@ -11,7 +11,9 @@ using Enzyme.EnzymeCore: Split, WithPrimal
 # we match reverse mode (or `Nothing`, Enzyme's default), so forward-mode
 # Enzyme falls back to the generic method.
 function ExplainableAI.gradient_wrt_input(
-        model, input, selector::AbstractOutputSelector,
+        model,
+        input,
+        selector::AbstractOutputSelector,
         backend::AutoEnzyme{<:Union{Nothing, ReverseMode}},
     )
     f = annotate_model(model, backend)
