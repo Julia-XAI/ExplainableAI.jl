@@ -1,8 +1,15 @@
 # ExplainableAI.jl
 
-## Version `v0.10.4-DEV`
-- ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection
-  via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
+## Version `v0.11.0-DEV`
+- ![BREAKING][badge-breaking]![Bugfix][badge-bugfix] Fix `NoiseAugmentation` and `SmoothGrad` misinterpreting a real-valued `std` argument: the noise distribution was built as `Normal(0, std^2)`, but `Distributions.Normal` takes the standard deviation, so noise was sampled with standard deviation `std^2` instead of `std`. This changes results for `std ≠ 1`
+- ![BREAKING][badge-breaking]![Bugfix][badge-bugfix] Fix `IntegratedGradients` and `InterpolationAugmentation` mutating the reference input. The interpolation was accumulated in place on `input_ref`, which overwrote a user-provided `input_ref` and corrupted the final multiplication with `input - input_ref`: attributions had the wrong sign and shrank roughly like `1/n`. This changes `IntegratedGradients` results
+- ![BREAKING][badge-breaking]![Bugfix][badge-bugfix] Fix the quadrature of `IntegratedGradients` and `InterpolationAugmentation`. The path integral is now computed with the trapezoidal rule on exactly `n` points spanning the reference and the input (inclusive), instead of averaging `n+1` points overshooting past the input. This changes `IntegratedGradients` results
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two when using the default Zygote backend. A package extension on Zygote selects the output between the forward and the reverse pass of `Zygote.pullback` ([#186])
+- ![Bugfix][badge-bugfix] Gradient-based analyzers now compute a single forward pass instead of two when using Enzyme in reverse mode. A package extension on Enzyme selects the output between the forward and the reverse pass of Enzyme's split mode ([#186])
+- ![Bugfix][badge-bugfix] `Gradient` now returns attributions of the array type of the input on all AD backends. Forward-mode Enzyme previously returned an immutable `Enzyme.TupleArray`
+- ![BREAKING][badge-breaking]![Enhancement][badge-enhancement] `SmoothGrad` and `IntegratedGradients` are now dedicated analyzers that hold the model, the AD backend and their sampling parameters directly, instead of wrapping a `Gradient` analyzer in a `NoiseAugmentation` or `InterpolationAugmentation`. They own an efficient implementation that selects the output once, reuses a DifferentiationInterface.jl preparation and a gradient buffer across all samples, and computes a single forward pass per sample on all AD backends. `NoiseAugmentation` and `InterpolationAugmentation` stay generic wrappers around arbitrary analyzers
+- ![BREAKING][badge-breaking] AD backends are forwarded to DifferentiationInterface.jl unmodified. Analyzers on the DifferentiationInterface.jl fallback (`SmoothGrad`, `IntegratedGradients`, and all analyzers on backends without a package extension) differentiate a stateless masking function and pass the model as a constant context, so an `AutoEnzyme` backend carrying a `function_annotation` for the model now errors on these analyzers. The Enzyme extension used by `Gradient` and `InputTimesGradient` in reverse mode still applies the annotation to the model
+- ![Feature][badge-feature] `SmoothGrad` and `IntegratedGradients` now support AD backend selection via the keyword argument `backend`, e.g. `SmoothGrad(model; backend=AutoEnzyme())`
 - ![Feature][badge-feature] Add `backend` accessor, returning the AD backend of a gradient-based analyzer
 - ![Maintenance][badge-maintenance] Switch from JuliaFormatter to Runic, update JET ([#188])
 
@@ -241,6 +248,7 @@ Performance improvements:
 [TextHeatmaps]: https://julia-xai.github.io/XAIDocs/TextHeatmaps/stable/
 
 [#188]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/188
+[#186]: https://github.com/Julia-XAI/ExplainableAI.jl/issues/186
 [#184]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/184
 [#183]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/183
 [#180]: https://github.com/Julia-XAI/ExplainableAI.jl/pull/180

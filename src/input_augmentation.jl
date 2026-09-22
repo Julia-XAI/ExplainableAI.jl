@@ -42,12 +42,13 @@ end
 function NoiseAugmentation(
         analyzer, n::Int, std::T = 1.0f0, rng = GLOBAL_RNG, show_progress = true
     ) where {T <: Real}
-    distribution = Normal(zero(T), std^2)
+    distribution = Normal(zero(T), std)
     return NoiseAugmentation(analyzer, n, distribution, rng, show_progress)
 end
 
 function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector; kwargs...)
-    # Regular forward pass of model
+    # Select the output once on the unaugmented input, then hold it fixed
+    # so every sample is analyzed at the same output neuron(s).
     output = aug.analyzer.model(input)
     output_indices = ns(output)
     output_selector = AugmentationSelector(output_indices)
@@ -56,14 +57,14 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
 
     # First augmentation
     noisy_input = similar(input)
-    noisy_input = sample_noise!(noisy_input, input, aug)
+    sample_noise!(noisy_input, input, aug.rng, aug.distribution)
     expl_aug = aug.analyzer(noisy_input, output_selector)
-    sum_val = expl_aug.val
+    sum_val = copy(expl_aug.val)
     next!(p)
 
     # Further augmentations
     for _ in 2:(aug.n)
-        noisy_input = sample_noise!(noisy_input, input, aug)
+        sample_noise!(noisy_input, input, aug.rng, aug.distribution)
         expl_aug = aug.analyzer(noisy_input, output_selector)
         sum_val .+= expl_aug.val
         next!(p)
@@ -77,10 +78,11 @@ function call_analyzer(input, aug::NoiseAugmentation, ns::AbstractOutputSelector
     )
 end
 
+# Fill `out` with additive noise sampled from `distribution` around `input`.
 function sample_noise!(
-        out::A, input::A, aug::NoiseAugmentation
-    ) where {T, A <: AbstractArray{T}}
-    out = rand!(aug.rng, aug.distribution, out)
+        out::A, input::A, rng::AbstractRNG, distribution::Sampleable
+    ) where {A <: AbstractArray}
+    rand!(rng, distribution, out)
     out .+= input
     return out
 end
@@ -88,10 +90,13 @@ end
 """
     InterpolationAugmentation(model, [n=50])
 
-A wrapper around analyzers that augments the input with `n` steps of linear interpolation
-between the input and a reference input (typically `zero(input)`).
-The gradients w.r.t. this augmented input are then averaged and multiplied with the
-difference between the input and the reference input.
+A wrapper around analyzers that augments the input with `n` points of linear interpolation
+between a reference input (typically `zero(input)`) and the input, both endpoints included.
+The explanations of these augmented inputs are integrated over the path
+using the trapezoidal rule,
+and multiplied with the difference between the input and the reference input.
+
+The reference input can be set via the keyword argument `input_ref` of `analyze`.
 """
 struct InterpolationAugmentation{A <: AbstractXAIMethod} <: AbstractXAIMethod
     analyzer::A
@@ -111,28 +116,38 @@ function call_analyzer(
     size(input) != size(input_ref) &&
         throw(ArgumentError("Input reference size doesn't match input size."))
 
-    # Regular forward pass of model
-    output = aug.analyzer.model(input)
-    output_indices = ns(output)
+    # The input is the endpoint α = 1 of the interpolation path.
+    # Analyzing it also provides the model output and the output selection,
+    # which are then held fixed across the remaining interpolation points.
+    expl_input = aug.analyzer(input, ns)
+    output = expl_input.output
+    output_indices = expl_input.output_selection
     output_selector = AugmentationSelector(output_indices)
 
-    # First augmentations
-    input_aug = input_ref
-    expl_aug = aug.analyzer(input_aug, output_selector)
-    sum_val = expl_aug.val
+    # Integrate the analyzer along the straight path xᵣ + α (x - xᵣ) for α ∈ [0, 1],
+    # using the trapezoidal rule on `n` equidistant points, endpoints included.
+    # Every point is computed from the endpoints, so `input_ref` is never mutated.
+    T = eltype(input)
+    input_delta = input - input_ref
+    input_aug = similar(input)
+    function explain_at(α)
+        input_aug .= input_ref .+ α .* input_delta
+        return aug.analyzer(input_aug, output_selector)
+    end
 
-    # Further augmentations
-    input_delta = (input - input_ref) / (aug.n - 1)
-    for _ in 1:(aug.n)
-        input_aug .+= input_delta
-        expl_aug = aug.analyzer(input_aug, output_selector)
-        sum_val .+= expl_aug.val
+    # Endpoints α = 1 (the input) and α = 0 carry half weight
+    sum_val = T(0.5) .* expl_input.val
+    sum_val .+= T(0.5) .* explain_at(zero(T)).val
+
+    # Interior points carry full weight
+    for k in 1:(aug.n - 2)
+        sum_val .+= explain_at(T(k / (aug.n - 1))).val
     end
 
     # Average gradients and compute explanation
-    val = (input - input_ref) .* sum_val / aug.n
+    val = input_delta .* sum_val ./ (aug.n - 1)
 
     return Explanation(
-        val, input, output, output_indices, expl_aug.analyzer, expl_aug.heatmap, nothing
+        val, input, output, output_indices, expl_input.analyzer, expl_input.heatmap, nothing
     )
 end
