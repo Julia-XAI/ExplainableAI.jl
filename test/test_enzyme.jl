@@ -20,9 +20,17 @@ ANALYZERS = Dict(
     "IntegratedGradients" => (m, backend) -> IntegratedGradients(m, 5; backend),
 )
 
-function test_against_zygote(model, backend_enzyme)
+# The extension differentiates the model directly, so the backend's `function_annotation`
+# applies to it. `SmoothGrad` and `IntegratedGradients` use the DifferentiationInterface.jl
+# fallback, which differentiates the stateless `masked_model` with the model held constant
+# as a context argument: annotating that function as differentiable is an Enzyme error,
+# so backends carrying a `function_annotation` only cover the extension analyzers.
+EXTENSION_ANALYZERS = filter(p -> first(p) in ("Gradient", "InputTimesGradient"), ANALYZERS)
+FALLBACK_ANALYZERS = filter(p -> first(p) in ("SmoothGrad", "IntegratedGradients"), ANALYZERS)
+
+function test_against_zygote(model, backend_enzyme; analyzers = ANALYZERS)
     output = model(input)
-    for (name, constructor) in ANALYZERS
+    for (name, constructor) in analyzers
         @testset "$name" begin
             kwargs = name == "IntegratedGradients" ? (; input_ref) : (;)
             expl_zygote = analyze(input, constructor(model, AutoZygote()); kwargs...)
@@ -49,17 +57,23 @@ model_without_parameters(x) = vcat(sum(0.5f0 .* x .^ 2; dims = 1), sum(5 .* x; d
     test_against_zygote(model_without_parameters, AutoEnzyme())
 end
 
-# Flux models hold their parameters, which requires a shadow of the differentiated function.
+# Flux models hold their parameters, which requires a shadow of the differentiated
+# function on the extension path. The fallback analyzers pass the model as a constant
+# context instead, so they run with an unannotated backend.
 @testset "Flux model" begin
     model = Chain(Dense(5 => 8, relu; init = pseudorand), Dense(8 => 3; init = pseudorand))
-    test_against_zygote(model, AutoEnzyme(; function_annotation = Duplicated))
+    backend = AutoEnzyme(; function_annotation = Duplicated)
+    test_against_zygote(model, backend; analyzers = EXTENSION_ANALYZERS)
+    test_against_zygote(model, AutoEnzyme(); analyzers = FALLBACK_ANALYZERS)
 end
 
 # Settings of a user-provided reverse mode are kept by the split mode of the extension.
 @testset "Reverse mode with runtime activity" begin
     model = Chain(Dense(5 => 8, relu; init = pseudorand), Dense(8 => 3; init = pseudorand))
     mode = Enzyme.set_runtime_activity(Enzyme.Reverse)
-    test_against_zygote(model, AutoEnzyme(; mode, function_annotation = Duplicated))
+    backend = AutoEnzyme(; mode, function_annotation = Duplicated)
+    test_against_zygote(model, backend; analyzers = EXTENSION_ANALYZERS)
+    test_against_zygote(model, AutoEnzyme(; mode); analyzers = FALLBACK_ANALYZERS)
 end
 
 # Forward mode isn't covered by the extension and falls back to DifferentiationInterface.jl.

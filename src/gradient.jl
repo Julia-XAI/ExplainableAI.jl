@@ -24,22 +24,12 @@ function gradient_wrt_input(
     return grad, output, selection
 end
 
-# Backend used to differentiate `masked_model` through DifferentiationInterface.jl,
-# where the model is passed as an inactive context, not the differentiated function.
-di_backend(backend::AbstractADType) = backend
-
-# `AutoEnzyme`'s `function_annotation` says how to annotate the differentiated function.
-# The split-mode extension differentiates the model directly, but here the model is an
-# inactive context and the stateless `masked_model` is the function, which must not be
-# annotated as differentiable, so the annotation is dropped.
-di_backend(backend::AutoEnzyme) = AutoEnzyme(; mode = backend.mode)
-
 # Fix the output selection ahead of time so that repeated gradients at the same
 # `output_indices`, e.g. over augmented inputs, can reuse the preparation `prep`.
 function prepare_gradient_wrt_input(model, input, output_indices, backend::AbstractADType)
     return DI.prepare_gradient(
         masked_model,      # function differentiated w.r.t. its first argument
-        di_backend(backend),  # AD backend
+        backend,           # AD backend
         input,             # active argument the gradient is taken w.r.t.
         DI.Constant(model),          # context argument held constant
         DI.Constant(output_indices), # context argument held constant
@@ -54,7 +44,7 @@ function gradient_wrt_input!(
         masked_model,      # function differentiated w.r.t. its first argument
         grad,              # buffer the gradient is written into
         prep,              # reused preparation
-        di_backend(backend),  # AD backend
+        backend,           # AD backend
         input,             # active argument the gradient is taken w.r.t.
         DI.Constant(model),          # context argument held constant
         DI.Constant(output_indices), # context argument held constant
