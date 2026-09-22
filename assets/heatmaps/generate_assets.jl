@@ -11,7 +11,7 @@ using HTTP, FileIO, ImageIO  # load image from URL
 using ImageInTerminal        # show heatmap in terminal
 
 # Load & prepare model
-model = VGG(16, pretrain=true).layers
+model = VGG(19, pretrain=true).layers
 
 # Load input
 url = HTTP.URI("https://raw.githubusercontent.com/Julia-XAI/ExplainableAI.jl/gh-pages/assets/heatmaps/castle.jpg")
@@ -38,15 +38,20 @@ methods = Dict(
     "LRPEpsilonAlpha2Beta1Flat" => model -> LRP(model, EpsilonAlpha2Beta1Flat()),
 )
 
+# Default pipelines with the 0.1% and 99.9% percentiles clipped after pooling
+pipe_signed = SumPooling() |> PercentileClip() |> CenteredNormalization() |> Colormap(:berlin)
+pipe_unsigned = NormPooling() |> PercentileClip() |> ExtremaNormalization() |> Colormap(:batlow)
+
 for (name, method) in methods
     @info "Generating $name assets..."
     analyzer = method(model)
 
     # Max activated neuron corresponds to "castle"
-    h = heatmap(input, analyzer)
-    save("castle_$name.png", h)
+    attr = analyze(input, analyzer)
+    pipe = attr.pooling isa SignedPooling ? pipe_signed : pipe_unsigned
+    save("castle_$name.png", only(heatmap(attr, pipe)))
 
     # Output neuron 920 corresponds to "street sign"
-    h = heatmap(input, analyzer, 920)
-    save("streetsign_$name.png", h)
+    attr = analyze(input, analyzer, 920)
+    save("streetsign_$name.png", only(heatmap(attr, pipe)))
 end
