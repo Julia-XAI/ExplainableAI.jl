@@ -19,10 +19,10 @@ convert2image(MNIST, x)
 analyzer = Gradient(model)
 heatmap(input, analyzer)
 
-analyzer = NoiseAugmentation(Gradient(model), 50)
+analyzer = NoiseAugmentation(Gradient(model), 50; pooling = NormPooling())
 heatmap(input, analyzer)
 
-analyzer = NoiseAugmentation(Gradient(model), 50, 0.1)
+analyzer = NoiseAugmentation(Gradient(model), 50, 0.1; pooling = NormPooling())
 heatmap(input, analyzer)
 
 analyzer = SmoothGrad(model, 50)
@@ -30,10 +30,10 @@ heatmap(input, analyzer)
 
 using Distributions
 
-analyzer = NoiseAugmentation(Gradient(model), 50, Poisson(0.5))
+analyzer = NoiseAugmentation(Gradient(model), 50, Poisson(0.5); pooling = NormPooling())
 heatmap(input, analyzer)
 
-analyzer = InterpolationAugmentation(Gradient(model), 50)
+analyzer = InterpolationAugmentation(Gradient(model), 50; pooling = SumPooling())
 heatmap(input, analyzer)
 
 analyzer = IntegratedGradients(model, 50)
@@ -41,8 +41,8 @@ heatmap(input, analyzer)
 
 matrix_of_ones = ones(Float32, size(input))
 
-analyzer = InterpolationAugmentation(Gradient(model), 50)
-expl = analyzer(input; input_ref = matrix_of_ones)
-heatmap(expl)
+analyzer = InterpolationAugmentation(Gradient(model), 50; pooling = SumPooling())
+attr = analyzer(input; input_ref = matrix_of_ones)
+heatmap(attr)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

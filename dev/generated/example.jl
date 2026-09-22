@@ -18,27 +18,27 @@ using ExplainableAI
 using Zygote
 
 analyzer = InputTimesGradient(model)
-expl = analyze(input, analyzer);
+attr = analyze(input, analyzer);
 
-expl.analyzer
+attr.pooling
 
-expl.val
+attr.val
 
 using VisionHeatmaps
 
-heatmap(expl)
+heatmap(attr)
 
 heatmap(input, analyzer)
 
-expl = analyze(input, analyzer, 5)
-heatmap(expl)
+attr = analyze(input, analyzer, 5)
+heatmap(attr)
 
 batchsize = 20
 xs, _ = MNIST(Float32, :test)[1:batchsize]
 batch = reshape(xs, 28, 28, 1, :) # reshape to WHCN format
-expl = analyze(batch, analyzer);
+attr = analyze(batch, analyzer);
 
-heatmap(expl)
+heatmap(attr)
 
 # Custom heatmaps
 
